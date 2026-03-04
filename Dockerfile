@@ -16,7 +16,6 @@ RUN apt-get install -y \
     build-essential \
     gcc \
     g++ \
-    make \
     pkg-config \
     # 32-bit support
     gcc-multilib \
@@ -43,6 +42,7 @@ RUN apt-get install -y \
     libglu1-mesa-dev \
     # Additional tools
     git \
+    just \
     wget \
     curl \
     && rm -rf /var/lib/apt/lists/*
@@ -67,17 +67,5 @@ COPY . .
 # Download Go dependencies
 RUN go mod download
 
-# Create build output directory
-RUN mkdir -p /workspace/build
-
-# Set the default command to build all plugins (both 32-bit and 64-bit)
-CMD ["make", "build"]
-
-# The build output will be available in ./build when using bind mount:
-# docker run -v $(pwd)/build:/workspace/build vst3go-builder
-#
-# To build only 64-bit:
-# docker run -v $(pwd)/build:/workspace/build vst3go-builder make build-64
-#
-# To build only 32-bit:
-# docker run -v $(pwd)/build:/workspace/build vst3go-builder make build-32
+# Set the default command to run the core repo checks
+CMD ["just", "test"]

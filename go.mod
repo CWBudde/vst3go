@@ -1,3 +1,3 @@
-module github.com/justyntemme/vst3go
+module github.com/cwbudde/vst3go
 
 go 1.24.3

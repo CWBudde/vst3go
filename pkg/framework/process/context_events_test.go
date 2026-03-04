@@ -3,8 +3,8 @@ package process
 import (
 	"testing"
 
-	"github.com/justyntemme/vst3go/pkg/framework/param"
-	"github.com/justyntemme/vst3go/pkg/midi"
+	"github.com/cwbudde/vst3go/pkg/framework/param"
+	"github.com/cwbudde/vst3go/pkg/midi"
 )
 
 func TestContextEventProcessing(t *testing.T) {
@@ -118,7 +118,7 @@ func TestContextProcessEvents(t *testing.T) {
 
 	// Process events in chunks
 	processor := &testProcessor{}
-	
+
 	// Process first chunk [0, 200)
 	ctx.ProcessEvents(processor, 0, 200)
 	if len(processor.receivedEvents) != 2 {

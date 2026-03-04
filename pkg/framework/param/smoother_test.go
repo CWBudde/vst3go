@@ -58,7 +58,7 @@ func TestSmoother(t *testing.T) {
 
 	t.Run("LogarithmicSmoothing", func(t *testing.T) {
 		smoother := NewSmoother(LogarithmicSmoothing, 10)
-		smoother.Reset(100.0) // Start at 100 Hz
+		smoother.Reset(100.0)      // Start at 100 Hz
 		smoother.SetTarget(1000.0) // Target 1000 Hz
 
 		// Should interpolate in log space
@@ -116,7 +116,7 @@ func TestSmoothedParameter(t *testing.T) {
 		param := &Parameter{
 			ID:           1,
 			Name:         "Test",
-			ShortName:    "Test", 
+			ShortName:    "Test",
 			Unit:         "",
 			Min:          0.0,
 			Max:          1.0,
@@ -208,7 +208,7 @@ func TestParameterSmoother(t *testing.T) {
 			DefaultValue: 0.0,
 		}
 		param1.SetValue(0.0)
-		
+
 		param2 := &Parameter{
 			ID:           2,
 			Name:         "Param2",

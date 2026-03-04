@@ -66,18 +66,18 @@ func TestGetEventsInRange(t *testing.T) {
 		end      int32
 		expected int
 	}{
-		{0, 100, 2},    // Events at 0 and 50
-		{50, 150, 2},   // Events at 50 and 100
-		{100, 200, 2},  // Events at 100 and 150
-		{0, 250, 5},    // All events
-		{250, 300, 0},  // No events
-		{-50, 0, 0},    // Before first event
+		{0, 100, 2},   // Events at 0 and 50
+		{50, 150, 2},  // Events at 50 and 100
+		{100, 200, 2}, // Events at 100 and 150
+		{0, 250, 5},   // All events
+		{250, 300, 0}, // No events
+		{-50, 0, 0},   // Before first event
 	}
 
 	for _, tt := range tests {
 		events := q.GetEventsInRange(tt.start, tt.end)
 		if len(events) != tt.expected {
-			t.Errorf("Range [%d, %d): expected %d events, got %d", 
+			t.Errorf("Range [%d, %d): expected %d events, got %d",
 				tt.start, tt.end, tt.expected, len(events))
 		}
 	}
@@ -129,7 +129,7 @@ func TestOffsetEvents(t *testing.T) {
 
 	for i, event := range events {
 		if event.SampleOffset() != expectedOffsets[i] {
-			t.Errorf("Event %d: expected offset %d, got %d", 
+			t.Errorf("Event %d: expected offset %d, got %d",
 				i, expectedOffsets[i], event.SampleOffset())
 		}
 	}

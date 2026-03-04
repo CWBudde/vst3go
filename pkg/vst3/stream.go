@@ -20,6 +20,7 @@ package vst3
 //     return stream->lpVtbl->tell(stream, pos);
 // }
 import "C"
+
 import (
 	"encoding/binary"
 	"unsafe"

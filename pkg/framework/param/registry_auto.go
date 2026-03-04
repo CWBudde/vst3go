@@ -33,7 +33,7 @@ func (r *AutoRegistry) EnableAutoID(enabled bool) {
 func (r *AutoRegistry) Register(params ...*Parameter) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	
+
 	for _, p := range params {
 		// Check if we already have this parameter by name
 		if existingID, exists := r.nameToID[p.Name]; exists {
@@ -42,23 +42,23 @@ func (r *AutoRegistry) Register(params ...*Parameter) error {
 			r.params[existingID] = p
 			continue
 		}
-		
+
 		// Assign new ID if auto-enabled and ID is 0
 		if r.autoEnabled && p.ID == 0 {
 			p.ID = r.nextID.Add(1) - 1
 		}
-		
+
 		// Check for ID conflicts
 		if _, exists := r.params[p.ID]; exists {
 			return fmt.Errorf("parameter ID %d already exists", p.ID)
 		}
-		
+
 		// Register the parameter
 		r.params[p.ID] = p
 		r.order = append(r.order, p.ID)
 		r.nameToID[p.Name] = p.ID
 	}
-	
+
 	return nil
 }
 
@@ -66,25 +66,25 @@ func (r *AutoRegistry) Register(params ...*Parameter) error {
 func (r *AutoRegistry) RegisterWithID(id uint32, param *Parameter) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	
+
 	// Force the ID
 	param.ID = id
-	
+
 	// Check for conflicts
 	if existing, exists := r.params[id]; exists {
 		return fmt.Errorf("parameter ID %d already used by '%s'", id, existing.Name)
 	}
-	
+
 	// Update next ID if necessary
 	if id >= r.nextID.Load() {
 		r.nextID.Store(id + 1)
 	}
-	
+
 	// Register
 	r.params[id] = param
 	r.order = append(r.order, id)
 	r.nameToID[param.Name] = id
-	
+
 	return nil
 }
 
@@ -92,12 +92,12 @@ func (r *AutoRegistry) RegisterWithID(id uint32, param *Parameter) error {
 func (r *AutoRegistry) GetByName(name string) *Parameter {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	
+
 	id, exists := r.nameToID[name]
 	if !exists {
 		return nil
 	}
-	
+
 	return r.params[id]
 }
 
@@ -105,7 +105,7 @@ func (r *AutoRegistry) GetByName(name string) *Parameter {
 func (r *AutoRegistry) GetID(name string) (uint32, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	
+
 	id, exists := r.nameToID[name]
 	return id, exists
 }
@@ -114,7 +114,7 @@ func (r *AutoRegistry) GetID(name string) (uint32, bool) {
 func (r *AutoRegistry) Clear() {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	
+
 	r.params = make(map[uint32]*Parameter)
 	r.order = make([]uint32, 0)
 	r.nameToID = make(map[string]uint32)
@@ -195,7 +195,7 @@ func (r *AutoRegistry) RegisterCompressorControls() error {
 // RegisterEQBand registers a parametric EQ band
 func (r *AutoRegistry) RegisterEQBand(bandNumber int) error {
 	prefix := fmt.Sprintf("Band %d", bandNumber)
-	
+
 	filterTypes := []ChoiceOption{
 		{Value: 0, Name: "Bell"},
 		{Value: 1, Name: "Low Shelf"},
@@ -204,7 +204,7 @@ func (r *AutoRegistry) RegisterEQBand(bandNumber int) error {
 		{Value: 4, Name: "High Pass"},
 		{Value: 5, Name: "Notch"},
 	}
-	
+
 	return NewRegistryBuilder(r).
 		Add(BypassParameter(0, prefix+" Enable").Build()).
 		Add(FrequencyParameter(0, prefix+" Frequency", 20, 20000, 1000).Build()).

@@ -25,10 +25,10 @@ type Smoother struct {
 	rate          float64
 	threshold     float64
 	isSmoothing   bool
-	
+
 	// For linear smoothing
 	step float64
-	
+
 	// For logarithmic smoothing
 	logCurrent float64
 	logTarget  float64
@@ -50,33 +50,33 @@ func (s *Smoother) SetTarget(target float64) {
 	if math.Abs(target-s.target) < s.threshold {
 		return // Target hasn't changed significantly
 	}
-	
+
 	s.target = target
 	s.isSmoothing = true
-	
+
 	switch s.smoothingType {
 	case LinearSmoothing:
 		// Calculate step size for linear smoothing
 		if s.rate > 0 {
 			s.step = (target - s.current) / s.rate
 		}
-		
+
 	case LogarithmicSmoothing:
 		// Convert to log space for frequency parameters
 		const minVal = 0.001
 		currentVal := s.current
 		targetVal := target
-		
+
 		if currentVal < minVal {
 			currentVal = minVal
 		}
 		if targetVal < minVal {
 			targetVal = minVal
 		}
-		
+
 		s.logCurrent = math.Log(currentVal)
 		s.logTarget = math.Log(targetVal)
-		
+
 		if s.rate > 0 {
 			s.logStep = (s.logTarget - s.logCurrent) / s.rate
 		}
@@ -88,32 +88,32 @@ func (s *Smoother) Next() float64 {
 	if !s.isSmoothing {
 		return s.current
 	}
-	
+
 	switch s.smoothingType {
 	case ExponentialSmoothing:
 		// One-pole filter: y = y + a * (x - y)
 		s.current += (s.target - s.current) * (1.0 - s.rate)
-		
+
 		// Check if we've reached the target
 		if math.Abs(s.current-s.target) < s.threshold {
 			s.current = s.target
 			s.isSmoothing = false
 		}
-		
+
 	case LinearSmoothing:
 		// Linear interpolation
 		s.current += s.step
-		
+
 		// Check if we've reached or passed the target
 		if (s.step > 0 && s.current >= s.target) || (s.step < 0 && s.current <= s.target) {
 			s.current = s.target
 			s.isSmoothing = false
 		}
-		
+
 	case LogarithmicSmoothing:
 		// Interpolate in log space
 		s.logCurrent += s.logStep
-		
+
 		// Check if we've reached the target
 		if (s.logStep > 0 && s.logCurrent >= s.logTarget) || (s.logStep < 0 && s.logCurrent <= s.logTarget) {
 			s.current = s.target
@@ -122,7 +122,7 @@ func (s *Smoother) Next() float64 {
 			s.current = math.Exp(s.logCurrent)
 		}
 	}
-	
+
 	return s.current
 }
 
@@ -173,10 +173,10 @@ func NewSmoothedParameter(param *Parameter, smoothingType SmoothingType, rate fl
 		smoothingRate: rate,
 		enabled:       true,
 	}
-	
+
 	// Initialize smoother with current parameter value
 	sp.smoother.Reset(param.GetPlainValue())
-	
+
 	return sp
 }
 
@@ -212,11 +212,12 @@ func (sp *SmoothedParameter) SetSmoothingRate(rate float64) {
 
 // Update smoothing rate based on sample rate for time-based smoothing.
 func (sp *SmoothedParameter) UpdateSampleRate(sampleRate float64, targetTimeMs float64) {
-	if sp.smoother.smoothingType == LinearSmoothing {
+	switch sp.smoother.smoothingType {
+	case LinearSmoothing:
 		// Convert time to samples
 		samples := sampleRate * targetTimeMs / 1000.0
 		sp.SetSmoothingRate(samples)
-	} else if sp.smoother.smoothingType == ExponentialSmoothing {
+	case ExponentialSmoothing:
 		// Calculate coefficient for target time
 		// -60dB in targetTimeMs
 		sp.SetSmoothingRate(math.Exp(-6.908 / (sampleRate * targetTimeMs / 1000.0)))

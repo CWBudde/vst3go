@@ -192,7 +192,7 @@ func (b *Builder) Validate() error {
 			break
 		}
 	}
-	
+
 	// MIDI effects might only have event buses
 	if !hasMainOutput && len(b.config.eventBuses) > 0 {
 		for _, bus := range b.config.eventBuses {

@@ -54,7 +54,7 @@ func (e NoteOnEvent) Type() EventType {
 }
 
 func (e NoteOnEvent) String() string {
-	return fmt.Sprintf("NoteOn{ch:%d, note:%d, vel:%d, offset:%d}", 
+	return fmt.Sprintf("NoteOn{ch:%d, note:%d, vel:%d, offset:%d}",
 		e.EventChannel, e.NoteNumber, e.Velocity, e.Offset)
 }
 
@@ -69,7 +69,7 @@ func (e NoteOffEvent) Type() EventType {
 }
 
 func (e NoteOffEvent) String() string {
-	return fmt.Sprintf("NoteOff{ch:%d, note:%d, vel:%d, offset:%d}", 
+	return fmt.Sprintf("NoteOff{ch:%d, note:%d, vel:%d, offset:%d}",
 		e.EventChannel, e.NoteNumber, e.Velocity, e.Offset)
 }
 
@@ -84,7 +84,7 @@ func (e ControlChangeEvent) Type() EventType {
 }
 
 func (e ControlChangeEvent) String() string {
-	return fmt.Sprintf("CC{ch:%d, ctrl:%d, val:%d, offset:%d}", 
+	return fmt.Sprintf("CC{ch:%d, ctrl:%d, val:%d, offset:%d}",
 		e.EventChannel, e.Controller, e.Value, e.Offset)
 }
 
@@ -119,7 +119,7 @@ func (e PitchBendEvent) Type() EventType {
 }
 
 func (e PitchBendEvent) String() string {
-	return fmt.Sprintf("PitchBend{ch:%d, val:%d, offset:%d}", 
+	return fmt.Sprintf("PitchBend{ch:%d, val:%d, offset:%d}",
 		e.EventChannel, e.Value, e.Offset)
 }
 
@@ -138,7 +138,7 @@ func (e PolyPressureEvent) Type() EventType {
 }
 
 func (e PolyPressureEvent) String() string {
-	return fmt.Sprintf("PolyPressure{ch:%d, note:%d, pressure:%d, offset:%d}", 
+	return fmt.Sprintf("PolyPressure{ch:%d, note:%d, pressure:%d, offset:%d}",
 		e.EventChannel, e.NoteNumber, e.Pressure, e.Offset)
 }
 
@@ -152,7 +152,7 @@ func (e ChannelPressureEvent) Type() EventType {
 }
 
 func (e ChannelPressureEvent) String() string {
-	return fmt.Sprintf("ChannelPressure{ch:%d, pressure:%d, offset:%d}", 
+	return fmt.Sprintf("ChannelPressure{ch:%d, pressure:%d, offset:%d}",
 		e.EventChannel, e.Pressure, e.Offset)
 }
 
@@ -166,7 +166,7 @@ func (e ProgramChangeEvent) Type() EventType {
 }
 
 func (e ProgramChangeEvent) String() string {
-	return fmt.Sprintf("ProgramChange{ch:%d, prog:%d, offset:%d}", 
+	return fmt.Sprintf("ProgramChange{ch:%d, prog:%d, offset:%d}",
 		e.EventChannel, e.Program, e.Offset)
 }
 
@@ -222,7 +222,7 @@ func NoteToFrequency(note uint8, tuningA4 float64) float64 {
 	if tuningA4 == 0 {
 		tuningA4 = 440.0
 	}
-	return tuningA4 * pow2((float64(note) - 69.0) / 12.0)
+	return tuningA4 * pow2((float64(note)-69.0)/12.0)
 }
 
 func pow2(x float64) float64 {
@@ -232,7 +232,7 @@ func pow2(x float64) float64 {
 		frac := x - float64(whole)
 		// 2^whole * 2^frac
 		// Use Taylor series approximation for fractional part
-		fracPow := 1.0 + frac*(0.693147 + frac*(0.240227 + frac*0.055504))
+		fracPow := 1.0 + frac*(0.693147+frac*(0.240227+frac*0.055504))
 		return float64(uint64(1)<<uint(whole)) * fracPow
 	} else {
 		// For negative x, use 2^x = 1 / 2^(-x)
@@ -259,7 +259,7 @@ func log2(x float64) float64 {
 	if x <= 0 {
 		return -1000.0 // Return a very negative number for invalid input
 	}
-	
+
 	// Normalize x to [1, 2) range
 	exp := 0
 	for x >= 2.0 {
@@ -270,18 +270,18 @@ func log2(x float64) float64 {
 		x *= 2.0
 		exp--
 	}
-	
+
 	// Now x is in [1, 2), use polynomial approximation
 	// log2(x) ≈ (x-1) * (1.4427 - 0.7213*(x-1) + 0.4821*(x-1)^2)
 	t := x - 1.0
-	frac := t * (1.4427 - t*(0.7213 - t*0.4821))
-	
+	frac := t * (1.4427 - t*(0.7213-t*0.4821))
+
 	return float64(exp) + frac
 }
 
 func NoteNumberToName(note uint8) string {
 	noteNames := []string{"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"}
-	octave := int(note / 12) - 1
-	noteName := noteNames[note % 12]
+	octave := int(note/12) - 1
+	noteName := noteNames[note%12]
 	return fmt.Sprintf("%s%d", noteName, octave)
 }

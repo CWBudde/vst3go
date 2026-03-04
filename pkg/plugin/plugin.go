@@ -4,10 +4,10 @@ package plugin
 import (
 	"io"
 
-	"github.com/justyntemme/vst3go/pkg/framework/bus"
-	"github.com/justyntemme/vst3go/pkg/framework/param"
-	"github.com/justyntemme/vst3go/pkg/framework/plugin"
-	"github.com/justyntemme/vst3go/pkg/framework/process"
+	"github.com/cwbudde/vst3go/pkg/framework/bus"
+	"github.com/cwbudde/vst3go/pkg/framework/param"
+	"github.com/cwbudde/vst3go/pkg/framework/plugin"
+	"github.com/cwbudde/vst3go/pkg/framework/process"
 )
 
 // Plugin is the main interface that users implement

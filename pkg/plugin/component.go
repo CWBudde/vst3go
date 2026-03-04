@@ -4,17 +4,18 @@ package plugin
 // #include "../../include/vst3/vst3_c_api.h"
 // #include "../../bridge/bridge.h"
 import "C"
+
 import (
 	"bytes"
 	"fmt"
 	"sync"
 	"unsafe"
 
-	"github.com/justyntemme/vst3go/pkg/framework/bus"
-	"github.com/justyntemme/vst3go/pkg/framework/process"
-	"github.com/justyntemme/vst3go/pkg/framework/state"
-	"github.com/justyntemme/vst3go/pkg/midi"
-	"github.com/justyntemme/vst3go/pkg/vst3"
+	"github.com/cwbudde/vst3go/pkg/framework/bus"
+	"github.com/cwbudde/vst3go/pkg/framework/process"
+	"github.com/cwbudde/vst3go/pkg/framework/state"
+	"github.com/cwbudde/vst3go/pkg/midi"
+	"github.com/cwbudde/vst3go/pkg/vst3"
 )
 
 // componentImpl wraps a Processor to implement VST3 interfaces
@@ -387,7 +388,7 @@ func (c *componentImpl) processInputEvents(eventList *C.struct_Steinberg_Vst_IEv
 func (c *componentImpl) processSingleEvent(event *C.struct_Steinberg_Vst_Event) {
 	// Use helper function to get event type
 	eventType := C.getEventType(event)
-	
+
 	switch eventType {
 	case C.Steinberg_Vst_Event_EventTypes_kNoteOnEvent:
 		// Note On event - use helper to get the event data
@@ -413,7 +414,7 @@ func (c *componentImpl) processSingleEvent(event *C.struct_Steinberg_Vst_Event) 
 			Velocity:   uint8(noteOff.velocity * 127),
 		})
 
-	// Add more event types as needed
+		// Add more event types as needed
 	}
 }
 

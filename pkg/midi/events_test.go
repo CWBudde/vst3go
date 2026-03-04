@@ -104,10 +104,10 @@ func TestNoteToFrequency(t *testing.T) {
 		note uint8
 		freq float64
 	}{
-		{69, 440.0},    // A4
-		{60, 261.63},   // Middle C (C4)
-		{57, 220.0},    // A3
-		{81, 880.0},    // A5
+		{69, 440.0},  // A4
+		{60, 261.63}, // Middle C (C4)
+		{57, 220.0},  // A3
+		{81, 880.0},  // A5
 	}
 
 	for _, tt := range tests {

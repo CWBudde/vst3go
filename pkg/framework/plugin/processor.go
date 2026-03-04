@@ -2,9 +2,9 @@
 package plugin
 
 import (
-	"github.com/justyntemme/vst3go/pkg/framework/bus"
-	"github.com/justyntemme/vst3go/pkg/framework/param"
-	"github.com/justyntemme/vst3go/pkg/framework/process"
+	"github.com/cwbudde/vst3go/pkg/framework/bus"
+	"github.com/cwbudde/vst3go/pkg/framework/param"
+	"github.com/cwbudde/vst3go/pkg/framework/process"
 )
 
 // BaseProcessor provides common functionality for audio processors
@@ -12,7 +12,7 @@ type BaseProcessor struct {
 	params     *param.Registry
 	buses      *bus.Configuration
 	sampleRate float64
-	
+
 	// Optional callbacks for customization
 	onInitialize func(sampleRate float64, maxBlockSize int32) error
 	onSetActive  func(active bool) error
@@ -24,7 +24,7 @@ func NewBaseProcessor(buses *bus.Configuration) *BaseProcessor {
 	if buses == nil {
 		buses = bus.NewStereoConfiguration() // Default to stereo
 	}
-	
+
 	return &BaseProcessor{
 		params: param.NewRegistry(),
 		buses:  buses,
@@ -34,11 +34,11 @@ func NewBaseProcessor(buses *bus.Configuration) *BaseProcessor {
 // Initialize implements the Processor interface
 func (b *BaseProcessor) Initialize(sampleRate float64, maxBlockSize int32) error {
 	b.sampleRate = sampleRate
-	
+
 	if b.onInitialize != nil {
 		return b.onInitialize(sampleRate, maxBlockSize)
 	}
-	
+
 	return nil
 }
 
@@ -57,11 +57,11 @@ func (b *BaseProcessor) SetActive(active bool) error {
 	if !active && b.onReset != nil {
 		b.onReset()
 	}
-	
+
 	if b.onSetActive != nil {
 		return b.onSetActive(active)
 	}
-	
+
 	return nil
 }
 

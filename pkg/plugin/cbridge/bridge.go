@@ -2,7 +2,8 @@
 // This package should be imported by plugin implementations to enable VST3 functionality.
 //
 // Usage:
-//   import _ "github.com/justyntemme/vst3go/pkg/plugin/cbridge"
+//
+//	import _ "github.com/cwbudde/vst3go/pkg/plugin/cbridge"
 //
 // The underscore import ensures the C bridge is linked without directly using any exports.
 package cbridge

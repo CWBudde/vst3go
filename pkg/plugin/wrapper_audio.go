@@ -3,10 +3,11 @@ package plugin
 // #cgo CFLAGS: -I../../include
 // #include "../../include/vst3/vst3_c_api.h"
 import "C"
+
 import (
 	"unsafe"
 
-	"github.com/justyntemme/vst3go/pkg/vst3"
+	"github.com/cwbudde/vst3go/pkg/vst3"
 )
 
 // IAudioProcessor callbacks

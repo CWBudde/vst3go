@@ -2,7 +2,7 @@
 package process
 
 import (
-	"github.com/justyntemme/vst3go/pkg/framework/bus"
+	"github.com/cwbudde/vst3go/pkg/framework/bus"
 )
 
 // BusBuffers represents audio buffers for a single bus
@@ -14,11 +14,11 @@ type BusBuffers struct {
 // MultiBusContext extends Context with multi-bus support
 type MultiBusContext struct {
 	*Context
-	
+
 	// Multi-bus audio buffers
 	InputBuses  []BusBuffers
 	OutputBuses []BusBuffers
-	
+
 	// Bus configuration
 	BusConfig *bus.Configuration
 }
@@ -137,7 +137,7 @@ func (m *MultiBusContext) ProcessWithSidechain(fn func(main, sidechain, output [
 	mainIn := m.GetMainInput()
 	sidechain := m.GetSidechainInput()
 	mainOut := m.GetMainOutput()
-	
+
 	if mainIn != nil && mainOut != nil {
 		// If no sidechain, pass nil
 		fn(mainIn, sidechain, mainOut)
@@ -161,16 +161,16 @@ func (m *MultiBusContext) PassThroughAll() {
 	if len(m.OutputBuses) < minBuses {
 		minBuses = len(m.OutputBuses)
 	}
-	
+
 	for busIdx := 0; busIdx < minBuses; busIdx++ {
 		inChannels := m.InputBuses[busIdx].Channels
 		outChannels := m.OutputBuses[busIdx].Channels
-		
+
 		minChannels := len(inChannels)
 		if len(outChannels) < minChannels {
 			minChannels = len(outChannels)
 		}
-		
+
 		for ch := 0; ch < minChannels; ch++ {
 			copy(outChannels[ch], inChannels[ch])
 		}

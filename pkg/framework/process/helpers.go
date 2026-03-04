@@ -6,7 +6,7 @@ func (ctx *Context) ProcessChannels(fn func(ch int, input, output []float32)) {
 	if ctx.NumOutputChannels() < numChannels {
 		numChannels = ctx.NumOutputChannels()
 	}
-	
+
 	for ch := 0; ch < numChannels; ch++ {
 		fn(ch, ctx.Input[ch], ctx.Output[ch])
 	}
@@ -21,7 +21,7 @@ func (ctx *Context) ProcessStereo(fn func(ch int, input, output []float32)) {
 	if numChannels > 2 {
 		numChannels = 2 // Limit to stereo
 	}
-	
+
 	for ch := 0; ch < numChannels; ch++ {
 		fn(ch, ctx.Input[ch], ctx.Output[ch])
 	}
@@ -40,22 +40,22 @@ func (ctx *Context) ProcessSamples(fn func(sample int, inputs, outputs []float32
 	if ctx.NumOutputChannels() < numChannels {
 		numChannels = ctx.NumOutputChannels()
 	}
-	
+
 	numSamples := ctx.NumSamples()
-	
+
 	// Temporary slices to avoid allocations
 	inputs := make([]float32, numChannels)
 	outputs := make([]float32, numChannels)
-	
+
 	for s := 0; s < numSamples; s++ {
 		// Gather inputs
 		for ch := 0; ch < numChannels; ch++ {
 			inputs[ch] = ctx.Input[ch][s]
 		}
-		
+
 		// Process
 		fn(s, inputs, outputs)
-		
+
 		// Write outputs
 		for ch := 0; ch < numChannels; ch++ {
 			ctx.Output[ch][s] = outputs[ch]
@@ -72,7 +72,7 @@ func (ctx *Context) ProcessChannelsSeparately(fns ...func(input, output []float3
 	if len(fns) < numChannels {
 		numChannels = len(fns)
 	}
-	
+
 	for ch := 0; ch < numChannels; ch++ {
 		fns[ch](ctx.Input[ch], ctx.Output[ch])
 	}

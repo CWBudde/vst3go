@@ -1,0 +1,38 @@
+# treefmt configuration for vst3go
+
+[global]
+excludes = [
+  "**/.git/**",
+  "**/.gitignore",
+  "go.mod",
+  "go.sum",
+  "**/*.txt",
+  "LICENSE",
+  "build/**",
+]
+
+[formatter.gofumpt]
+command = "gofumpt"
+options = ["-w"]
+includes = ["*.go"]
+
+[formatter.gci]
+command = "gci"
+options = ["write"]
+includes = ["*.go"]
+priority = 1
+
+[formatter.shfmt]
+command = "shfmt"
+options = ["-s", "-w"]
+includes = ["*.sh"]
+
+[formatter.prettier]
+command = "prettier"
+options = ["-w"]
+includes = [
+  "*.md",
+  "*.yaml",
+  "*.yml",
+  "*.json",
+]

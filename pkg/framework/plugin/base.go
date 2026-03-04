@@ -2,8 +2,8 @@
 package plugin
 
 import (
-	"github.com/justyntemme/vst3go/pkg/framework/param"
-	"github.com/justyntemme/vst3go/pkg/framework/state"
+	"github.com/cwbudde/vst3go/pkg/framework/param"
+	"github.com/cwbudde/vst3go/pkg/framework/state"
 )
 
 // Base provides core functionality for all plugins

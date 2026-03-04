@@ -6,12 +6,12 @@ import (
 
 func TestTemplates(t *testing.T) {
 	tests := []struct {
-		name           string
-		config         *Configuration
-		expectInputs   int32
-		expectOutputs  int32
+		name            string
+		config          *Configuration
+		expectInputs    int32
+		expectOutputs   int32
 		expectSidechain bool
-		expectEvents   int
+		expectEvents    int
 	}{
 		{
 			name:          "EffectStereo",
@@ -52,11 +52,11 @@ func TestTemplates(t *testing.T) {
 			expectEvents:  1,
 		},
 		{
-			name:         "MIDIEffect",
-			config:       NewMIDIEffect(),
-			expectInputs: 0,
+			name:          "MIDIEffect",
+			config:        NewMIDIEffect(),
+			expectInputs:  0,
 			expectOutputs: 0,
-			expectEvents: 2, // in and out
+			expectEvents:  2, // in and out
 		},
 	}
 
@@ -121,7 +121,7 @@ func TestMixerChannel(t *testing.T) {
 func TestSurroundConfigs(t *testing.T) {
 	t.Run("5.1 Effect", func(t *testing.T) {
 		config := NewSurround5_1Effect()
-		
+
 		in := config.GetBusInfo(MediaTypeAudio, DirectionInput, 0)
 		if in.ChannelCount != 6 {
 			t.Errorf("Expected 6 input channels for 5.1, got %d", in.ChannelCount)
@@ -135,7 +135,7 @@ func TestSurroundConfigs(t *testing.T) {
 
 	t.Run("7.1 Effect", func(t *testing.T) {
 		config := NewSurround7_1Effect()
-		
+
 		in := config.GetBusInfo(MediaTypeAudio, DirectionInput, 0)
 		if in.ChannelCount != 8 {
 			t.Errorf("Expected 8 input channels for 7.1, got %d", in.ChannelCount)
@@ -144,7 +144,7 @@ func TestSurroundConfigs(t *testing.T) {
 
 	t.Run("Surround Panner", func(t *testing.T) {
 		config := NewSurroundPanner()
-		
+
 		in := config.GetBusInfo(MediaTypeAudio, DirectionInput, 0)
 		if in.ChannelCount != 2 {
 			t.Errorf("Expected stereo input, got %d channels", in.ChannelCount)
@@ -160,7 +160,7 @@ func TestSurroundConfigs(t *testing.T) {
 func TestSpecialTemplates(t *testing.T) {
 	t.Run("Crossover", func(t *testing.T) {
 		config := NewCrossover(3)
-		
+
 		// 1 input, 4 outputs (3 bands + main)
 		if config.GetBusCount(MediaTypeAudio, DirectionOutput) != 4 {
 			t.Error("Expected 4 outputs for 3-band crossover")
@@ -183,7 +183,7 @@ func TestSpecialTemplates(t *testing.T) {
 
 	t.Run("Splitter", func(t *testing.T) {
 		config := NewSplitter(3)
-		
+
 		if config.GetBusCount(MediaTypeAudio, DirectionInput) != 1 {
 			t.Error("Expected 1 input")
 		}
@@ -203,7 +203,7 @@ func TestSpecialTemplates(t *testing.T) {
 
 	t.Run("Vocoder", func(t *testing.T) {
 		config := NewVocoder()
-		
+
 		// Check voice input
 		voice := config.GetBusInfo(MediaTypeAudio, DirectionInput, 0)
 		if voice.ChannelCount != 1 {
@@ -223,10 +223,10 @@ func TestSpecialTemplates(t *testing.T) {
 
 	t.Run("MultiChannelEffect", func(t *testing.T) {
 		config := NewMultiChannelEffect(12)
-		
+
 		in := config.GetBusInfo(MediaTypeAudio, DirectionInput, 0)
 		out := config.GetBusInfo(MediaTypeAudio, DirectionOutput, 0)
-		
+
 		if in.ChannelCount != 12 {
 			t.Errorf("Expected 12 input channels, got %d", in.ChannelCount)
 		}

@@ -6,6 +6,7 @@ package vst3
 //     return buffers->Steinberg_Vst_AudioBusBuffers_channelBuffers32;
 // }
 import "C"
+
 import (
 	"unsafe"
 )

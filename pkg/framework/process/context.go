@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/justyntemme/vst3go/pkg/framework/param"
-	"github.com/justyntemme/vst3go/pkg/midi"
+	"github.com/cwbudde/vst3go/pkg/framework/param"
+	"github.com/cwbudde/vst3go/pkg/midi"
 )
 
 // ParameterChange represents a parameter change at a specific sample offset

@@ -1,3 +1,5 @@
+version: "2"
+
 run:
   timeout: 5m
   issues-exit-code: 1
@@ -18,8 +20,6 @@ linters-settings:
     locale: US
   lll:
     line-length: 140
-  goimports:
-    local-prefixes: github.com/justyntemme/vst3go
   gocritic:
     enabled-tags:
       - diagnostic
@@ -36,21 +36,13 @@ linters-settings:
   funlen:
     lines: 100
     statements: 50
-  depguard:
-    rules:
-      main:
-        allow:
-          - $gostd
-          - github.com/justyntemme/vst3go
-
 linters:
   # please, do not use `enable-all`: it's deprecated and will be removed soon.
   # inverted configuration with `enable-all` and `disable` is not scalable during updates of golangci-lint
   disable-all: true
   enable:
     - bodyclose
-    - copyloopvar    # replaces exportloopref (Go 1.22+)
-    - depguard
+    - copyloopvar # replaces exportloopref (Go 1.22+)
     - dogsled
     - dupl
     - errcheck
@@ -59,12 +51,9 @@ linters:
     - goconst
     - gocritic
     - gocyclo
-    - gofmt
-    - goimports
-    - mnd            # replaces gomnd
+    - mnd # replaces gomnd
     - goprintffuncname
     - gosec
-    - gosimple
     - govet
     - ineffassign
     - lll
@@ -72,14 +61,12 @@ linters:
     - nakedret
     - noctx
     - nolintlint
-    - revive         # replaces golint
+    - revive # replaces golint
     - rowserrcheck
     - staticcheck
-    - stylecheck
-    - typecheck
     - unconvert
     - unparam
-    - unused         # replaces deadcode, structcheck, varcheck
+    - unused # replaces deadcode, structcheck, varcheck
     - whitespace
 
 issues:
@@ -107,15 +94,6 @@ issues:
         - revive
         - stylecheck
         - funlen
-    # Examples can have longer functions for clarity
-    - path: examples/
-      linters:
-        - funlen
-        - gocyclo
-    # DSP packages use mathematical constants
-    - path: pkg/dsp/
-      linters:
-        - mnd
     # Bus configuration has expected channel counts
     - path: pkg/framework/bus/
       linters:
@@ -125,23 +103,23 @@ issues:
       linters:
         - lll
         - mnd
-        - gocritic  # C interop patterns may trigger false positives
+        - gocritic # C interop patterns may trigger false positives
     # Plugin package deals with C interop and has some necessary duplication
     - path: pkg/plugin/
       linters:
         - dupl
         - lll
         - mnd
-        - revive  # C interface functions often have unused parameters
-        - gocritic  # C binding patterns don't follow Go conventions
-        - gocyclo  # Complex C interop functions
-        - staticcheck  # Empty branches are placeholders for future C implementations
-        - govet  # Unsafe operations are necessary for C interop
+        - revive # C interface functions often have unused parameters
+        - gocritic # C binding patterns don't follow Go conventions
+        - gocyclo # Complex C interop functions
+        - staticcheck # Empty branches are placeholders for future C implementations
+        - govet # Unsafe operations are necessary for C interop
     # Parameter formatters have conversion constants and necessary unsafe operations
     - path: pkg/framework/param/
       linters:
         - mnd
-        - gosec  # Uses necessary unsafe operations for atomic values
+        - gosec # Uses necessary unsafe operations for atomic values
 
   # Independently from option `exclude` we use default exclude patterns,
   # it can be disabled by this option. To list all

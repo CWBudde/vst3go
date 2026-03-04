@@ -10,7 +10,6 @@ func TestBuilder(t *testing.T) {
 			WithStereoInput("In").
 			WithStereoOutput("Out").
 			Build()
-
 		if err != nil {
 			t.Fatalf("Build failed: %v", err)
 		}
@@ -30,7 +29,6 @@ func TestBuilder(t *testing.T) {
 			WithQuadOutput("Quad").
 			With5_1Output("Surround").
 			Build()
-
 		if err != nil {
 			t.Fatalf("Build failed: %v", err)
 		}
@@ -63,7 +61,6 @@ func TestBuilder(t *testing.T) {
 			WithStereoOutput("Out").
 			WithSidechain("SC").
 			Build()
-
 		if err != nil {
 			t.Fatalf("Build failed: %v", err)
 		}
@@ -90,7 +87,6 @@ func TestBuilder(t *testing.T) {
 			WithEventInput("MIDI In").
 			WithEventOutput("MIDI Thru").
 			Build()
-
 		if err != nil {
 			t.Fatalf("Build failed: %v", err)
 		}
@@ -120,7 +116,6 @@ func TestBuilder(t *testing.T) {
 			WithStereoOutput("Out").
 			SetBusActive(MediaTypeAudio, DirectionInput, 1, false).
 			Build()
-
 		if err != nil {
 			t.Fatalf("Build failed: %v", err)
 		}

@@ -29,11 +29,12 @@ package plugin
 //     return Steinberg_kResultFalse;
 // }
 import "C"
+
 import (
 	"sync"
 	"unsafe"
 
-	"github.com/justyntemme/vst3go/pkg/vst3"
+	"github.com/cwbudde/vst3go/pkg/vst3"
 )
 
 // Component interface that our componentImpl satisfies
