@@ -36,8 +36,10 @@ func (b *Base) Parameters() *param.Registry {
 	return b.params
 }
 
-// AudioProcessor is a minimal audio-only processing contract used by helper
-// layers that do not need the full runtime Processor interface.
+// AudioProcessor is a legacy minimal audio-only processing contract used by
+// helper layers that do not need the full runtime Processor interface.
+//
+// Prefer pkg/plugin.Processor for new runtime-facing code.
 type AudioProcessor interface {
 	// ProcessAudio processes audio buffers - zero allocations allowed!
 	ProcessAudio(input, output [][]float32)

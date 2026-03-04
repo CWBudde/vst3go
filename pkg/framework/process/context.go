@@ -114,6 +114,8 @@ type Context struct {
 	// Pre-allocated work buffers
 	workBuffer []float32
 	tempBuffer []float32
+	sampleIn   []float32
+	sampleOut  []float32
 
 	// Parameter access
 	params *param.Registry

@@ -1,5 +1,19 @@
 package process
 
+func (ctx *Context) ensureSampleScratch(numChannels int) {
+	if cap(ctx.sampleIn) < numChannels {
+		ctx.sampleIn = make([]float32, numChannels)
+	} else {
+		ctx.sampleIn = ctx.sampleIn[:numChannels]
+	}
+
+	if cap(ctx.sampleOut) < numChannels {
+		ctx.sampleOut = make([]float32, numChannels)
+	} else {
+		ctx.sampleOut = ctx.sampleOut[:numChannels]
+	}
+}
+
 // ProcessChannels processes all available channels with the given function
 func (ctx *Context) ProcessChannels(fn func(ch int, input, output []float32)) {
 	numChannels := ctx.NumInputChannels()
@@ -42,10 +56,9 @@ func (ctx *Context) ProcessSamples(fn func(sample int, inputs, outputs []float32
 	}
 
 	numSamples := ctx.NumSamples()
-
-	// Temporary slices to avoid allocations
-	inputs := make([]float32, numChannels)
-	outputs := make([]float32, numChannels)
+	ctx.ensureSampleScratch(numChannels)
+	inputs := ctx.sampleIn
+	outputs := ctx.sampleOut
 
 	for s := 0; s < numSamples; s++ {
 		// Gather inputs

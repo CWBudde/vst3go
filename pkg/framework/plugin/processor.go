@@ -32,7 +32,7 @@ type BaseProcessor struct {
 // NewBaseProcessor creates a BaseProcessor with the given bus configuration.
 func NewBaseProcessor(buses *bus.Configuration) *BaseProcessor {
 	if buses == nil {
-		buses = bus.NewStereoConfiguration() // Default to stereo
+		buses = bus.Stereo() // Default to stereo
 	}
 
 	return &BaseProcessor{

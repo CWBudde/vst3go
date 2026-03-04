@@ -6,12 +6,12 @@
 - [x] Move DSP packages, showcase plugins, and synth-product planning out to `synthkit`.
 - [x] Rename the module to `github.com/cwbudde/vst3go`.
 - [x] Update the README to state that this fork intentionally differs from the original project.
-- [ ] Review the retained package boundary once more.
+- [x] Review the retained package boundary once more.
   - [x] `pkg/vst3`
   - [x] `pkg/plugin`
   - [x] `pkg/midi`
   - [x] `pkg/framework/{bus,param,plugin,process,state}`
-  - [ ] Confirm no higher-level audio/product concerns have drifted back in.
+  - [x] Confirm no higher-level audio/product concerns have drifted back in.
 
 ## Rules
 
@@ -19,7 +19,7 @@
 - [x] Keep business logic in Go rather than in C.
 - [x] Keep DSP and product-specific logic out of this repo.
 - [x] Keep example/showcase plugin ownership out of this repo.
-- [ ] Keep these rules reflected in docs and future planning updates.
+- [x] Keep these rules reflected in docs and future planning updates.
 
 ## Current Baseline
 
@@ -53,17 +53,17 @@
 
 ## Phase 2: Runtime Architecture Hardening
 
-- [ ] Reassess package boundaries.
-  - [ ] Keep VST3-facing code, bridge glue, and generic runtime primitives clearly separated.
-  - [ ] Remove mixed-responsibility code where low-level and higher-level concerns are entangled.
-- [ ] Review lifecycle behavior.
-  - [ ] Audit `SetActive(false)` and related reset behavior in retained runtime code.
-  - [ ] Ensure state, parameter, and event handling reset deterministically.
-- [ ] Review process-layer structure.
-  - [ ] Refactor oversized runtime processing functions where readability is poor.
-  - [ ] Keep transport updates, buffer mapping, and event handling understandable and testable.
-- [ ] Keep helper abstractions honest.
-  - [ ] Only add base helpers if they reduce boilerplate without hiding core VST3 mechanics.
+- [x] Reassess package boundaries.
+  - [x] Keep VST3-facing code, bridge glue, and generic runtime primitives clearly separated.
+  - [x] Remove mixed-responsibility code where low-level and higher-level concerns are entangled.
+- [x] Review lifecycle behavior.
+  - [x] Audit `SetActive(false)` and related reset behavior in retained runtime code.
+  - [x] Ensure state, parameter, and event handling reset deterministically in retained runtime paths.
+- [x] Review process-layer structure.
+  - [x] Refactor oversized runtime processing functions where readability is poor.
+  - [x] Split transport updates, buffer mapping, and automation collection into smaller runtime helpers.
+- [x] Keep helper abstractions honest.
+  - [x] Only add base helpers if they reduce boilerplate without hiding core VST3 mechanics.
 
 ## Phase 3: Testing, Validation, And Performance
 
