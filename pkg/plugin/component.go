@@ -462,34 +462,32 @@ func (c *componentImpl) GetParamValueByString(id uint32, str string) (float64, e
 }
 
 func (c *componentImpl) NormalizedParamToPlain(id uint32, normalized float64) float64 {
-	if p := c.processor.GetParameters().Get(id); p != nil {
-		return p.Min + normalized*(p.Max-p.Min)
+	if p, ok := c.processor.GetParameters().GetOK(id); ok {
+		return p.Denormalize(normalized)
 	}
 	return normalized
 }
 
 func (c *componentImpl) PlainParamToNormalized(id uint32, plain float64) float64 {
-	if p := c.processor.GetParameters().Get(id); p != nil {
-		if p.Max > p.Min {
-			return (plain - p.Min) / (p.Max - p.Min)
-		}
+	if p, ok := c.processor.GetParameters().GetOK(id); ok {
+		return p.Normalize(plain)
 	}
 	return plain
 }
 
 func (c *componentImpl) GetParamNormalized(id uint32) float64 {
-	if p := c.processor.GetParameters().Get(id); p != nil {
-		return p.GetValue()
+	if value, ok := c.processor.GetParameters().GetNormalized(id); ok {
+		return value
 	}
 	return 0
 }
 
 func (c *componentImpl) SetParamNormalized(id uint32, value float64) error {
-	if p := c.processor.GetParameters().Get(id); p != nil {
+	if p, ok := c.processor.GetParameters().GetOK(id); ok {
 		// Debug parameter changes
 		fmt.Printf("[PARAM_CHANGE] SetParamNormalized: id=%d, value=%.3f, plain=%.1f\n",
-			id, value, p.Min+value*(p.Max-p.Min))
-		p.SetValue(value)
+			id, value, p.Denormalize(value))
+		p.SetNormalized(value)
 		return nil
 	}
 	return vst3.ErrInvalidArgument
@@ -506,16 +504,16 @@ func (c *componentImpl) CreateView(name string) (interface{}, error) {
 // SetParamNormalizedWithNotification sets a parameter value and notifies the host
 // This should be used when the plugin changes a parameter value internally
 func (c *componentImpl) SetParamNormalizedWithNotification(id uint32, value float64) error {
-	if p := c.processor.GetParameters().Get(id); p != nil {
+	if p, ok := c.processor.GetParameters().GetOK(id); ok {
 		// Notify host of parameter change
 		if c.wrapper != nil {
 			c.wrapper.notifyParamBeginEdit(id)
-			p.SetValue(value)
+			p.SetNormalized(value)
 			c.wrapper.notifyParamPerformEdit(id, value)
 			c.wrapper.notifyParamEndEdit(id)
 		} else {
 			// Fallback if no wrapper available
-			p.SetValue(value)
+			p.SetNormalized(value)
 		}
 		return nil
 	}
@@ -574,9 +572,9 @@ func (c *componentImpl) processSampleAccurate() {
 		c.processCtx.ApplyParameterChange(change)
 
 		// Debug output
-		if p := c.processor.GetParameters().Get(change.ParamID); p != nil {
+		if p, ok := c.processor.GetParameters().GetOK(change.ParamID); ok {
 			fmt.Printf("[SAMPLE_ACCURATE] Applied param %d change at sample %d: value=%.6f, plain=%.1f\n",
-				change.ParamID, change.SampleOffset, change.Value, p.GetPlainValue())
+				change.ParamID, change.SampleOffset, change.Value, p.GetPlain())
 		}
 	}
 

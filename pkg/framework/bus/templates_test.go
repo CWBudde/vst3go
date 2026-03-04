@@ -15,45 +15,45 @@ func TestTemplates(t *testing.T) {
 	}{
 		{
 			name:          "EffectStereo",
-			config:        NewEffectStereo(),
+			config:        EffectStereo(),
 			expectInputs:  1,
 			expectOutputs: 1,
 		},
 		{
 			name:          "EffectMono",
-			config:        NewEffectMono(),
+			config:        EffectMono(),
 			expectInputs:  1,
 			expectOutputs: 1,
 		},
 		{
 			name:            "EffectStereoSidechain",
-			config:          NewEffectStereoSidechain(),
+			config:          EffectStereoSidechain(),
 			expectInputs:    2, // main + sidechain
 			expectOutputs:   1,
 			expectSidechain: true,
 		},
 		{
 			name:          "MonoToStereo",
-			config:        NewMonoToStereo(),
+			config:        MonoToStereo(),
 			expectInputs:  1,
 			expectOutputs: 1,
 		},
 		{
 			name:          "DualMono",
-			config:        NewDualMono(),
+			config:        DualMono(),
 			expectInputs:  2,
 			expectOutputs: 2,
 		},
 		{
 			name:          "Generator",
-			config:        NewGenerator(),
+			config:        Generator(),
 			expectInputs:  0,
 			expectOutputs: 1,
 			expectEvents:  1,
 		},
 		{
 			name:          "MIDIEffect",
-			config:        NewMIDIEffect(),
+			config:        MIDIEffect(),
 			expectInputs:  0,
 			expectOutputs: 0,
 			expectEvents:  2, // in and out

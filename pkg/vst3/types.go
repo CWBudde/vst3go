@@ -7,9 +7,11 @@ import "unsafe"
 // Result codes - we need to define these as values, not C constants
 const (
 	ResultOK    = 0
-	ResultOk    = 0
 	ResultFalse = 1
-	ResultTrue  = 0 // Same as Ok
+
+	// Deprecated aliases kept for compatibility with older callers.
+	ResultOk   = ResultOK
+	ResultTrue = ResultOK
 )
 
 // Basic type aliases

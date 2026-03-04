@@ -49,8 +49,8 @@ type Configuration struct {
 	eventBuses []Info
 }
 
-// NewStereoConfiguration creates a standard stereo I/O configuration
-func NewStereoConfiguration() *Configuration {
+// Stereo creates a standard stereo I/O configuration.
+func Stereo() *Configuration {
 	return &Configuration{
 		audioBuses: []Info{
 			{
@@ -73,8 +73,8 @@ func NewStereoConfiguration() *Configuration {
 	}
 }
 
-// NewMonoConfiguration creates a mono I/O configuration
-func NewMonoConfiguration() *Configuration {
+// Mono creates a mono I/O configuration.
+func Mono() *Configuration {
 	return &Configuration{
 		audioBuses: []Info{
 			{
@@ -95,6 +95,18 @@ func NewMonoConfiguration() *Configuration {
 			},
 		},
 	}
+}
+
+// NewStereoConfiguration creates a standard stereo I/O configuration.
+// Deprecated: use Stereo.
+func NewStereoConfiguration() *Configuration {
+	return Stereo()
+}
+
+// NewMonoConfiguration creates a mono I/O configuration.
+// Deprecated: use Mono.
+func NewMonoConfiguration() *Configuration {
+	return Mono()
 }
 
 // GetBusCount returns the number of buses for a given type and direction

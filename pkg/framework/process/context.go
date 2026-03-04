@@ -144,18 +144,26 @@ func NewContext(maxBlockSize int, params *param.Registry) *Context {
 
 // Param returns the current value of a parameter (0-1 normalized)
 func (c *Context) Param(id uint32) float64 {
-	if p := c.params.Get(id); p != nil {
-		return p.GetValue()
+	if c.params == nil {
+		return 0
 	}
-	return 0
+	value, ok := c.params.GetNormalized(id)
+	if !ok {
+		return 0
+	}
+	return value
 }
 
 // ParamPlain returns the current plain value of a parameter
 func (c *Context) ParamPlain(id uint32) float64 {
-	if p := c.params.Get(id); p != nil {
-		return p.GetPlainValue()
+	if c.params == nil {
+		return 0
 	}
-	return 0
+	value, ok := c.params.GetPlain(id)
+	if !ok {
+		return 0
+	}
+	return value
 }
 
 // NumSamples returns the number of samples to process
@@ -215,13 +223,17 @@ func (c *Context) Clear() {
 // SetParameterAtOffset sets a parameter value at a specific sample offset within the current block
 // Deprecated: Use AddParameterChange for sample-accurate automation
 func (c *Context) SetParameterAtOffset(paramID uint32, value float64, sampleOffset int) {
-	if param := c.params.Get(paramID); param != nil {
+	if c.params == nil {
+		return
+	}
+
+	if param, ok := c.params.GetOK(paramID); ok {
 		// For backward compatibility, apply the change immediately
-		param.SetValue(value)
+		param.SetNormalized(value)
 
 		// Debug output for parameter changes
 		fmt.Printf("[PARAM_AUTOMATION] SetParameterAtOffset: id=%d, value=%.6f, offset=%d, plain=%.1f\n",
-			paramID, value, sampleOffset, param.GetPlainValue())
+			paramID, value, sampleOffset, param.GetPlain())
 	}
 }
 

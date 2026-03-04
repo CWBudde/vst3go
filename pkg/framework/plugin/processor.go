@@ -1,4 +1,10 @@
-// Package plugin provides base processor functionality to reduce boilerplate in VST3 plugins.
+// Package plugin provides framework-side helper types that sit below the
+// runtime-facing pkg/plugin interfaces.
+//
+// In practice:
+//   - pkg/plugin defines the runtime contract consumed by the VST3 wrapper
+//   - pkg/framework/plugin provides reusable building blocks that help satisfy
+//     that contract without owning the wrapper itself
 package plugin
 
 import (
@@ -7,7 +13,11 @@ import (
 	"github.com/cwbudde/vst3go/pkg/framework/process"
 )
 
-// BaseProcessor provides common functionality for audio processors
+// BaseProcessor is a convenience helper for implementations of pkg/plugin.Processor.
+//
+// It supplies default storage for parameters, bus configuration, sample rate,
+// and a few lifecycle hooks. It is optional: callers can implement the runtime
+// Processor interface directly when they need full control.
 type BaseProcessor struct {
 	params     *param.Registry
 	buses      *bus.Configuration
@@ -19,7 +29,7 @@ type BaseProcessor struct {
 	onReset      func()
 }
 
-// NewBaseProcessor creates a new base processor with the given bus configuration
+// NewBaseProcessor creates a BaseProcessor with the given bus configuration.
 func NewBaseProcessor(buses *bus.Configuration) *BaseProcessor {
 	if buses == nil {
 		buses = bus.NewStereoConfiguration() // Default to stereo
@@ -100,12 +110,17 @@ func (b *BaseProcessor) OnReset(fn func()) {
 	b.onReset = fn
 }
 
-// ProcessorWithBase is an interface for processors that embed BaseProcessor
+// ProcessorWithBase marks types that use BaseProcessor and provide ProcessAudio.
+//
+// It is a documentation-oriented helper rather than a required runtime layer.
 type ProcessorWithBase interface {
 	ProcessAudio(ctx *process.Context)
 }
 
-// SimpleProcessor provides an even simpler base for basic effects
+// SimpleProcessor is a thin convenience wrapper for very small processors.
+//
+// It still satisfies the runtime Processor contract through BaseProcessor, but
+// delegates audio handling to a single function.
 type SimpleProcessor struct {
 	*BaseProcessor
 	processFunc func(ctx *process.Context)

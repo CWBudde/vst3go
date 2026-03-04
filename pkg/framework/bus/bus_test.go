@@ -37,6 +37,17 @@ func TestNewStereoConfiguration(t *testing.T) {
 	}
 }
 
+func TestStereo(t *testing.T) {
+	config := Stereo()
+
+	if got := config.GetBusCount(MediaTypeAudio, DirectionInput); got != 1 {
+		t.Errorf("Expected 1 audio input bus, got %d", got)
+	}
+	if got := config.GetBusCount(MediaTypeAudio, DirectionOutput); got != 1 {
+		t.Errorf("Expected 1 audio output bus, got %d", got)
+	}
+}
+
 func TestNewMonoConfiguration(t *testing.T) {
 	config := NewMonoConfiguration()
 
@@ -48,6 +59,15 @@ func TestNewMonoConfiguration(t *testing.T) {
 	outBus := config.GetBusInfo(MediaTypeAudio, DirectionOutput, 0)
 	if outBus.ChannelCount != 1 {
 		t.Errorf("Expected 1 output channel, got %d", outBus.ChannelCount)
+	}
+}
+
+func TestMono(t *testing.T) {
+	config := Mono()
+
+	inBus := config.GetBusInfo(MediaTypeAudio, DirectionInput, 0)
+	if inBus.ChannelCount != 1 {
+		t.Errorf("Expected 1 input channel, got %d", inBus.ChannelCount)
 	}
 }
 

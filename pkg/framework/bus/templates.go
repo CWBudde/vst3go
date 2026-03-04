@@ -5,6 +5,46 @@ import "fmt"
 
 // Common bus configuration templates for different plugin types
 
+// EffectStereo creates a standard stereo effect configuration (1 stereo in, 1 stereo out).
+func EffectStereo() *Configuration {
+	return NewEffectStereo()
+}
+
+// EffectMono creates a mono effect configuration (1 mono in, 1 mono out).
+func EffectMono() *Configuration {
+	return NewEffectMono()
+}
+
+// EffectStereoSidechain creates a stereo effect with sidechain input.
+func EffectStereoSidechain() *Configuration {
+	return NewEffectStereoSidechain()
+}
+
+// MonoToStereo creates a mono-to-stereo effect configuration.
+func MonoToStereo() *Configuration {
+	return NewMonoToStereo()
+}
+
+// StereoToMono creates a stereo-to-mono effect configuration.
+func StereoToMono() *Configuration {
+	return NewStereoToMono()
+}
+
+// DualMono creates a dual mono configuration (2 mono in, 2 mono out).
+func DualMono() *Configuration {
+	return NewDualMono()
+}
+
+// Generator creates a generator/instrument configuration.
+func Generator() *Configuration {
+	return NewGenerator()
+}
+
+// MIDIEffect creates a MIDI effect configuration.
+func MIDIEffect() *Configuration {
+	return NewMIDIEffect()
+}
+
 // NewEffectStereo creates a standard stereo effect configuration (1 stereo in, 1 stereo out)
 func NewEffectStereo() *Configuration {
 	return NewBuilder().

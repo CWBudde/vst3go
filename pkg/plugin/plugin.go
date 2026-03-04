@@ -1,4 +1,8 @@
-// Package plugin provides the VST3 plugin framework
+// Package plugin provides the runtime-facing VST3 plugin interfaces.
+//
+// This package is the contract consumed by the VST3 wrapper/runtime layer:
+// callers implement Plugin, which produces a Processor, and may optionally
+// implement StatefulProcessor when parameter state alone is not sufficient.
 package plugin
 
 import (
@@ -10,7 +14,10 @@ import (
 	"github.com/cwbudde/vst3go/pkg/framework/process"
 )
 
-// Plugin is the main interface that users implement
+// Plugin is the top-level runtime interface implemented by a plugin entrypoint.
+//
+// GetInfo returns the metadata shared with the host, while CreateProcessor
+// constructs a fresh Processor instance for actual audio/event handling.
 type Plugin interface {
 	// GetInfo returns plugin metadata
 	GetInfo() plugin.Info
@@ -19,7 +26,16 @@ type Plugin interface {
 	CreateProcessor() Processor
 }
 
-// Processor handles the actual audio processing
+// Processor is the core runtime contract consumed by the VST3 wrapper.
+//
+// A Processor owns:
+//   - initialization and activation lifecycle
+//   - audio/event processing via process.Context
+//   - parameter and bus configuration
+//   - latency/tail reporting
+//
+// The wrapper/runtime creates a Processor from Plugin.CreateProcessor and
+// delegates all host-facing lifecycle and processing calls through it.
 type Processor interface {
 	// Initialize is called when the plugin is created
 	Initialize(sampleRate float64, maxBlockSize int32) error
@@ -43,9 +59,10 @@ type Processor interface {
 	GetTailSamples() int32
 }
 
-// StatefulProcessor extends Processor with custom state save/load capabilities
-// Processors can optionally implement this interface to save custom state
-// beyond parameter values (e.g., delay buffer contents, filter states)
+// StatefulProcessor extends Processor with custom state save/load hooks.
+//
+// Implement this only when parameter state is insufficient to restore runtime
+// behavior, for example when additional processor-owned state must be persisted.
 type StatefulProcessor interface {
 	Processor
 

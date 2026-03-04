@@ -125,7 +125,9 @@ static Steinberg_tresult SMTG_STDMETHODCALLTYPE factory_getClassInfo(void* thisI
 static Steinberg_tresult SMTG_STDMETHODCALLTYPE factory_createInstance(void* thisInterface, Steinberg_FIDString cid, Steinberg_FIDString iid, void** obj) {
     DBG_LOG("factory_createInstance called");
     // Create instance through Go
-    void* instance = GoCreateInstance(cid, iid);
+    char* mutableCID = (char*)cid;
+    char* mutableIID = (char*)iid;
+    void* instance = GoCreateInstance(mutableCID, mutableIID);
     if (!instance) {
         DBG_LOG("factory_createInstance: GoCreateInstance returned NULL");
         *obj = NULL;

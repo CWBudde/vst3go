@@ -13,7 +13,10 @@ const (
 	uuidVariantMask = 0x3f
 )
 
-// Info contains plugin metadata
+// Info contains host-visible plugin metadata.
+//
+// This type lives in framework/plugin because it is shared metadata rather than
+// a runtime wrapper concern. pkg/plugin.Plugin.GetInfo returns this type.
 type Info struct {
 	ID       string // Unique plugin identifier (e.g., "com.example.myplugin")
 	Name     string // Display name

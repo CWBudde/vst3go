@@ -42,12 +42,22 @@ const (
 
 // GetValue returns the current normalized value (0-1)
 func (p *Parameter) GetValue() float64 {
+	return p.GetNormalized()
+}
+
+// GetNormalized returns the current normalized value (0-1)
+func (p *Parameter) GetNormalized() float64 {
 	bits := atomic.LoadUint64(&p.value)
 	return float64frombits(bits)
 }
 
 // SetValue sets the normalized value (0-1)
 func (p *Parameter) SetValue(value float64) {
+	p.SetNormalized(value)
+}
+
+// SetNormalized sets the normalized value (0-1)
+func (p *Parameter) SetNormalized(value float64) {
 	// Clamp to 0-1
 	if value < 0 {
 		value = 0
@@ -60,19 +70,29 @@ func (p *Parameter) SetValue(value float64) {
 
 // GetPlainValue converts normalized to plain value
 func (p *Parameter) GetPlainValue() float64 {
-	normalized := p.GetValue()
+	return p.GetPlain()
+}
+
+// GetPlain converts the current normalized value to a plain value.
+func (p *Parameter) GetPlain() float64 {
+	normalized := p.GetNormalized()
 	return p.Min + normalized*(p.Max-p.Min)
 }
 
 // SetPlainValue converts plain to normalized value
 func (p *Parameter) SetPlainValue(plain float64) {
+	p.SetPlain(plain)
+}
+
+// SetPlain converts a plain value to normalized form and stores it.
+func (p *Parameter) SetPlain(plain float64) {
 	if p.Max <= p.Min {
-		p.SetValue(0)
+		p.SetNormalized(0)
 		return
 	}
 
 	normalized := (plain - p.Min) / (p.Max - p.Min)
-	p.SetValue(normalized)
+	p.SetNormalized(normalized)
 }
 
 // SetFormatter sets custom value formatting

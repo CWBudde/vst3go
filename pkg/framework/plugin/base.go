@@ -1,4 +1,6 @@
-// Package plugin provides base plugin functionality and information structures for VST3 plugins.
+// Package plugin provides framework-side metadata and convenience types for
+// plugin authors. These types support, but do not replace, the runtime-facing
+// contracts in pkg/plugin.
 package plugin
 
 import (
@@ -6,7 +8,10 @@ import (
 	"github.com/cwbudde/vst3go/pkg/framework/state"
 )
 
-// Base provides core functionality for all plugins
+// Base provides shared metadata/parameter/state storage for plugin authors.
+//
+// It is a convenience type and is not required by the runtime wrapper. The
+// actual runtime entrypoint remains pkg/plugin.Plugin.
 type Base struct {
 	Info   Info
 	params *param.Registry
@@ -31,7 +36,8 @@ func (b *Base) Parameters() *param.Registry {
 	return b.params
 }
 
-// AudioProcessor is the interface plugins implement for audio processing
+// AudioProcessor is a minimal audio-only processing contract used by helper
+// layers that do not need the full runtime Processor interface.
 type AudioProcessor interface {
 	// ProcessAudio processes audio buffers - zero allocations allowed!
 	ProcessAudio(input, output [][]float32)

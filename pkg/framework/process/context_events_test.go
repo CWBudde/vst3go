@@ -152,3 +152,15 @@ func TestContextClearAllEvents(t *testing.T) {
 		t.Error("Expected no output events after ClearAllEvents")
 	}
 }
+
+func TestContextParameterAccessorsHandleMissingParameters(t *testing.T) {
+	ctx := NewContext(128, param.NewRegistry())
+
+	if got := ctx.Param(999); got != 0 {
+		t.Fatalf("Param(999) = %f, want 0", got)
+	}
+
+	if got := ctx.ParamPlain(999); got != 0 {
+		t.Fatalf("ParamPlain(999) = %f, want 0", got)
+	}
+}
