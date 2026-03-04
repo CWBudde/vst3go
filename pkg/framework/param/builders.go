@@ -184,11 +184,12 @@ func PanParameter(id uint32, name string) *Builder {
 		Range(-100, 100).
 		Default(0).
 		Formatter(func(v float64) string {
-			if v == 0 {
+			switch {
+			case v == 0:
 				return "Center"
-			} else if v < 0 {
+			case v < 0:
 				return fmt.Sprintf("%.0f%% L", -v)
-			} else {
+			default:
 				return fmt.Sprintf("%.0f%% R", v)
 			}
 		}, func(s string) (float64, error) {

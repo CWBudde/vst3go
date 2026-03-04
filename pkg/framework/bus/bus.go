@@ -98,12 +98,14 @@ func Mono() *Configuration {
 }
 
 // NewStereoConfiguration creates a standard stereo I/O configuration.
+//
 // Deprecated: use Stereo.
 func NewStereoConfiguration() *Configuration {
 	return Stereo()
 }
 
 // NewMonoConfiguration creates a mono I/O configuration.
+//
 // Deprecated: use Mono.
 func NewMonoConfiguration() *Configuration {
 	return Mono()

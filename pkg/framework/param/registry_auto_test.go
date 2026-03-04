@@ -64,7 +64,10 @@ func TestAutoRegistry(t *testing.T) {
 		reg := NewAutoRegistry()
 
 		p1 := GainParameter(0, "Master Volume").Build()
-		reg.Register(p1)
+		err := reg.Register(p1)
+		if err != nil {
+			t.Fatalf("Registration failed: %v", err)
+		}
 
 		// Retrieve by name
 		found := reg.GetByName("Master Volume")
@@ -86,8 +89,15 @@ func TestAutoRegistry(t *testing.T) {
 		p2 := GainParameter(0, "Volume").Build()
 		p2.DefaultValue = 0.7
 
-		reg.Register(p1)
-		reg.Register(p2)
+		err := reg.Register(p1)
+		if err != nil {
+			t.Fatalf("First registration failed: %v", err)
+		}
+
+		err = reg.Register(p2)
+		if err != nil {
+			t.Fatalf("Second registration failed: %v", err)
+		}
 
 		// Second registration should update the existing parameter
 		found := reg.GetByName("Volume")
@@ -130,7 +140,10 @@ func TestAutoRegistry(t *testing.T) {
 
 		// Next auto ID should be 10
 		p := GainParameter(0, "Test").Build()
-		reg.Register(p)
+		err := reg.Register(p)
+		if err != nil {
+			t.Fatalf("Registration failed: %v", err)
+		}
 
 		if p.ID != 10 {
 			t.Errorf("Expected ID 10 after reservation, got %d", p.ID)
@@ -140,8 +153,15 @@ func TestAutoRegistry(t *testing.T) {
 	t.Run("Clear", func(t *testing.T) {
 		reg := NewAutoRegistry()
 
-		reg.Register(GainParameter(0, "P1").Build())
-		reg.Register(GainParameter(0, "P2").Build())
+		err := reg.Register(GainParameter(0, "P1").Build())
+		if err != nil {
+			t.Fatalf("First registration failed: %v", err)
+		}
+
+		err = reg.Register(GainParameter(0, "P2").Build())
+		if err != nil {
+			t.Fatalf("Second registration failed: %v", err)
+		}
 
 		reg.Clear()
 
@@ -151,7 +171,10 @@ func TestAutoRegistry(t *testing.T) {
 
 		// ID counter should reset
 		p := GainParameter(0, "P3").Build()
-		reg.Register(p)
+		err = reg.Register(p)
+		if err != nil {
+			t.Fatalf("Registration failed: %v", err)
+		}
 		if p.ID != 0 {
 			t.Errorf("ID counter not reset, got %d", p.ID)
 		}
@@ -185,9 +208,12 @@ func TestRegistryBuilder(t *testing.T) {
 		reg := NewAutoRegistry()
 
 		// Create ID conflict
-		reg.RegisterWithID(5, GainParameter(0, "P1").Build())
+		err := reg.RegisterWithID(5, GainParameter(0, "P1").Build())
+		if err != nil {
+			t.Fatalf("Failed to seed registry: %v", err)
+		}
 
-		err := NewRegistryBuilder(reg).
+		err = NewRegistryBuilder(reg).
 			Add(GainParameter(0, "P2").Build()).
 			AddWithID(5, GainParameter(0, "P3").Build()). // Conflict
 			Build()
@@ -272,7 +298,10 @@ func BenchmarkAutoRegistry(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			reg.Clear()
 			for _, p := range params {
-				reg.Register(p)
+				err := reg.Register(p)
+				if err != nil {
+					b.Fatalf("Registration failed: %v", err)
+				}
 			}
 		}
 	})
@@ -280,7 +309,10 @@ func BenchmarkAutoRegistry(b *testing.B) {
 	b.Run("GetByName", func(b *testing.B) {
 		reg := NewAutoRegistry()
 		for i := 0; i < 100; i++ {
-			reg.Register(New(0, string(rune('A'+i))).Build())
+			err := reg.Register(New(0, string(rune('A'+i))).Build())
+			if err != nil {
+				b.Fatalf("Registration failed at index %d: %v", i, err)
+			}
 		}
 
 		b.ResetTimer()

@@ -223,6 +223,7 @@ func (c *Context) Clear() {
 }
 
 // SetParameterAtOffset sets a parameter value at a specific sample offset within the current block
+//
 // Deprecated: Use AddParameterChange for sample-accurate automation
 func (c *Context) SetParameterAtOffset(paramID uint32, value float64, sampleOffset int) {
 	if c.params == nil {

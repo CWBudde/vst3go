@@ -131,7 +131,10 @@ func TestGetActiveChannelCounts(t *testing.T) {
 	}
 
 	// Deactivate aux input
-	config.SetBusActive(MediaTypeAudio, DirectionInput, 1, false)
+	err := config.SetBusActive(MediaTypeAudio, DirectionInput, 1, false)
+	if err != nil {
+		t.Fatalf("SetBusActive failed: %v", err)
+	}
 
 	if got := config.GetActiveInputChannelCount(); got != 2 {
 		t.Errorf("Expected 2 active input channels after deactivation, got %d", got)
@@ -171,7 +174,10 @@ func TestGetActiveBuses(t *testing.T) {
 		MustBuild()
 
 	// Deactivate second input
-	config.SetBusActive(MediaTypeAudio, DirectionInput, 1, false)
+	err := config.SetBusActive(MediaTypeAudio, DirectionInput, 1, false)
+	if err != nil {
+		t.Fatalf("SetBusActive failed: %v", err)
+	}
 
 	activeBuses := config.GetActiveBuses(MediaTypeAudio, DirectionInput)
 	if len(activeBuses) != 1 {
