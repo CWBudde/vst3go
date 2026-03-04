@@ -12,6 +12,7 @@ import (
 	"unsafe"
 
 	"github.com/cwbudde/vst3go/pkg/framework/bus"
+	"github.com/cwbudde/vst3go/pkg/framework/param"
 	"github.com/cwbudde/vst3go/pkg/framework/process"
 	"github.com/cwbudde/vst3go/pkg/framework/state"
 	"github.com/cwbudde/vst3go/pkg/midi"
@@ -28,6 +29,34 @@ type componentImpl struct {
 	processing   bool
 	mu           sync.RWMutex
 	wrapper      *componentWrapper // Reference to wrapper for notifications
+}
+
+func (c *componentImpl) parameterRegistry() (*param.Registry, error) {
+	if c.processor == nil {
+		return nil, fmt.Errorf("component has no processor")
+	}
+
+	params := c.processor.GetParameters()
+	if params == nil {
+		return nil, fmt.Errorf("processor has no parameter registry")
+	}
+
+	return params, nil
+}
+
+func (c *componentImpl) stateManager() (*state.Manager, error) {
+	params, err := c.parameterRegistry()
+	if err != nil {
+		return nil, err
+	}
+
+	manager := state.NewManager(params)
+	if stateful, ok := c.processor.(StatefulProcessor); ok {
+		manager.SetCustomLoadFunc(stateful.LoadCustomState)
+		manager.SetCustomSaveFunc(stateful.SaveCustomState)
+	}
+
+	return manager, nil
 }
 
 // newComponent creates a new component implementation
@@ -98,54 +127,35 @@ func (c *componentImpl) SetActive(active bool) error {
 	defer c.mu.Unlock()
 
 	c.active = active
+	if !active && c.processCtx != nil {
+		c.processCtx.ResetParameterChanges()
+		c.processCtx.ClearAllEvents()
+	}
 	return c.processor.SetActive(active)
 }
 
 func (c *componentImpl) SetState(stateData []byte) error {
-	if c.processor == nil {
-		return fmt.Errorf("no processor available")
-	}
-
-	// Get parameter registry from processor
-	params := c.processor.GetParameters()
-	if params == nil {
-		return fmt.Errorf("no parameters available")
-	}
-
-	// Create state manager and configure custom state handling
-	stateManager := state.NewManager(params)
-
-	// Check if processor implements StatefulProcessor
-	if stateful, ok := c.processor.(StatefulProcessor); ok {
-		stateManager.SetCustomLoadFunc(stateful.LoadCustomState)
+	stateManager, err := c.stateManager()
+	if err != nil {
+		return fmt.Errorf("set component state: %w", err)
 	}
 
 	buf := bytes.NewReader(stateData)
-	return stateManager.Load(buf)
+	if err := stateManager.Load(buf); err != nil {
+		return fmt.Errorf("set component state: %w", err)
+	}
+	return nil
 }
 
 func (c *componentImpl) GetState() ([]byte, error) {
-	if c.processor == nil {
-		return nil, fmt.Errorf("no processor available")
-	}
-
-	// Get parameter registry from processor
-	params := c.processor.GetParameters()
-	if params == nil {
-		return nil, fmt.Errorf("no parameters available")
-	}
-
-	// Create state manager and configure custom state handling
-	stateManager := state.NewManager(params)
-
-	// Check if processor implements StatefulProcessor
-	if stateful, ok := c.processor.(StatefulProcessor); ok {
-		stateManager.SetCustomSaveFunc(stateful.SaveCustomState)
+	stateManager, err := c.stateManager()
+	if err != nil {
+		return nil, fmt.Errorf("get component state: %w", err)
 	}
 
 	var buf bytes.Buffer
 	if err := stateManager.Save(&buf); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get component state: %w", err)
 	}
 
 	return buf.Bytes(), nil
@@ -177,6 +187,10 @@ func (c *componentImpl) SetupProcessing(setup *vst3.ProcessSetup) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	if setup == nil {
+		return fmt.Errorf("setup processing: nil process setup")
+	}
+
 	c.sampleRate = setup.SampleRate
 	if setup.MaxSamplesPerBlock > 0 {
 		c.maxBlockSize = setup.MaxSamplesPerBlock
@@ -185,7 +199,10 @@ func (c *componentImpl) SetupProcessing(setup *vst3.ProcessSetup) error {
 		c.processCtx = process.NewContext(int(c.maxBlockSize), params)
 	}
 
-	return c.processor.Initialize(c.sampleRate, c.maxBlockSize)
+	if err := c.processor.Initialize(c.sampleRate, c.maxBlockSize); err != nil {
+		return fmt.Errorf("setup processing: initialize processor: %w", err)
+	}
+	return nil
 }
 
 func (c *componentImpl) SetProcessing(state bool) error {
@@ -200,6 +217,10 @@ func (c *componentImpl) Process(data unsafe.Pointer) error {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
+	if data == nil {
+		return fmt.Errorf("process: nil process data")
+	}
+
 	if !c.processing {
 		return nil
 	}
@@ -207,142 +228,11 @@ func (c *componentImpl) Process(data unsafe.Pointer) error {
 	// Get raw process data struct
 	processData := (*C.struct_Steinberg_Vst_ProcessData)(data)
 
-	// Update context with current buffers
-	c.processCtx.SampleRate = c.sampleRate
-
-	// Update transport information if available
-	if processData.processContext != nil {
-		ctx := processData.processContext
-		transport := c.processCtx.Transport
-
-		// Transport state
-		transport.IsPlaying = (ctx.state & C.Steinberg_Vst_ProcessContext_StatesAndFlags_kPlaying) != 0
-		transport.IsRecording = (ctx.state & C.Steinberg_Vst_ProcessContext_StatesAndFlags_kRecording) != 0
-		transport.IsCycling = (ctx.state & C.Steinberg_Vst_ProcessContext_StatesAndFlags_kCycleActive) != 0
-
-		// Tempo
-		transport.HasTempo = (ctx.state & C.Steinberg_Vst_ProcessContext_StatesAndFlags_kTempoValid) != 0
-		if transport.HasTempo {
-			transport.Tempo = float64(ctx.tempo)
-		}
-
-		// Time signature
-		transport.HasTimeSignature = (ctx.state & C.Steinberg_Vst_ProcessContext_StatesAndFlags_kTimeSigValid) != 0
-		if transport.HasTimeSignature {
-			transport.TimeSigNumerator = int32(ctx.timeSigNumerator)
-			transport.TimeSigDenominator = int32(ctx.timeSigDenominator)
-		}
-
-		// Musical time
-		transport.HasMusicalTime = (ctx.state & C.Steinberg_Vst_ProcessContext_StatesAndFlags_kProjectTimeMusicValid) != 0
-		if transport.HasMusicalTime {
-			transport.ProjectTimeMusic = float64(ctx.projectTimeMusic)
-		}
-
-		// Bar position
-		transport.HasBarPosition = (ctx.state & C.Steinberg_Vst_ProcessContext_StatesAndFlags_kBarPositionValid) != 0
-		if transport.HasBarPosition {
-			transport.BarPositionMusic = float64(ctx.barPositionMusic)
-		}
-
-		// Cycle points
-		transport.HasCycle = (ctx.state & C.Steinberg_Vst_ProcessContext_StatesAndFlags_kCycleValid) != 0
-		if transport.HasCycle {
-			transport.CycleStartMusic = float64(ctx.cycleStartMusic)
-			transport.CycleEndMusic = float64(ctx.cycleEndMusic)
-		}
-
-		// Sample positions
-		transport.ProjectTimeSamples = int64(ctx.projectTimeSamples)
-		transport.ContinuousTimeSamples = int64(ctx.continousTimeSamples)
-
-		// Clock
-		if (ctx.state & C.Steinberg_Vst_ProcessContext_StatesAndFlags_kClockValid) != 0 {
-			transport.SamplesToNextClock = int32(ctx.samplesToNextClock)
-		}
-	}
-
-	// Set input/output buffers (slicing pre-allocated arrays, no allocation)
-	numSamples := int(processData.numSamples)
-
-	// Clear slices (no allocation, just updating slice headers)
-	c.processCtx.Input = c.processCtx.Input[:0]
-	c.processCtx.Output = c.processCtx.Output[:0]
-
-	// Map input buffers
-	if processData.numInputs > 0 && processData.inputs != nil {
-		inputBuses := (*[1]C.struct_Steinberg_Vst_AudioBusBuffers)(unsafe.Pointer(processData.inputs))[:processData.numInputs:processData.numInputs]
-		for _, bus := range inputBuses {
-			channelBuffers32 := getChannelBuffers32(&bus)
-			if bus.numChannels > 0 && channelBuffers32 != nil {
-				channels := (*[16]*float32)(unsafe.Pointer(channelBuffers32))[:bus.numChannels:bus.numChannels]
-				for _, channel := range channels {
-					if channel != nil {
-						// Create slice from pointer without allocation
-						samples := (*[vst3.MaxArraySize]float32)(unsafe.Pointer(channel))[:numSamples:numSamples]
-						c.processCtx.Input = append(c.processCtx.Input, samples)
-					}
-				}
-			}
-		}
-	}
-
-	// Map output buffers
-	if processData.numOutputs > 0 && processData.outputs != nil {
-		outputBuses := (*[1]C.struct_Steinberg_Vst_AudioBusBuffers)(unsafe.Pointer(processData.outputs))[:processData.numOutputs:processData.numOutputs]
-		for _, bus := range outputBuses {
-			channelBuffers32 := getChannelBuffers32(&bus)
-			if bus.numChannels > 0 && channelBuffers32 != nil {
-				channels := (*[16]*float32)(unsafe.Pointer(channelBuffers32))[:bus.numChannels:bus.numChannels]
-				for _, channel := range channels {
-					if channel != nil {
-						// Create slice from pointer without allocation
-						samples := (*[vst3.MaxArraySize]float32)(unsafe.Pointer(channel))[:numSamples:numSamples]
-						c.processCtx.Output = append(c.processCtx.Output, samples)
-					}
-				}
-			}
-		}
-	}
-
-	// Reset parameter changes for this processing block
-	c.processCtx.ResetParameterChanges()
-
-	// Process input events (MIDI)
-	if processData.inputEvents != nil {
-		c.processInputEvents(processData.inputEvents)
-	}
-
-	// Collect parameter changes for sample-accurate automation
-	if processData.inputParameterChanges != nil {
-		// Get parameter count using C helper function
-		paramCount := C.getParameterChangeCount(unsafe.Pointer(processData.inputParameterChanges))
-
-		// Process each parameter that has changes
-		for i := C.int32_t(0); i < paramCount; i++ {
-			paramQueue := C.getParameterData(unsafe.Pointer(processData.inputParameterChanges), i)
-			if paramQueue != nil {
-				// Get parameter ID
-				paramID := C.getParameterId(paramQueue)
-
-				// Get number of automation points
-				pointCount := C.getPointCount(paramQueue)
-
-				// Process all automation points for this parameter
-				for j := C.int32_t(0); j < pointCount; j++ {
-					var sampleOffset C.int32_t
-					var value C.double
-
-					// Get the automation point
-					result := C.getPoint(paramQueue, j, &sampleOffset, &value)
-					if result == 0 { // kResultOk
-						// Add parameter change for sample-accurate processing
-						c.processCtx.AddParameterChange(uint32(paramID), float64(value), int(sampleOffset))
-					}
-				}
-			}
-		}
-	}
+	c.prepareProcessContext()
+	c.updateTransport(processData.processContext)
+	c.mapAudioBuffers(processData)
+	c.processInputEvents(processData.inputEvents)
+	c.collectParameterChanges(unsafe.Pointer(processData.inputParameterChanges))
 
 	// Process audio with sample-accurate parameter automation
 	if c.processCtx.HasParameterChanges() {
@@ -357,6 +247,120 @@ func (c *componentImpl) Process(data unsafe.Pointer) error {
 	}
 
 	return nil
+}
+
+func (c *componentImpl) prepareProcessContext() {
+	c.processCtx.SampleRate = c.sampleRate
+	c.processCtx.ResetParameterChanges()
+	c.processCtx.ClearAllEvents()
+	c.processCtx.Input = c.processCtx.Input[:0]
+	c.processCtx.Output = c.processCtx.Output[:0]
+}
+
+func (c *componentImpl) updateTransport(ctx *C.struct_Steinberg_Vst_ProcessContext) {
+	transport := c.processCtx.Transport
+	*transport = process.TransportInfo{}
+
+	if ctx == nil {
+		return
+	}
+
+	transport.IsPlaying = (ctx.state & C.Steinberg_Vst_ProcessContext_StatesAndFlags_kPlaying) != 0
+	transport.IsRecording = (ctx.state & C.Steinberg_Vst_ProcessContext_StatesAndFlags_kRecording) != 0
+	transport.IsCycling = (ctx.state & C.Steinberg_Vst_ProcessContext_StatesAndFlags_kCycleActive) != 0
+
+	transport.HasTempo = (ctx.state & C.Steinberg_Vst_ProcessContext_StatesAndFlags_kTempoValid) != 0
+	if transport.HasTempo {
+		transport.Tempo = float64(ctx.tempo)
+	}
+
+	transport.HasTimeSignature = (ctx.state & C.Steinberg_Vst_ProcessContext_StatesAndFlags_kTimeSigValid) != 0
+	if transport.HasTimeSignature {
+		transport.TimeSigNumerator = int32(ctx.timeSigNumerator)
+		transport.TimeSigDenominator = int32(ctx.timeSigDenominator)
+	}
+
+	transport.HasMusicalTime = (ctx.state & C.Steinberg_Vst_ProcessContext_StatesAndFlags_kProjectTimeMusicValid) != 0
+	if transport.HasMusicalTime {
+		transport.ProjectTimeMusic = float64(ctx.projectTimeMusic)
+	}
+
+	transport.HasBarPosition = (ctx.state & C.Steinberg_Vst_ProcessContext_StatesAndFlags_kBarPositionValid) != 0
+	if transport.HasBarPosition {
+		transport.BarPositionMusic = float64(ctx.barPositionMusic)
+	}
+
+	transport.HasCycle = (ctx.state & C.Steinberg_Vst_ProcessContext_StatesAndFlags_kCycleValid) != 0
+	if transport.HasCycle {
+		transport.CycleStartMusic = float64(ctx.cycleStartMusic)
+		transport.CycleEndMusic = float64(ctx.cycleEndMusic)
+	}
+
+	transport.ProjectTimeSamples = int64(ctx.projectTimeSamples)
+	transport.ContinuousTimeSamples = int64(ctx.continousTimeSamples)
+
+	if (ctx.state & C.Steinberg_Vst_ProcessContext_StatesAndFlags_kClockValid) != 0 {
+		transport.SamplesToNextClock = int32(ctx.samplesToNextClock)
+	}
+}
+
+func (c *componentImpl) mapAudioBuffers(processData *C.struct_Steinberg_Vst_ProcessData) {
+	numSamples := int(processData.numSamples)
+
+	if processData.numInputs > 0 && processData.inputs != nil {
+		inputBuses := (*[1]C.struct_Steinberg_Vst_AudioBusBuffers)(unsafe.Pointer(processData.inputs))[:processData.numInputs:processData.numInputs]
+		c.appendAudioBuffers(&c.processCtx.Input, inputBuses, numSamples)
+	}
+
+	if processData.numOutputs > 0 && processData.outputs != nil {
+		outputBuses := (*[1]C.struct_Steinberg_Vst_AudioBusBuffers)(unsafe.Pointer(processData.outputs))[:processData.numOutputs:processData.numOutputs]
+		c.appendAudioBuffers(&c.processCtx.Output, outputBuses, numSamples)
+	}
+}
+
+func (c *componentImpl) appendAudioBuffers(dst *[][]float32, buses []C.struct_Steinberg_Vst_AudioBusBuffers, numSamples int) {
+	for _, bus := range buses {
+		channelBuffers32 := getChannelBuffers32(&bus)
+		if bus.numChannels <= 0 || channelBuffers32 == nil {
+			continue
+		}
+
+		channels := (*[16]*float32)(unsafe.Pointer(channelBuffers32))[:bus.numChannels:bus.numChannels]
+		for _, channel := range channels {
+			if channel == nil {
+				continue
+			}
+
+			samples := (*[vst3.MaxArraySize]float32)(unsafe.Pointer(channel))[:numSamples:numSamples]
+			*dst = append(*dst, samples)
+		}
+	}
+}
+
+func (c *componentImpl) collectParameterChanges(inputParameterChanges unsafe.Pointer) {
+	if inputParameterChanges == nil {
+		return
+	}
+
+	paramCount := C.getParameterChangeCount(inputParameterChanges)
+	for i := C.int32_t(0); i < paramCount; i++ {
+		paramQueue := C.getParameterData(inputParameterChanges, i)
+		if paramQueue == nil {
+			continue
+		}
+
+		paramID := C.getParameterId(paramQueue)
+		pointCount := C.getPointCount(paramQueue)
+		for j := C.int32_t(0); j < pointCount; j++ {
+			var sampleOffset C.int32_t
+			var value C.double
+
+			result := C.getPoint(paramQueue, j, &sampleOffset, &value)
+			if result == 0 {
+				c.processCtx.AddParameterChange(uint32(paramID), float64(value), int(sampleOffset))
+			}
+		}
+	}
 }
 
 func (c *componentImpl) GetTailSamples() uint32 {

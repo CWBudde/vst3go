@@ -48,8 +48,8 @@
   - [x] Prefer checked access where nil is possible by adding safe registry helpers such as `GetOK`, `Has`, `GetNormalized`, and `GetPlain`.
   - [x] Clarify duplicate-registration behavior and failure modes by making `Registry.Add` fail explicitly on duplicate IDs.
 - [ ] Tighten error handling.
-  - [ ] Replace silent failures where normal error returns are appropriate.
-  - [ ] Wrap errors with useful context in initialization and runtime paths.
+  - [x] Replace silent failures where normal error returns are appropriate in the state/registry layer.
+  - [x] Wrap errors with useful context in state save/load and core runtime setup paths.
 
 ## Phase 2: Runtime Architecture Hardening
 
