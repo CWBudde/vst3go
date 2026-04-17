@@ -23,3 +23,7 @@ test-go:
   env GOCACHE=/tmp/gocache GOMODCACHE=/tmp/gomodcache go test ./pkg/...
 
 test: fmt-check test-go
+
+fix:
+    just lint-fix
+    just fmt
