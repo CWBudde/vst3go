@@ -1,24 +1,39 @@
 package vst3
 
 // #include "../../include/vst3/vst3_c_api.h"
+//
+// // The header declares the interface IDs as "static const" arrays, which cgo
+// // cannot reference directly from Go (it emits an extern symbol that never
+// // links). These accessors keep the values inside C where they are defined.
+// static inline const Steinberg_int8* uid_IComponent(void)      { return Steinberg_Vst_IComponent_iid; }
+// static inline const Steinberg_int8* uid_IAudioProcessor(void) { return Steinberg_Vst_IAudioProcessor_iid; }
+// static inline const Steinberg_int8* uid_IEditController(void) { return Steinberg_Vst_IEditController_iid; }
+// static inline const Steinberg_int8* uid_IBStream(void)        { return Steinberg_IBStream_iid; }
+// static inline const Steinberg_int8* uid_FUnknown(void)        { return Steinberg_FUnknown_iid; }
+// static inline const Steinberg_int8* uid_IPluginFactory(void)  { return Steinberg_IPluginFactory_iid; }
 import "C"
 import "unsafe"
 
-// Component interface IDs
+// Component interface IDs.
+//
+// These are derived from the C header rather than transcribed by hand: the
+// previously hand-written literals for IComponent, IAudioProcessor and
+// IEditController were all wrong, and a wrong IID makes queryInterface silently
+// fail to match with no diagnostic anywhere.
 var (
-	IIDIComponent = [16]byte{
-		0xE8, 0x31, 0xFF, 0x31, 0xF2, 0xD5, 0x4B, 0x01,
-		0x83, 0x6F, 0x5D, 0x38, 0x54, 0x34, 0xAE, 0xC6,
-	}
-	IIDIAudioProcessor = [16]byte{
-		0x42, 0x04, 0x3F, 0x99, 0xB2, 0xA8, 0x4F, 0x3F,
-		0xA2, 0x85, 0x7A, 0xA0, 0x39, 0x82, 0x15, 0xC1,
-	}
-	IIDIEditController = [16]byte{
-		0xDD, 0xB1, 0x18, 0x8F, 0x2B, 0x0D, 0x43, 0x11,
-		0x9E, 0xD0, 0xAE, 0xB4, 0x38, 0x95, 0x40, 0x52,
-	}
+	IIDFUnknown        = tuidToBytes(C.uid_FUnknown())
+	IIDIPluginFactory  = tuidToBytes(C.uid_IPluginFactory())
+	IIDIComponent      = tuidToBytes(C.uid_IComponent())
+	IIDIAudioProcessor = tuidToBytes(C.uid_IAudioProcessor())
+	IIDIEditController = tuidToBytes(C.uid_IEditController())
+	IIDIBStream        = tuidToBytes(C.uid_IBStream())
 )
+
+// tuidToBytes copies a C Steinberg_TUID into a Go array. The copy matters: the C
+// value is const storage owned by the translation unit.
+func tuidToBytes(uid *C.Steinberg_int8) [16]byte {
+	return *(*[16]byte)(unsafe.Pointer(uid))
+}
 
 // IComponent represents the main plugin component interface
 type IComponent interface {

@@ -1,129 +1,185 @@
-// Package param provides parameter management for VST3 plugins.
 package param
 
 import (
 	"math"
+	"sync/atomic"
 )
 
 // SmoothingType defines different parameter smoothing algorithms.
 type SmoothingType int
 
 const (
-	// LinearSmoothing uses linear interpolation
+	// LinearSmoothing uses linear interpolation; rate is the ramp length in samples.
 	LinearSmoothing SmoothingType = iota
-	// ExponentialSmoothing uses exponential smoothing (one-pole filter)
+	// ExponentialSmoothing uses a one-pole filter; rate is the pole coefficient in [0,1).
 	ExponentialSmoothing
-	// LogarithmicSmoothing uses logarithmic smoothing (better for frequency parameters)
+	// LogarithmicSmoothing interpolates in log space (better for frequency
+	// parameters). It is only defined for strictly positive values; a ramp
+	// touching zero or negative values falls back to linear interpolation.
 	LogarithmicSmoothing
 )
 
 // Smoother provides parameter smoothing to prevent zipper noise.
+//
+// The control thread publishes target/rate/threshold through atomics; the
+// audio thread owns the ramp state and picks changes up in Next. This keeps
+// the audio path lock-free and allocation-free.
 type Smoother struct {
 	smoothingType SmoothingType
-	current       float64
-	target        float64
-	rate          float64
-	threshold     float64
-	isSmoothing   bool
 
-	// For linear smoothing
-	step float64
+	// Published across threads.
+	target    atomic.Uint64 // float64 bits
+	current   atomic.Uint64 // float64 bits
+	rate      atomic.Uint64 // float64 bits
+	threshold atomic.Uint64 // float64 bits
+	smoothing atomic.Bool
 
-	// For logarithmic smoothing
+	// Ramp state owned by the audio thread (Next). Reset also touches it and is
+	// therefore documented as control-thread-only, to be called while stopped.
+	ackTarget  float64
+	activeMode SmoothingType
+	step       float64
 	logCurrent float64
 	logTarget  float64
 	logStep    float64
 }
 
 // NewSmoother creates a new parameter smoother.
-// rate: smoothing rate (0.9-0.999 for exponential, samples for linear)
+// rate: smoothing rate (0-0.999 for exponential, ramp length in samples otherwise)
 func NewSmoother(smoothingType SmoothingType, rate float64) *Smoother {
-	return &Smoother{
-		smoothingType: smoothingType,
-		rate:          rate,
-		threshold:     0.0001,
-	}
+	s := &Smoother{smoothingType: smoothingType}
+	s.rate.Store(math.Float64bits(rate))
+	s.threshold.Store(math.Float64bits(0.0001))
+	return s
 }
 
-// SetTarget sets the target value for smoothing.
+func (s *Smoother) loadTarget() float64    { return math.Float64frombits(s.target.Load()) }
+func (s *Smoother) loadCurrent() float64   { return math.Float64frombits(s.current.Load()) }
+func (s *Smoother) loadRate() float64      { return math.Float64frombits(s.rate.Load()) }
+func (s *Smoother) loadThreshold() float64 { return math.Float64frombits(s.threshold.Load()) }
+
+// SetTarget sets the target value for smoothing. Safe to call from any thread.
 func (s *Smoother) SetTarget(target float64) {
-	if math.Abs(target-s.target) < s.threshold {
+	if !isFinite(target) {
+		return
+	}
+	if math.Abs(target-s.loadTarget()) < s.loadThreshold() {
 		return // Target hasn't changed significantly
 	}
 
-	s.target = target
-	s.isSmoothing = true
-
-	switch s.smoothingType {
-	case LinearSmoothing:
-		// Calculate step size for linear smoothing
-		if s.rate > 0 {
-			s.step = (target - s.current) / s.rate
-		}
-
-	case LogarithmicSmoothing:
-		// Convert to log space for frequency parameters
-		const minVal = 0.001
-		currentVal := s.current
-		targetVal := target
-
-		if currentVal < minVal {
-			currentVal = minVal
-		}
-		if targetVal < minVal {
-			targetVal = minVal
-		}
-
-		s.logCurrent = math.Log(currentVal)
-		s.logTarget = math.Log(targetVal)
-
-		if s.rate > 0 {
-			s.logStep = (s.logTarget - s.logCurrent) / s.rate
-		}
-	}
+	s.target.Store(math.Float64bits(target))
+	s.smoothing.Store(true)
 }
 
-// Next returns the next smoothed value.
-func (s *Smoother) Next() float64 {
-	if !s.isSmoothing {
-		return s.current
+// beginRamp recomputes the audio-thread ramp state for a newly observed target.
+// Every degenerate configuration snaps to the target instead of ramping, so a
+// bad rate can never leave the smoother stuck in an infinite ramp.
+func (s *Smoother) beginRamp(target float64) {
+	current := s.loadCurrent()
+	rate := s.loadRate()
+
+	mode := s.smoothingType
+	if mode == LogarithmicSmoothing && (current <= 0 || target <= 0) {
+		mode = LinearSmoothing
 	}
+	s.activeMode = mode
 
-	switch s.smoothingType {
-	case ExponentialSmoothing:
-		// One-pole filter: y = y + a * (x - y)
-		s.current += (s.target - s.current) * (1.0 - s.rate)
-
-		// Check if we've reached the target
-		if math.Abs(s.current-s.target) < s.threshold {
-			s.current = s.target
-			s.isSmoothing = false
+	switch mode {
+	case LinearSmoothing:
+		if rate <= 0 {
+			s.snap(target)
+			return
+		}
+		s.step = (target - current) / rate
+		if s.step == 0 {
+			s.snap(target)
+			return
 		}
 
-	case LinearSmoothing:
-		// Linear interpolation
-		s.current += s.step
-
-		// Check if we've reached or passed the target
-		if (s.step > 0 && s.current >= s.target) || (s.step < 0 && s.current <= s.target) {
-			s.current = s.target
-			s.isSmoothing = false
+	case ExponentialSmoothing:
+		// Outside [0,1) the one-pole filter diverges or never converges.
+		if rate < 0 || rate >= 1 {
+			s.snap(target)
+			return
 		}
 
 	case LogarithmicSmoothing:
-		// Interpolate in log space
-		s.logCurrent += s.logStep
-
-		// Check if we've reached the target
-		if (s.logStep > 0 && s.logCurrent >= s.logTarget) || (s.logStep < 0 && s.logCurrent <= s.logTarget) {
-			s.current = s.target
-			s.isSmoothing = false
-		} else {
-			s.current = math.Exp(s.logCurrent)
+		if rate <= 0 {
+			s.snap(target)
+			return
+		}
+		s.logCurrent = math.Log(current)
+		s.logTarget = math.Log(target)
+		s.logStep = (s.logTarget - s.logCurrent) / rate
+		if s.logStep == 0 {
+			s.snap(target)
+			return
 		}
 	}
 
-	return s.current
+	s.smoothing.Store(true)
+}
+
+func (s *Smoother) snap(target float64) {
+	s.current.Store(math.Float64bits(target))
+	s.step = 0
+	s.logStep = 0
+	s.smoothing.Store(false)
+}
+
+// Next advances the ramp by one sample and returns the new smoothed value.
+// Call it from the audio thread only; it is lock-free and allocation-free.
+func (s *Smoother) Next() float64 {
+	target := s.loadTarget()
+	if target != s.ackTarget {
+		s.ackTarget = target
+		s.beginRamp(target)
+	}
+
+	if !s.smoothing.Load() {
+		return s.loadCurrent()
+	}
+
+	current := s.loadCurrent()
+
+	switch s.activeMode {
+	case ExponentialSmoothing:
+		// One-pole filter: y = y + a * (x - y)
+		current += (target - current) * (1.0 - s.loadRate())
+		if math.Abs(current-target) < s.loadThreshold() {
+			current = target
+			s.smoothing.Store(false)
+		}
+
+	case LinearSmoothing:
+		current += s.step
+		if (s.step > 0 && current >= target) || (s.step < 0 && current <= target) {
+			current = target
+			s.smoothing.Store(false)
+		}
+
+	case LogarithmicSmoothing:
+		s.logCurrent += s.logStep
+		if (s.logStep > 0 && s.logCurrent >= s.logTarget) || (s.logStep < 0 && s.logCurrent <= s.logTarget) {
+			current = target
+			s.smoothing.Store(false)
+		} else {
+			current = math.Exp(s.logCurrent)
+		}
+	}
+
+	s.current.Store(math.Float64bits(current))
+	return current
+}
+
+// Value returns the current smoothed value without advancing the ramp.
+func (s *Smoother) Value() float64 {
+	return s.loadCurrent()
+}
+
+// Target returns the value the smoother is ramping towards.
+func (s *Smoother) Target() float64 {
+	return s.loadTarget()
 }
 
 // Process processes a buffer with the smoothed parameter.
@@ -137,96 +193,96 @@ func (s *Smoother) Process(buffer []float32, callback func(value float64, sample
 
 // IsSmoothing returns true if the smoother is currently smoothing.
 func (s *Smoother) IsSmoothing() bool {
-	return s.isSmoothing
+	return s.smoothing.Load()
 }
 
-// Reset resets the smoother to a specific value.
+// Reset resets the smoother to a specific value. Control thread only; call it
+// while the audio thread is stopped.
 func (s *Smoother) Reset(value float64) {
-	s.current = value
-	s.target = value
-	s.isSmoothing = false
+	if !isFinite(value) {
+		return
+	}
+	s.current.Store(math.Float64bits(value))
+	s.target.Store(math.Float64bits(value))
+	s.ackTarget = value
+	s.step = 0
+	s.logStep = 0
+	s.smoothing.Store(false)
 }
 
-// SetRate updates the smoothing rate.
+// SetRate updates the smoothing rate. It takes effect on the next ramp.
 func (s *Smoother) SetRate(rate float64) {
-	s.rate = rate
+	if !isFinite(rate) {
+		return
+	}
+	s.rate.Store(math.Float64bits(rate))
+}
+
+// Rate returns the current smoothing rate.
+func (s *Smoother) Rate() float64 {
+	return s.loadRate()
 }
 
 // SetThreshold sets the threshold for considering smoothing complete.
 func (s *Smoother) SetThreshold(threshold float64) {
-	s.threshold = threshold
+	if !isFinite(threshold) {
+		return
+	}
+	s.threshold.Store(math.Float64bits(threshold))
 }
 
-// SmoothedParameter wraps a Parameter with smoothing capability.
+// SmoothedParameter is a convenience handle over a Parameter with smoothing
+// enabled. The smoothing itself lives in the Parameter, so a plain
+// *Parameter held by the registry, the state manager or the process context
+// sees the same behavior.
 type SmoothedParameter struct {
 	*Parameter
-	smoother      *Smoother
-	smoothingRate float64
-	enabled       bool
+	smoother *Smoother
 }
 
-// NewSmoothedParameter creates a parameter with built-in smoothing.
+// NewSmoothedParameter enables smoothing on param and returns a handle to it.
 func NewSmoothedParameter(param *Parameter, smoothingType SmoothingType, rate float64) *SmoothedParameter {
-	sp := &SmoothedParameter{
-		Parameter:     param,
-		smoother:      NewSmoother(smoothingType, rate),
-		smoothingRate: rate,
-		enabled:       true,
+	return &SmoothedParameter{
+		Parameter: param,
+		smoother:  param.EnableSmoothing(smoothingType, rate),
 	}
-
-	// Initialize smoother with current parameter value
-	sp.smoother.Reset(param.GetPlainValue())
-
-	return sp
-}
-
-// SetValue sets the parameter value and updates the smoother target.
-func (sp *SmoothedParameter) SetValue(value float64) {
-	sp.Parameter.SetValue(value)
-	if sp.enabled {
-		sp.smoother.SetTarget(sp.GetPlainValue())
-	}
-}
-
-// GetSmoothedValue returns the current smoothed value.
-func (sp *SmoothedParameter) GetSmoothedValue() float64 {
-	if sp.enabled {
-		return sp.smoother.Next()
-	}
-	return sp.GetPlainValue()
 }
 
 // SetSmoothing enables or disables smoothing.
 func (sp *SmoothedParameter) SetSmoothing(enabled bool) {
-	sp.enabled = enabled
 	if !enabled {
-		sp.smoother.Reset(sp.GetPlainValue())
+		sp.DisableSmoothing()
+		return
 	}
+	sp.smoother.Reset(sp.GetPlain())
+	sp.attachSmoother(sp.smoother)
 }
 
 // SetSmoothingRate updates the smoothing rate.
 func (sp *SmoothedParameter) SetSmoothingRate(rate float64) {
-	sp.smoothingRate = rate
 	sp.smoother.SetRate(rate)
 }
 
-// Update smoothing rate based on sample rate for time-based smoothing.
-func (sp *SmoothedParameter) UpdateSampleRate(sampleRate float64, targetTimeMs float64) {
+// UpdateSampleRate recomputes the smoothing rate for a time-based ramp length.
+func (sp *SmoothedParameter) UpdateSampleRate(sampleRate, targetTimeMs float64) {
+	samples := sampleRate * targetTimeMs / 1000.0
+
 	switch sp.smoother.smoothingType {
-	case LinearSmoothing:
-		// Convert time to samples
-		samples := sampleRate * targetTimeMs / 1000.0
+	case LinearSmoothing, LogarithmicSmoothing:
+		// Both ramp over a fixed number of samples.
 		sp.SetSmoothingRate(samples)
 	case ExponentialSmoothing:
-		// Calculate coefficient for target time
-		// -60dB in targetTimeMs
-		sp.SetSmoothingRate(math.Exp(-6.908 / (sampleRate * targetTimeMs / 1000.0)))
+		// Pole coefficient for -60 dB decay within targetTimeMs.
+		sp.SetSmoothingRate(math.Exp(-6.908 / samples))
 	}
 }
 
 // ParameterSmoother manages smoothing for multiple parameters.
 type ParameterSmoother struct {
 	smoothers map[uint32]*SmoothedParameter
+	// order mirrors smoothers so AdvanceAll can iterate a slice instead of a
+	// map on the audio thread.
+	order []*SmoothedParameter
 }
 
 // NewParameterSmoother creates a new parameter smoother manager.
@@ -238,21 +294,40 @@ func NewParameterSmoother() *ParameterSmoother {
 
 // Add adds a parameter with smoothing.
 func (ps *ParameterSmoother) Add(id uint32, param *Parameter, smoothingType SmoothingType, rate float64) {
-	ps.smoothers[id] = NewSmoothedParameter(param, smoothingType, rate)
+	sp := NewSmoothedParameter(param, smoothingType, rate)
+	if old, exists := ps.smoothers[id]; exists {
+		for i, existing := range ps.order {
+			if existing == old {
+				ps.order[i] = sp
+				break
+			}
+		}
+	} else {
+		ps.order = append(ps.order, sp)
+	}
+	ps.smoothers[id] = sp
 }
 
-// GetSmoothed returns the smoothed value for a parameter.
-func (ps *ParameterSmoother) GetSmoothed(id uint32) float64 {
+// Value returns the current smoothed value for a parameter without advancing it.
+func (ps *ParameterSmoother) Value(id uint32) float64 {
 	if sp, ok := ps.smoothers[id]; ok {
-		return sp.GetSmoothedValue()
+		return sp.SmoothedValue()
 	}
 	return 0
 }
 
-// UpdateAll updates all smoothers (call once per sample).
-func (ps *ParameterSmoother) UpdateAll() {
-	for _, sp := range ps.smoothers {
-		sp.GetSmoothedValue() // This advances the smoother
+// Advance advances a single parameter by one sample and returns its value.
+func (ps *ParameterSmoother) Advance(id uint32) float64 {
+	if sp, ok := ps.smoothers[id]; ok {
+		return sp.Advance()
+	}
+	return 0
+}
+
+// AdvanceAll advances all smoothers by one sample (call once per sample).
+func (ps *ParameterSmoother) AdvanceAll() {
+	for _, sp := range ps.order {
+		sp.Advance()
 	}
 }
 

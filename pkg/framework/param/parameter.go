@@ -3,12 +3,15 @@ package param
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"sync/atomic"
-	"unsafe"
 )
 
-// Parameter represents a plugin parameter
+// Parameter represents a plugin parameter.
+//
+// A Parameter must not be copied once it has been used: it carries atomic
+// state that the audio thread reads concurrently with the UI thread.
 type Parameter struct {
 	ID           uint32
 	Name         string
@@ -17,12 +20,17 @@ type Parameter struct {
 	Min          float64
 	Max          float64
 	DefaultValue float64
-	StepCount    int32
-	Flags        uint32
-	UnitID       int32
+	// StepCount counts intervals, not positions: a toggle has StepCount 1 and
+	// an N-way list has StepCount N-1 (see the VST3 ParameterInfo docs).
+	StepCount int32
+	Flags     uint32
+	UnitID    int32
 
-	// Atomic value for lock-free access in audio thread
-	value uint64 // Store as uint64 for atomic operations
+	// Normalized value, stored as raw bits for lock-free access from the audio thread.
+	value atomic.Uint64
+
+	// Optional smoother. Nil (the zero value) means no smoothing and no cost.
+	smoother atomic.Pointer[Smoother]
 
 	// Value formatting
 	formatFunc func(float64) string
@@ -47,8 +55,7 @@ func (p *Parameter) GetValue() float64 {
 
 // GetNormalized returns the current normalized value (0-1)
 func (p *Parameter) GetNormalized() float64 {
-	bits := atomic.LoadUint64(&p.value)
-	return float64frombits(bits)
+	return math.Float64frombits(p.value.Load())
 }
 
 // SetValue sets the normalized value (0-1)
@@ -56,16 +63,21 @@ func (p *Parameter) SetValue(value float64) {
 	p.SetNormalized(value)
 }
 
-// SetNormalized sets the normalized value (0-1)
+// SetNormalized sets the normalized value (0-1) and, when smoothing is
+// enabled, retargets the smoother. Non-finite input is dropped rather than
+// stored: preset loading and host automation are untrusted sources, and a
+// stored NaN would never clamp back out again.
 func (p *Parameter) SetNormalized(value float64) {
-	// Clamp to 0-1
-	if value < 0 {
-		value = 0
-	} else if value > 1 {
-		value = 1
+	if !isFinite(value) {
+		return
 	}
 
-	atomic.StoreUint64(&p.value, float64bits(value))
+	value = clamp01(value)
+	p.value.Store(math.Float64bits(value))
+
+	if s := p.smoother.Load(); s != nil {
+		s.SetTarget(p.Denormalize(value))
+	}
 }
 
 // GetPlainValue converts normalized to plain value
@@ -75,8 +87,7 @@ func (p *Parameter) GetPlainValue() float64 {
 
 // GetPlain converts the current normalized value to a plain value.
 func (p *Parameter) GetPlain() float64 {
-	normalized := p.GetNormalized()
-	return p.Min + normalized*(p.Max-p.Min)
+	return p.Denormalize(p.GetNormalized())
 }
 
 // SetPlainValue converts plain to normalized value
@@ -86,13 +97,53 @@ func (p *Parameter) SetPlainValue(plain float64) {
 
 // SetPlain converts a plain value to normalized form and stores it.
 func (p *Parameter) SetPlain(plain float64) {
-	if p.Max <= p.Min {
-		p.SetNormalized(0)
+	if !isFinite(plain) {
 		return
 	}
+	p.SetNormalized(p.Normalize(plain))
+}
 
-	normalized := (plain - p.Min) / (p.Max - p.Min)
-	p.SetNormalized(normalized)
+// EnableSmoothing attaches a smoother to the parameter. Every subsequent
+// SetNormalized retargets it, and the audio thread reads the ramp through
+// Advance. Call this during setup, not from the audio thread.
+func (p *Parameter) EnableSmoothing(smoothingType SmoothingType, rate float64) *Smoother {
+	s := NewSmoother(smoothingType, rate)
+	s.Reset(p.GetPlain())
+	p.smoother.Store(s)
+	return s
+}
+
+// DisableSmoothing detaches the smoother; Advance then returns the plain value directly.
+func (p *Parameter) DisableSmoothing() {
+	p.smoother.Store(nil)
+}
+
+// Smoother returns the attached smoother, or nil when smoothing is disabled.
+func (p *Parameter) Smoother() *Smoother {
+	return p.smoother.Load()
+}
+
+// attachSmoother re-attaches a previously created smoother (used by SmoothedParameter).
+func (p *Parameter) attachSmoother(s *Smoother) {
+	p.smoother.Store(s)
+}
+
+// Advance advances the smoothing ramp by one sample and returns the resulting
+// plain value. Call it exactly once per sample from the audio thread; it is
+// lock-free and allocation-free.
+func (p *Parameter) Advance() float64 {
+	if s := p.smoother.Load(); s != nil {
+		return s.Next()
+	}
+	return p.GetPlain()
+}
+
+// SmoothedValue returns the current smoothed plain value without advancing the ramp.
+func (p *Parameter) SmoothedValue() float64 {
+	if s := p.smoother.Load(); s != nil {
+		return s.Value()
+	}
+	return p.GetPlain()
 }
 
 // SetFormatter sets custom value formatting
@@ -134,31 +185,53 @@ func (p *Parameter) ParseValue(str string) (float64, error) {
 	return p.Normalize(plain), nil
 }
 
-// Normalize converts plain value to normalized (0-1)
+// Normalize converts a plain value to normalized (0-1) form.
+//
+// For stepped parameters (StepCount > 0) the VST3 mapping is
+// normalized = (plain - Min) / StepCount, which is the exact inverse of
+// Denormalize on every detent.
 func (p *Parameter) Normalize(plain float64) float64 {
+	if math.IsNaN(plain) {
+		return 0
+	}
+
+	if p.StepCount > 0 {
+		return clamp01((plain - p.Min) / float64(p.StepCount))
+	}
+
 	if p.Max <= p.Min {
 		return 0
 	}
-	normalized := (plain - p.Min) / (p.Max - p.Min)
-	if normalized < 0 {
-		return 0
-	}
-	if normalized > 1 {
-		return 1
-	}
-	return normalized
+	return clamp01((plain - p.Min) / (p.Max - p.Min))
 }
 
-// Denormalize converts normalized (0-1) to plain value
+// Denormalize converts normalized (0-1) to a plain value.
+//
+// For stepped parameters (StepCount > 0) the VST3 mapping is
+// plain = Min + round(normalized * StepCount), so the value snaps to a detent
+// instead of degrading into a continuous range.
 func (p *Parameter) Denormalize(normalized float64) float64 {
+	if math.IsNaN(normalized) {
+		normalized = 0
+	}
+	normalized = clamp01(normalized)
+
+	if p.StepCount > 0 {
+		return p.Min + math.Round(normalized*float64(p.StepCount))
+	}
 	return p.Min + normalized*(p.Max-p.Min)
 }
 
-// Helper functions for float64 <-> uint64 conversion
-func float64bits(f float64) uint64 {
-	return *(*uint64)(unsafe.Pointer(&f))
+func clamp01(v float64) float64 {
+	if v < 0 {
+		return 0
+	}
+	if v > 1 {
+		return 1
+	}
+	return v
 }
 
-func float64frombits(b uint64) float64 {
-	return *(*float64)(unsafe.Pointer(&b))
+func isFinite(v float64) bool {
+	return !math.IsNaN(v) && !math.IsInf(v, 0)
 }

@@ -27,7 +27,7 @@ func (r *Registry) Add(params ...*Parameter) error {
 
 	for _, p := range params {
 		if _, exists := r.params[p.ID]; exists {
-			return fmt.Errorf("parameter ID %d already exists", p.ID)
+			return fmt.Errorf("%w: %d", ErrDuplicateID, p.ID)
 		}
 		r.params[p.ID] = p
 		r.order = append(r.order, p.ID)

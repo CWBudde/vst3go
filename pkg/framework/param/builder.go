@@ -1,21 +1,30 @@
 package param
 
-// Builder provides a fluent API for creating parameters
+import (
+	"errors"
+	"fmt"
+)
+
+// Builder provides a fluent API for creating parameters.
+//
+// The default value is remembered in plain form and only converted to
+// normalized form in Build, so Default and Range may be called in any order.
 type Builder struct {
-	param *Parameter
+	param      *Parameter
+	rawDefault float64
+	errs       []error
 }
 
 // New creates a new parameter builder
 func New(id uint32, name string) *Builder {
 	return &Builder{
 		param: &Parameter{
-			ID:           id,
-			Name:         name,
-			ShortName:    name,
-			Min:          0,
-			Max:          1,
-			DefaultValue: 0,
-			Flags:        CanAutomate,
+			ID:        id,
+			Name:      name,
+			ShortName: name,
+			Min:       0,
+			Max:       1,
+			Flags:     CanAutomate,
 		},
 	}
 }
@@ -35,11 +44,11 @@ func (b *Builder) Range(minVal, maxVal float64) *Builder {
 
 // Default sets the default value (in plain range, not normalized)
 func (b *Builder) Default(value float64) *Builder {
-	// Convert to normalized
-	if b.param.Max > b.param.Min {
-		normalized := (value - b.param.Min) / (b.param.Max - b.param.Min)
-		b.param.DefaultValue = normalized
+	if !isFinite(value) {
+		b.errs = append(b.errs, fmt.Errorf("default value %v: %w", value, ErrInvalidNumber))
+		return b
 	}
+	b.rawDefault = value
 	return b
 }
 
@@ -49,44 +58,61 @@ func (b *Builder) Unit(unit string) *Builder {
 	return b
 }
 
-// Steps sets the number of discrete steps
+// Steps sets the number of discrete steps (intervals, so an N-way list uses N-1)
 func (b *Builder) Steps(count int32) *Builder {
+	if count < 0 {
+		b.errs = append(b.errs, fmt.Errorf("step count %d: %w", count, ErrInvalidStepCount))
+		return b
+	}
 	b.param.StepCount = count
 	return b
 }
 
-// Flags sets parameter flags
+// Flags replaces the parameter flags. Use AddFlags to combine with the
+// flags already set by ReadOnly, Bypass or Hidden.
 func (b *Builder) Flags(flags uint32) *Builder {
 	b.param.Flags = flags
 	return b
 }
 
-// Toggle creates a boolean parameter
+// AddFlags adds flags to the existing set.
+func (b *Builder) AddFlags(flags uint32) *Builder {
+	b.param.Flags |= flags
+	return b
+}
+
+// RemoveFlags clears flags from the existing set.
+func (b *Builder) RemoveFlags(flags uint32) *Builder {
+	b.param.Flags &^= flags
+	return b
+}
+
+// Toggle turns the parameter into an on/off switch. It keeps a default set
+// by an earlier or later Default call.
 func (b *Builder) Toggle() *Builder {
 	b.param.Min = 0
 	b.param.Max = 1
 	b.param.StepCount = 1
-	b.param.DefaultValue = 0
 	return b
 }
 
 // ReadOnly marks the parameter as read-only
 func (b *Builder) ReadOnly() *Builder {
-	b.param.Flags |= IsReadOnly
-	b.param.Flags &^= CanAutomate // Remove automation flag
-	return b
+	return b.AddFlags(IsReadOnly).RemoveFlags(CanAutomate)
 }
 
 // Hidden marks the parameter as hidden
 func (b *Builder) Hidden() *Builder {
-	b.param.Flags |= IsHidden
-	return b
+	return b.AddFlags(IsHidden)
 }
 
-// Bypass marks this as the bypass parameter
+// Bypass marks this as the bypass parameter. VST3 requires the bypass
+// parameter to be a stepped list, so IsList and a single step are implied.
 func (b *Builder) Bypass() *Builder {
-	b.param.Flags |= IsBypass
-	return b
+	if b.param.StepCount == 0 {
+		b.param.Min, b.param.Max, b.param.StepCount = 0, 1, 1
+	}
+	return b.AddFlags(IsBypass | IsList)
 }
 
 // Formatter sets custom value formatting and parsing
@@ -96,9 +122,44 @@ func (b *Builder) Formatter(format func(float64) string, parse func(string) (flo
 	return b
 }
 
-// Build returns the configured parameter
+// Err reports the first configuration problem detected so far, if any.
+func (b *Builder) Err() error {
+	return errors.Join(b.errs...)
+}
+
+// validate checks the assembled parameter for internal consistency.
+func (b *Builder) validate() error {
+	errs := append([]error(nil), b.errs...)
+	p := b.param
+
+	if p.Name == "" {
+		errs = append(errs, ErrMissingName)
+	}
+	if p.Max <= p.Min {
+		errs = append(errs, fmt.Errorf("%q: min %v, max %v: %w", p.Name, p.Min, p.Max, ErrInvalidRange))
+	}
+	// VST3 stepped parameters map plain = Min + round(normalized*StepCount),
+	// which only covers the full range when the range spans exactly StepCount.
+	if p.StepCount > 0 && p.Max-p.Min != float64(p.StepCount) {
+		errs = append(errs, fmt.Errorf("%q: range %v..%v does not span %d steps: %w",
+			p.Name, p.Min, p.Max, p.StepCount, ErrInvalidStepCount))
+	}
+
+	return errors.Join(errs...)
+}
+
+// Build returns the configured parameter, ignoring validation problems.
+// Use TryBuild when the configuration is not statically known to be valid.
 func (b *Builder) Build() *Parameter {
-	// Initialize with default value
-	b.param.SetValue(b.param.DefaultValue)
-	return b.param
+	p, _ := b.TryBuild()
+	return p
+}
+
+// TryBuild returns the configured parameter together with any validation
+// error. The parameter is returned even when invalid so callers can report
+// and continue.
+func (b *Builder) TryBuild() (*Parameter, error) {
+	b.param.DefaultValue = b.param.Normalize(b.rawDefault)
+	b.param.SetNormalized(b.param.DefaultValue)
+	return b.param, b.validate()
 }

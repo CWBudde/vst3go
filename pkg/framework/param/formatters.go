@@ -9,6 +9,15 @@ import (
 
 // Common parameter formatters and parsers
 
+// Display strings shared by the formatters in this package and by the
+// pre-built parameter sets in builders.go and registry_auto.go.
+const (
+	displaySilence   = "-∞ dB"
+	displayPanCenter = "Center"
+	displayOff       = "Off"
+	displayOn        = "On"
+)
+
 // FrequencyFormatter formats frequency values with Hz/kHz
 func FrequencyFormatter(hz float64) string {
 	if hz >= 1000 {
@@ -38,18 +47,27 @@ func FrequencyParser(str string) (float64, error) {
 	return strconv.ParseFloat(str, 64)
 }
 
+// SilenceDB is the plain value this package uses for "-∞ dB". It is below any
+// realistic parameter minimum, so Parameter.Normalize clamps it to the
+// parameter's own floor.
+const SilenceDB = -96.0
+
+// DecibelDisplayFloor is the level at or below which DecibelFormatter prints
+// "-∞ dB". Parameters with a lower minimum supply their own formatter.
+const DecibelDisplayFloor = -60.0
+
 // DecibelFormatter formats dB values
 func DecibelFormatter(db float64) string {
-	if db <= -60 {
-		return "-∞ dB"
+	if db <= DecibelDisplayFloor {
+		return displaySilence
 	}
 	return fmt.Sprintf("%.1f dB", db)
 }
 
 // DecibelParser parses dB strings
 func DecibelParser(str string) (float64, error) {
-	if strings.Contains(str, "∞") || strings.Contains(str, "inf") {
-		return -96.0, nil // Practical minimum
+	if strings.Contains(str, "∞") || strings.Contains(strings.ToLower(str), "inf") {
+		return SilenceDB, nil
 	}
 	str = strings.TrimSuffix(strings.TrimSpace(str), "dB")
 	str = strings.TrimSuffix(strings.TrimSpace(str), "db")
@@ -118,52 +136,62 @@ func RatioParser(str string) (float64, error) {
 	return strconv.ParseFloat(strings.TrimSpace(str), 64)
 }
 
-// PanFormatter formats pan position
+// PanFormatter formats a pan position on the package-wide pan convention:
+// plain values run from -100 (hard left) through 0 (center) to +100 (hard right).
 func PanFormatter(pan float64) string {
-	if math.Abs(pan) < 0.01 {
-		return "C"
-	} else if pan < 0 {
-		return fmt.Sprintf("%.0fL", -pan*100)
+	switch {
+	case math.Abs(pan) < 0.5:
+		return displayPanCenter
+	case pan < 0:
+		return fmt.Sprintf("%.0f%% L", -pan)
+	default:
+		return fmt.Sprintf("%.0f%% R", pan)
 	}
-	return fmt.Sprintf("%.0fR", pan*100)
 }
 
-// PanParser parses pan position strings
+// PanParser parses pan position strings into the -100..100 pan convention.
+// It accepts "Center"/"C", "50L"/"50% left" and plain numbers.
 func PanParser(str string) (float64, error) {
-	str = strings.ToUpper(strings.TrimSpace(str))
+	str = strings.ToLower(strings.TrimSpace(str))
 
-	if str == "C" || str == "CENTER" {
+	if str == "c" || str == "center" {
 		return 0, nil
 	}
 
-	if strings.HasSuffix(str, "L") {
-		numStr := strings.TrimSuffix(str, "L")
-		val, err := strconv.ParseFloat(strings.TrimSpace(numStr), 64)
-		if err != nil {
-			return 0, err
-		}
-		return -val / 100, nil
+	sign := 1.0
+	switch {
+	case strings.HasSuffix(str, "left"):
+		sign, str = -1, strings.TrimSuffix(str, "left")
+	case strings.HasSuffix(str, "l"):
+		sign, str = -1, strings.TrimSuffix(str, "l")
+	case strings.HasSuffix(str, "right"):
+		str = strings.TrimSuffix(str, "right")
+	case strings.HasSuffix(str, "r"):
+		str = strings.TrimSuffix(str, "r")
 	}
 
-	if strings.HasSuffix(str, "R") {
-		numStr := strings.TrimSuffix(str, "R")
-		val, err := strconv.ParseFloat(strings.TrimSpace(numStr), 64)
-		if err != nil {
-			return 0, err
-		}
-		return val / 100, nil
+	str = strings.TrimSuffix(strings.TrimSpace(str), "%")
+	val, err := parseFloat(str)
+	if err != nil {
+		return 0, err
 	}
-
-	// Try to parse as plain number (-1 to 1)
-	return strconv.ParseFloat(str, 64)
+	return sign * val, nil
 }
 
-// NoteFormatter formats MIDI note numbers
+// noteNames indexes the twelve pitch classes starting at C.
+var noteNames = [12]string{"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"}
+
+// NoteFormatter formats MIDI note numbers. The host may denormalize to any
+// value, including negatives, so the pitch class uses a floored modulo.
 func NoteFormatter(noteNumber float64) string {
-	notes := []string{"C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"}
-	note := int(noteNumber) % 12
-	octave := int(noteNumber)/12 - 1
-	return fmt.Sprintf("%s%d", notes[note], octave)
+	if math.IsNaN(noteNumber) || math.IsInf(noteNumber, 0) {
+		return unknownValue
+	}
+
+	n := int(math.Floor(noteNumber))
+	pitchClass := ((n % 12) + 12) % 12
+	octave := int(math.Floor(float64(n)/12)) - 1
+	return fmt.Sprintf("%s%d", noteNames[pitchClass], octave)
 }
 
 // NoteParser parses note names to MIDI numbers
@@ -195,7 +223,7 @@ func NoteParser(str string) (float64, error) {
 	}
 
 	if octaveStart == -1 {
-		return 0, fmt.Errorf("no octave number found in note: %s", str)
+		return 0, fmt.Errorf("%w: no octave number in %q", ErrInvalidNote, str)
 	}
 
 	noteName := str[:octaveStart]
@@ -203,12 +231,12 @@ func NoteParser(str string) (float64, error) {
 
 	noteOffset, ok := noteMap[noteName]
 	if !ok {
-		return 0, fmt.Errorf("unknown note name: %s", noteName)
+		return 0, fmt.Errorf("%w: unknown note name %q", ErrInvalidNote, noteName)
 	}
 
 	octave, err := strconv.Atoi(octaveStr)
 	if err != nil {
-		return 0, fmt.Errorf("invalid octave number: %s", octaveStr)
+		return 0, fmt.Errorf("%w: invalid octave %q", ErrInvalidNote, octaveStr)
 	}
 
 	return float64((octave+1)*12 + noteOffset), nil
@@ -217,9 +245,9 @@ func NoteParser(str string) (float64, error) {
 // OnOffFormatter formats boolean as On/Off
 func OnOffFormatter(value float64) string {
 	if value > 0.5 {
-		return "On"
+		return displayOn
 	}
-	return "Off"
+	return displayOff
 }
 
 // OnOffParser parses On/Off strings
@@ -231,6 +259,6 @@ func OnOffParser(str string) (float64, error) {
 	case "off", "no", "false", "0":
 		return 0, nil
 	default:
-		return 0, fmt.Errorf("expected 'on' or 'off', got: %s", str)
+		return 0, fmt.Errorf("%w: %q", ErrInvalidOnOff, str)
 	}
 }

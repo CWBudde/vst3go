@@ -1,6 +1,8 @@
 package param
 
 import (
+	"errors"
+	"fmt"
 	"testing"
 )
 
@@ -18,19 +20,19 @@ func TestAutoRegistry(t *testing.T) {
 			t.Fatalf("Registration failed: %v", err)
 		}
 
-		// Check IDs were assigned
-		if p1.ID != 0 {
-			t.Errorf("Expected ID 0, got %d", p1.ID)
+		// Auto IDs start at 1; ID 0 stays reserved for "unset".
+		if p1.ID != 1 {
+			t.Errorf("Expected ID 1, got %d", p1.ID)
 		}
-		if p2.ID != 1 {
-			t.Errorf("Expected ID 1, got %d", p2.ID)
+		if p2.ID != 2 {
+			t.Errorf("Expected ID 2, got %d", p2.ID)
 		}
-		if p3.ID != 2 {
-			t.Errorf("Expected ID 2, got %d", p3.ID)
+		if p3.ID != 3 {
+			t.Errorf("Expected ID 3, got %d", p3.ID)
 		}
 
 		// Verify retrieval
-		if reg.Get(0) != p1 {
+		if reg.Get(1) != p1 {
 			t.Error("Failed to retrieve parameter by ID")
 		}
 	})
@@ -89,23 +91,42 @@ func TestAutoRegistry(t *testing.T) {
 		p2 := GainParameter(0, "Volume").Build()
 		p2.DefaultValue = 0.7
 
-		err := reg.Register(p1)
-		if err != nil {
+		if err := reg.Register(p1); err != nil {
 			t.Fatalf("First registration failed: %v", err)
 		}
 
-		err = reg.Register(p2)
-		if err != nil {
-			t.Fatalf("Second registration failed: %v", err)
+		err := reg.Register(p2)
+		if !errors.Is(err, ErrDuplicateName) {
+			t.Errorf("Register with duplicate name = %v, want ErrDuplicateName", err)
 		}
 
-		// Second registration should update the existing parameter
+		// The rejected registration must not have touched the registry.
+		if reg.Count() != 1 {
+			t.Errorf("Expected 1 parameter, got %d", reg.Count())
+		}
+		if found := reg.GetByName("Volume"); found != p1 {
+			t.Error("Existing parameter should be untouched")
+		}
+	})
+
+	t.Run("ReplaceByName", func(t *testing.T) {
+		reg := NewAutoRegistry()
+
+		p1 := GainParameter(0, "Volume").Build()
+		p2 := GainParameter(0, "Volume").Build()
+		p2.DefaultValue = 0.7
+
+		if err := reg.Register(p1); err != nil {
+			t.Fatalf("First registration failed: %v", err)
+		}
+		if err := reg.Replace(p2); err != nil {
+			t.Fatalf("Replace failed: %v", err)
+		}
+
 		found := reg.GetByName("Volume")
-		if found.DefaultValue != 0.7 {
-			t.Error("Should update existing parameter with same name")
+		if found != p2 || found.ID != p1.ID {
+			t.Error("Replace should overwrite in place, keeping the ID")
 		}
-
-		// Should not create duplicate
 		if reg.Count() != 1 {
 			t.Errorf("Expected 1 parameter, got %d", reg.Count())
 		}
@@ -132,21 +153,21 @@ func TestAutoRegistry(t *testing.T) {
 	t.Run("Reserve", func(t *testing.T) {
 		reg := NewAutoRegistry()
 
-		// Reserve first 10 IDs
+		// Reserve 10 IDs starting at the first auto ID
 		firstID := reg.Reserve(10)
-		if firstID != 0 {
-			t.Errorf("Expected first ID 0, got %d", firstID)
+		if firstID != 1 {
+			t.Errorf("Expected first ID 1, got %d", firstID)
 		}
 
-		// Next auto ID should be 10
+		// Next auto ID should be past the reserved block
 		p := GainParameter(0, "Test").Build()
 		err := reg.Register(p)
 		if err != nil {
 			t.Fatalf("Registration failed: %v", err)
 		}
 
-		if p.ID != 10 {
-			t.Errorf("Expected ID 10 after reservation, got %d", p.ID)
+		if p.ID != 11 {
+			t.Errorf("Expected ID 11 after reservation, got %d", p.ID)
 		}
 	})
 
@@ -175,7 +196,7 @@ func TestAutoRegistry(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Registration failed: %v", err)
 		}
-		if p.ID != 0 {
+		if p.ID != firstAutoID {
 			t.Errorf("ID counter not reset, got %d", p.ID)
 		}
 	})
@@ -291,7 +312,7 @@ func BenchmarkAutoRegistry(b *testing.B) {
 		reg := NewAutoRegistry()
 		params := make([]*Parameter, 100)
 		for i := range params {
-			params[i] = New(0, "Param").Build()
+			params[i] = New(0, fmt.Sprintf("Param %d", i)).Build()
 		}
 
 		b.ResetTimer()

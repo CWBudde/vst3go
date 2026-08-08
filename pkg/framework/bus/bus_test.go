@@ -1,7 +1,14 @@
 package bus
 
 import (
+	"errors"
 	"testing"
+)
+
+// Bus names reused across assertions.
+const (
+	nameStereoIn    = "Stereo In"
+	nameSidechainIn = "Sidechain In"
 )
 
 func TestNewStereoConfiguration(t *testing.T) {
@@ -185,5 +192,89 @@ func TestGetActiveBuses(t *testing.T) {
 	}
 	if activeBuses[0].Name != "In1" {
 		t.Errorf("Expected active bus name 'In1', got %s", activeBuses[0].Name)
+	}
+}
+
+// GetBusInfo used to return a pointer into the internal slice, so a later
+// AddEventBus could reallocate the backing array and leave the caller reading
+// a stale copy.
+func TestGetBusInfoIsNotInvalidatedByLaterAppends(t *testing.T) {
+	config := Stereo()
+
+	info := config.GetBusInfo(MediaTypeAudio, DirectionInput, 0)
+	if info == nil {
+		t.Fatal("expected input bus")
+	}
+
+	for i := 0; i < 8; i++ {
+		config.AddEventBus(DirectionInput, "MIDI In")
+	}
+
+	if info.Name != nameStereoIn || info.ChannelCount != 2 {
+		t.Errorf("Info was invalidated by appends: %+v", info)
+	}
+
+	// The copy must be detached: mutating it must not corrupt the config.
+	info.ChannelCount = 99
+	fresh := config.GetBusInfo(MediaTypeAudio, DirectionInput, 0)
+	if fresh.ChannelCount != 2 {
+		t.Errorf("mutating the returned Info leaked into the configuration: %d", fresh.ChannelCount)
+	}
+}
+
+func TestGetSidechainBusIsDetached(t *testing.T) {
+	config := NewEffectStereoSidechain()
+
+	sc := config.GetSidechainBus()
+	if sc == nil {
+		t.Fatal("expected sidechain bus")
+	}
+
+	sc.Name = "mutated"
+	if again := config.GetSidechainBus(); again.Name != nameSidechainIn {
+		t.Errorf("GetSidechainBus aliases internal storage: %s", again.Name)
+	}
+}
+
+func TestSetBusActiveErrors(t *testing.T) {
+	config := NewEffectStereo()
+
+	tests := []struct {
+		name      string
+		mediaType MediaType
+		direction Direction
+		index     int32
+		wantErr   bool
+	}{
+		{name: "valid audio input", mediaType: MediaTypeAudio, direction: DirectionInput, index: 0},
+		{name: "valid audio output", mediaType: MediaTypeAudio, direction: DirectionOutput, index: 0},
+		{name: "index out of range", mediaType: MediaTypeAudio, direction: DirectionInput, index: 7, wantErr: true},
+		{name: "no event buses", mediaType: MediaTypeEvent, direction: DirectionInput, index: 0, wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := config.SetBusActive(tt.mediaType, tt.direction, tt.index, true)
+			if tt.wantErr {
+				if !errors.Is(err, ErrBusNotFound) {
+					t.Fatalf("expected ErrBusNotFound, got %v", err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+		})
+	}
+}
+
+func TestGetBusInfoOutOfRange(t *testing.T) {
+	config := NewEffectStereo()
+
+	if got := config.GetBusInfo(MediaTypeAudio, DirectionInput, 5); got != nil {
+		t.Errorf("expected nil for out-of-range index, got %+v", got)
+	}
+	if got := config.GetBusInfo(MediaTypeEvent, DirectionInput, 0); got != nil {
+		t.Errorf("expected nil for missing event bus, got %+v", got)
 	}
 }

@@ -2,8 +2,27 @@
 package bus
 
 import (
+	"errors"
 	"fmt"
 )
+
+// Sentinel errors returned while building or querying a bus configuration.
+// They are wrapped with context, so match them with errors.Is.
+var (
+	// ErrBusNotFound is returned when no bus matches the requested media type,
+	// direction and index.
+	ErrBusNotFound = errors.New("bus not found")
+	// ErrNoMainOutputBus is returned when a configuration has no main output
+	// bus at all; a VST3 plugin cannot produce anything in that state.
+	ErrNoMainOutputBus = errors.New("configuration must have at least one main output bus (audio or event)")
+	// ErrInvalidChannelCount is returned for a non-positive channel count.
+	ErrInvalidChannelCount = errors.New("invalid channel count")
+	// ErrChannelCountTooHigh is returned when a bus exceeds MaxChannelsPerBus.
+	ErrChannelCountTooHigh = errors.New("channel count exceeds maximum")
+)
+
+// MaxChannelsPerBus is the largest channel count accepted for a single bus.
+const MaxChannelsPerBus = 32
 
 // Builder provides a fluent API for building bus configurations
 type Builder struct {
@@ -24,79 +43,45 @@ func NewBuilder() *Builder {
 
 // WithAudioInput adds an audio input bus
 func (b *Builder) WithAudioInput(name string, channels int32) *Builder {
-	b.config.audioBuses = append(b.config.audioBuses, Info{
-		MediaType:    MediaTypeAudio,
-		Direction:    DirectionInput,
-		ChannelCount: channels,
-		Name:         name,
-		BusType:      TypeMain,
-		IsActive:     true,
-	})
+	b.config.audioBuses = append(b.config.audioBuses,
+		newInfo(MediaTypeAudio, DirectionInput, channels, name, TypeMain, true))
 	return b
 }
 
 // WithAudioOutput adds an audio output bus
 func (b *Builder) WithAudioOutput(name string, channels int32) *Builder {
-	b.config.audioBuses = append(b.config.audioBuses, Info{
-		MediaType:    MediaTypeAudio,
-		Direction:    DirectionOutput,
-		ChannelCount: channels,
-		Name:         name,
-		BusType:      TypeMain,
-		IsActive:     true,
-	})
+	b.config.audioBuses = append(b.config.audioBuses,
+		newInfo(MediaTypeAudio, DirectionOutput, channels, name, TypeMain, true))
 	return b
 }
 
 // WithAuxInput adds an auxiliary audio input bus (e.g., sidechain)
 func (b *Builder) WithAuxInput(name string, channels int32) *Builder {
-	b.config.audioBuses = append(b.config.audioBuses, Info{
-		MediaType:    MediaTypeAudio,
-		Direction:    DirectionInput,
-		ChannelCount: channels,
-		Name:         name,
-		BusType:      TypeAux,
-		IsActive:     false, // Aux buses start inactive by default
-	})
+	// Aux buses start inactive; the host opts in to a sidechain explicitly.
+	b.config.audioBuses = append(b.config.audioBuses,
+		newInfo(MediaTypeAudio, DirectionInput, channels, name, TypeAux, false))
 	return b
 }
 
 // WithAuxOutput adds an auxiliary audio output bus
 func (b *Builder) WithAuxOutput(name string, channels int32) *Builder {
-	b.config.audioBuses = append(b.config.audioBuses, Info{
-		MediaType:    MediaTypeAudio,
-		Direction:    DirectionOutput,
-		ChannelCount: channels,
-		Name:         name,
-		BusType:      TypeAux,
-		IsActive:     false, // Aux buses start inactive by default
-	})
+	// Aux buses start inactive; the host opts in to extra sends explicitly.
+	b.config.audioBuses = append(b.config.audioBuses,
+		newInfo(MediaTypeAudio, DirectionOutput, channels, name, TypeAux, false))
 	return b
 }
 
 // WithEventInput adds an event (MIDI) input bus
 func (b *Builder) WithEventInput(name string) *Builder {
-	b.config.eventBuses = append(b.config.eventBuses, Info{
-		MediaType:    MediaTypeEvent,
-		Direction:    DirectionInput,
-		ChannelCount: 1,
-		Name:         name,
-		BusType:      TypeMain,
-		IsActive:     true,
-	})
+	b.config.eventBuses = append(b.config.eventBuses,
+		newInfo(MediaTypeEvent, DirectionInput, 1, name, TypeMain, true))
 	return b
 }
 
 // WithEventOutput adds an event (MIDI) output bus
 func (b *Builder) WithEventOutput(name string) *Builder {
-	b.config.eventBuses = append(b.config.eventBuses, Info{
-		MediaType:    MediaTypeEvent,
-		Direction:    DirectionOutput,
-		ChannelCount: 1,
-		Name:         name,
-		BusType:      TypeMain,
-		IsActive:     true,
-	})
+	b.config.eventBuses = append(b.config.eventBuses,
+		newInfo(MediaTypeEvent, DirectionOutput, 1, name, TypeMain, true))
 	return b
 }
 
@@ -157,23 +142,9 @@ func (b *Builder) With7_1Output(name string) *Builder {
 
 // SetBusActive sets a specific bus as active/inactive
 func (b *Builder) SetBusActive(mediaType MediaType, direction Direction, index int32, active bool) *Builder {
-	buses := b.config.audioBuses
-	if mediaType == MediaTypeEvent {
-		buses = b.config.eventBuses
+	if err := b.config.SetBusActive(mediaType, direction, index, active); err != nil {
+		b.errors = append(b.errors, err)
 	}
-
-	busIndex := int32(0)
-	for i := range buses {
-		if buses[i].Direction == direction {
-			if busIndex == index {
-				buses[i].IsActive = active
-				return b
-			}
-			busIndex++
-		}
-	}
-
-	b.errors = append(b.errors, fmt.Errorf("bus not found: mediaType=%d, direction=%d, index=%d", mediaType, direction, index))
 	return b
 }
 
@@ -181,13 +152,13 @@ func (b *Builder) SetBusActive(mediaType MediaType, direction Direction, index i
 func (b *Builder) Validate() error {
 	// Check for errors accumulated during building
 	if len(b.errors) > 0 {
-		return fmt.Errorf("builder errors: %v", b.errors)
+		return fmt.Errorf("builder errors: %w", errors.Join(b.errors...))
 	}
 
 	// Check that we have at least one main output bus (audio or event)
 	hasMainOutput := false
-	for _, bus := range b.config.audioBuses {
-		if bus.Direction == DirectionOutput && bus.BusType == TypeMain {
+	for _, audioBus := range b.config.audioBuses {
+		if audioBus.Direction == DirectionOutput && audioBus.BusType == TypeMain {
 			hasMainOutput = true
 			break
 		}
@@ -195,8 +166,8 @@ func (b *Builder) Validate() error {
 
 	// MIDI effects might only have event buses
 	if !hasMainOutput && len(b.config.eventBuses) > 0 {
-		for _, bus := range b.config.eventBuses {
-			if bus.Direction == DirectionOutput && bus.BusType == TypeMain {
+		for _, eventBus := range b.config.eventBuses {
+			if eventBus.Direction == DirectionOutput && eventBus.BusType == TypeMain {
 				hasMainOutput = true
 				break
 			}
@@ -204,16 +175,16 @@ func (b *Builder) Validate() error {
 	}
 
 	if !hasMainOutput {
-		return fmt.Errorf("configuration must have at least one main output bus (audio or event)")
+		return ErrNoMainOutputBus
 	}
 
 	// Validate channel counts
-	for _, bus := range b.config.audioBuses {
-		if bus.ChannelCount <= 0 {
-			return fmt.Errorf("invalid channel count %d for bus %s", bus.ChannelCount, bus.Name)
+	for _, audioBus := range b.config.audioBuses {
+		if audioBus.ChannelCount <= 0 {
+			return fmt.Errorf("%w %d for bus %q", ErrInvalidChannelCount, audioBus.ChannelCount, audioBus.Name)
 		}
-		if bus.ChannelCount > 32 {
-			return fmt.Errorf("channel count %d exceeds maximum of 32 for bus %s", bus.ChannelCount, bus.Name)
+		if audioBus.ChannelCount > MaxChannelsPerBus {
+			return fmt.Errorf("%w: %d exceeds %d for bus %q", ErrChannelCountTooHigh, audioBus.ChannelCount, MaxChannelsPerBus, audioBus.Name)
 		}
 	}
 
@@ -228,7 +199,11 @@ func (b *Builder) Build() (*Configuration, error) {
 	return b.config, nil
 }
 
-// MustBuild returns the built configuration or panics on error
+// MustBuild returns the built configuration or panics on error.
+//
+// Only use it where the configuration is statically known to be valid, such as
+// the argument-free templates in this package. Anything that derives a
+// configuration from caller input must use Build and return the error.
 func (b *Builder) MustBuild() *Configuration {
 	config, err := b.Build()
 	if err != nil {

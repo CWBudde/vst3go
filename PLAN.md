@@ -67,21 +67,48 @@
 
 ## Phase 3: Testing, Validation, And Performance
 
-- [ ] Expand automated coverage for retained packages.
-  - [ ] `pkg/framework/param`
-  - [ ] `pkg/framework/process`
-  - [ ] `pkg/framework/state`
-  - [ ] `pkg/midi`
-  - [ ] `pkg/plugin` where practical
-  - [ ] `pkg/vst3`
-- [ ] Add race-detector coverage where thread-safety assumptions are non-trivial.
+Coverage went from 34.3% to 62.1% overall. `golangci-lint` went from 104 issues
+to 0, and `go vet ./...` is clean for the first time.
+
+- [x] Expand automated coverage for retained packages.
+  - [x] `pkg/framework/param` (58.6% -> 67.5%)
+  - [x] `pkg/framework/process` (24.6% -> 94.9%)
+  - [x] `pkg/framework/state` (58.3% -> 83.8%)
+  - [x] `pkg/midi` (64.8% -> 90.2%)
+  - [x] `pkg/plugin` where practical (no test files -> 18.2%; the cgo entry
+        points are covered end-to-end by the smoke test instead)
+  - [x] `pkg/vst3` (0.0% -> 80.0%), unblocked by the new in-memory `IBStream`
+  - [x] `pkg/framework/plugin` (22.2% -> 100%)
+- [x] Add race-detector coverage where thread-safety assumptions are non-trivial.
+  - [x] `EventQueue` under concurrent writer/reader/mutator.
+  - [x] `Smoother.SetTarget` (control thread) against `Next` (audio thread).
+  - [x] `SetBusActive` against audio-thread bus reads.
+  - [x] `state.Manager.Save` against concurrent parameter registration.
 - [ ] Keep allocation-sensitive paths measurable.
-  - [ ] Benchmark process-context internals.
-  - [ ] Benchmark runtime hot paths where useful.
-  - [ ] Revisit fixed-size internal buffers where limits may be too rigid.
+  - [x] Benchmark process-context internals.
+  - [x] Benchmark runtime hot paths where useful. `testing.AllocsPerRun`
+        asserts 0 allocations for the `Context` audio path, `getComponent`,
+        `processChunk`, `processSampleAccurate`, MIDI event range reads, note
+        frequency conversion, and the smoother's per-sample advance.
+  - [x] Revisit fixed-size internal buffers where limits may be too rigid. The
+        128-entry automation buffer now scales with the block size and
+        coalesces on overflow instead of silently dropping changes.
+  - [ ] Remaining audio-thread allocation: `midi.Event` is an interface, so
+        every event boxes once per block. Fixing it means a concrete tagged
+        representation across `pkg/midi`, `pkg/framework/process` and
+        `pkg/plugin` — worth its own change with a single owner.
 - [ ] Keep validation expectations explicit.
-  - [ ] Define minimal validation expectations for the runtime layer itself.
-  - [ ] Document what downstream repos such as `synthkit` must validate on their own.
+  - [x] Define minimal validation expectations for the runtime layer itself.
+        `test/smoke` builds a real `c-shared` module and drives it from C
+        (`go test -tags smoke ./test/smoke/...`), covering the factory
+        lifecycle, IID dispatch, refcount release/re-acquire and a multi-bus
+        `process()` call. Run in CI.
+  - [ ] Add Steinberg's `validator` to CI on top of the smoke test.
+  - [ ] Document what downstream repos such as `synthkit` must validate on
+        their own.
+- [x] Add CI (`.github/workflows/ci.yml`): build/vet/`-race` on Linux and
+      macOS, golangci-lint, gofmt, a `-Werror` C bridge compile, and the
+      smoke test.
 
 ## Phase 4: Documentation And Consumer Experience
 
@@ -97,6 +124,10 @@
   - [x] Clarify intentional differences from the original project.
   - [x] Clarify the new module path.
   - [ ] Document how downstream repos should consume this fork once versions are tagged.
+- [x] Add a `LICENSE` file and state the Steinberg dual-license implication for
+      distributed binaries.
+- [ ] Document the preset format break: `state` now writes v2 (length-prefixed
+      custom payload). v1 presets still load; v2 cannot be read by older builds.
 - [ ] Keep build and validation instructions accurate for the retained runtime repo.
 
 ## Phase 5: Cross-Platform Windows Support

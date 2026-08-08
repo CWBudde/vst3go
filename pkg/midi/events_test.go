@@ -1,6 +1,7 @@
 package midi
 
 import (
+	"math"
 	"testing"
 )
 
@@ -147,11 +148,116 @@ func TestEventInterface(t *testing.T) {
 		PitchBendEvent{BaseEvent: BaseEvent{EventChannel: 0, Offset: 300}, Value: 0},
 	}
 
-	for _, event := range events {
-		// Ensure all events implement the interface
+	wantOffsets := []int32{0, 100, 200, 300}
+	for i, event := range events {
+		// Ensure all events implement the interface and report their own data
+		if event.SampleOffset() != wantOffsets[i] {
+			t.Errorf("event %d offset = %d, want %d", i, event.SampleOffset(), wantOffsets[i])
+		}
+		if event.Channel() != 0 {
+			t.Errorf("event %d channel = %d, want 0", i, event.Channel())
+		}
+		if event.String() == "" {
+			t.Errorf("event %d has an empty String()", i)
+		}
 		_ = event.Type()
-		_ = event.Channel()
-		_ = event.SampleOffset()
-		_ = event.String()
+	}
+}
+
+func TestNoteToFrequencyTuning(t *testing.T) {
+	tests := []struct {
+		name     string
+		note     uint8
+		tuningA4 float64
+		want     float64
+		tol      float64
+	}{
+		// A4 is the tuning reference and must come out bit-exact.
+		{"A4 is exactly the reference", 69, 440.0, 440.0, 0},
+		{"A4 with zero tuning defaults to 440", 69, 0, 440.0, 0},
+		{"A4 with 432 tuning", 69, 432.0, 432.0, 0},
+		{"middle C", 60, 440.0, 261.6255653005986, 1e-9},
+		{"A3", 57, 440.0, 220.0, 1e-9},
+		{"A5", 81, 440.0, 880.0, 1e-9},
+		{"lowest note", 0, 440.0, 8.175798915643707, 1e-9},
+		{"highest note", 127, 440.0, 12543.853951415975, 1e-9},
+		// The old cubic approximation was worst here, off by -7.13 cents.
+		{"note 104", 104, 440.0, 3322.437580639561, 1e-9},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := NoteToFrequency(tt.note, tt.tuningA4)
+			if diff := math.Abs(got - tt.want); diff > tt.tol {
+				t.Errorf("NoteToFrequency(%d, %v) = %.10f, want %.10f (diff %.3g)",
+					tt.note, tt.tuningA4, got, tt.want, diff)
+			}
+		})
+	}
+}
+
+// Every note must survive note -> frequency -> note. The old approximations
+// drifted by several cents, which is audible and could round to a wrong note.
+func TestNoteFrequencyRoundTrip(t *testing.T) {
+	for _, tuning := range []float64{440.0, 432.0, 415.0} {
+		for note := 0; note <= 127; note++ {
+			freq := NoteToFrequency(uint8(note), tuning)
+			if got := FrequencyToNote(freq, tuning); got != uint8(note) {
+				t.Errorf("tuning %.0f: note %d -> %.6f Hz -> note %d", tuning, note, freq, got)
+			}
+
+			// Detuning by a quarter tone either way must still round to the same note.
+			const quarterTone = 1.0072464122237039 // 2^(1/24)
+			if got := FrequencyToNote(freq*quarterTone*0.999, tuning); note < 127 && got != uint8(note) {
+				t.Errorf("tuning %.0f: note %d sharpened by ~49 cents resolved to %d", tuning, note, got)
+			}
+			if got := FrequencyToNote(freq/quarterTone*1.001, tuning); note > 0 && got != uint8(note) {
+				t.Errorf("tuning %.0f: note %d flattened by ~49 cents resolved to %d", tuning, note, got)
+			}
+		}
+	}
+}
+
+func TestFrequencyToNoteClamps(t *testing.T) {
+	tests := []struct {
+		name string
+		freq float64
+		want uint8
+	}{
+		{"zero frequency", 0, 0},
+		{"negative frequency", -100, 0},
+		{"NaN", math.NaN(), 0},
+		{"far below range", 0.001, 0},
+		{"far above range", 1e9, 127},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := FrequencyToNote(tt.freq, 440.0); got != tt.want {
+				t.Errorf("FrequencyToNote(%v) = %d, want %d", tt.freq, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestNoteFrequencyConversionDoesNotAllocate(t *testing.T) {
+	var sink float64
+	var noteSink uint8
+
+	sink = NoteToFrequency(69, 440.0) // warm up
+	noteSink = FrequencyToNote(sink, 440.0)
+
+	allocs := testing.AllocsPerRun(100, func() {
+		sink = NoteToFrequency(noteSink, 440.0)
+	})
+	if allocs != 0 {
+		t.Fatalf("NoteToFrequency allocated %f times, want 0", allocs)
+	}
+
+	allocs = testing.AllocsPerRun(100, func() {
+		noteSink = FrequencyToNote(sink, 440.0)
+	})
+	if allocs != 0 {
+		t.Fatalf("FrequencyToNote allocated %f times, want 0", allocs)
 	}
 }

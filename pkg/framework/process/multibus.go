@@ -107,18 +107,20 @@ func (m *MultiBusContext) NumOutputBuses() int {
 
 // ProcessInputBuses iterates through all active input buses
 func (m *MultiBusContext) ProcessInputBuses(fn func(busIndex int, channels [][]float32, info *bus.Info)) {
-	for i, bus := range m.InputBuses {
-		if bus.BusInfo.IsActive {
-			fn(i, bus.Channels, bus.BusInfo)
+	for i := range m.InputBuses {
+		// Active() reads the shared atomic, so the host may deactivate a bus
+		// from its UI thread while we are processing.
+		if m.InputBuses[i].BusInfo.Active() {
+			fn(i, m.InputBuses[i].Channels, m.InputBuses[i].BusInfo)
 		}
 	}
 }
 
 // ProcessOutputBuses iterates through all active output buses
 func (m *MultiBusContext) ProcessOutputBuses(fn func(busIndex int, channels [][]float32, info *bus.Info)) {
-	for i, bus := range m.OutputBuses {
-		if bus.BusInfo.IsActive {
-			fn(i, bus.Channels, bus.BusInfo)
+	for i := range m.OutputBuses {
+		if m.OutputBuses[i].BusInfo.Active() {
+			fn(i, m.OutputBuses[i].Channels, m.OutputBuses[i].BusInfo)
 		}
 	}
 }
@@ -146,10 +148,10 @@ func (m *MultiBusContext) ProcessWithSidechain(fn func(main, sidechain, output [
 
 // ClearAllOutputs clears all output buses
 func (m *MultiBusContext) ClearAllOutputs() {
-	for _, bus := range m.OutputBuses {
-		for ch := range bus.Channels {
-			for i := range bus.Channels[ch] {
-				bus.Channels[ch][i] = 0
+	for _, outputBus := range m.OutputBuses {
+		for ch := range outputBus.Channels {
+			for i := range outputBus.Channels[ch] {
+				outputBus.Channels[ch][i] = 0
 			}
 		}
 	}

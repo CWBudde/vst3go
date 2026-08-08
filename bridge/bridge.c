@@ -1,5 +1,6 @@
 #include "bridge.h"
 #include "component.h"
+#include <stdatomic.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -11,10 +12,12 @@
 #define DBG_LOG(fmt, ...)
 #endif
 
-// Reference counting for our factory
+// Reference counting for our factory.
+// refCount is atomic: hosts call addRef/release concurrently from the audio
+// thread, the UI thread and background scanner threads.
 typedef struct {
     struct Steinberg_IPluginFactoryVtbl* vtbl;
-    int refCount;
+    _Atomic int refCount;
 } PluginFactory;
 
 // Forward declarations for vtable functions
@@ -45,10 +48,17 @@ __attribute__((visibility("default")))
 struct Steinberg_IPluginFactory* GetPluginFactory() {
     DBG_LOG("GetPluginFactory called");
     if (!globalFactory) {
-        globalFactory = (PluginFactory*)malloc(sizeof(PluginFactory));
-        globalFactory->vtbl = &factoryVtbl;
-        globalFactory->refCount = 1;
+        PluginFactory* factory = (PluginFactory*)malloc(sizeof(PluginFactory));
+        if (!factory) {
+            DBG_LOG("GetPluginFactory: allocation failed");
+            return NULL;
+        }
+        factory->vtbl = &factoryVtbl;
+        atomic_store(&factory->refCount, 1);
+        globalFactory = factory;
         DBG_LOG("GetPluginFactory: Created factory at %p", globalFactory);
+    } else {
+        factory_addRef(globalFactory);
     }
     return (struct Steinberg_IPluginFactory*)globalFactory;
 }
@@ -92,16 +102,23 @@ static Steinberg_tresult SMTG_STDMETHODCALLTYPE factory_queryInterface(void* thi
 
 static Steinberg_uint32 SMTG_STDMETHODCALLTYPE factory_addRef(void* thisInterface) {
     PluginFactory* factory = (PluginFactory*)thisInterface;
-    return ++factory->refCount;
+    return (Steinberg_uint32)atomic_fetch_add(&factory->refCount, 1) + 1;
 }
 
 static Steinberg_uint32 SMTG_STDMETHODCALLTYPE factory_release(void* thisInterface) {
     PluginFactory* factory = (PluginFactory*)thisInterface;
-    if (--factory->refCount == 0) {
+    int remaining = atomic_fetch_sub(&factory->refCount, 1) - 1;
+    if (remaining == 0) {
+        // Clear the global before freeing: a host that releases the factory and
+        // later calls GetPluginFactory() again (rescan, module reload) must get
+        // a fresh instance, not this freed pointer.
+        if (globalFactory == factory) {
+            globalFactory = NULL;
+        }
         free(factory);
         return 0;
     }
-    return factory->refCount;
+    return (Steinberg_uint32)remaining;
 }
 
 // IPluginFactory implementation - these will call into Go
@@ -118,6 +135,9 @@ static Steinberg_tresult SMTG_STDMETHODCALLTYPE factory_getClassInfo(void* thisI
     if (index >= GoCountClasses()) {
         return ((Steinberg_tresult)1);
     }
+    // Zero first: the host's struct is uninitialized stack memory, and Go only
+    // writes up to each field's terminator.
+    memset(info, 0, sizeof(*info));
     GoGetClassInfo(index, (char*)info->cid, &info->cardinality, info->category, info->name);
     return ((Steinberg_tresult)0);
 }
@@ -131,12 +151,25 @@ static Steinberg_tresult SMTG_STDMETHODCALLTYPE factory_createInstance(void* thi
     if (!instance) {
         DBG_LOG("factory_createInstance: GoCreateInstance returned NULL");
         *obj = NULL;
-        return ((Steinberg_tresult)-1); // kNoInterface
+        return Steinberg_kNoInterface;
     }
-    
-    DBG_LOG("factory_createInstance: Created instance at %p", instance);
-    *obj = instance;
-    return ((Steinberg_tresult)0);
+
+    // The host asks for a specific interface (commonly IComponent, but also
+    // IEditController or FUnknown). Hand back the matching vtable instead of
+    // always returning the IComponent one, then drop the creation reference so
+    // the caller owns exactly the reference queryInterface handed out.
+    struct Steinberg_FUnknown* unknown = (struct Steinberg_FUnknown*)instance;
+    Steinberg_tresult result = unknown->lpVtbl->queryInterface(unknown, (const char*)iid, obj);
+    unknown->lpVtbl->release(unknown);
+
+    if (result != Steinberg_kResultOk) {
+        DBG_LOG("factory_createInstance: requested interface not supported");
+        *obj = NULL;
+        return Steinberg_kNoInterface;
+    }
+
+    DBG_LOG("factory_createInstance: Created instance at %p", *obj);
+    return Steinberg_kResultOk;
 }
 
 // Parameter automation helper functions implementation

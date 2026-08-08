@@ -13,26 +13,34 @@ import (
 // IEditController callbacks
 //
 //export GoEditControllerSetComponentState
-func GoEditControllerSetComponentState(componentPtr unsafe.Pointer, state unsafe.Pointer) C.Steinberg_tresult {
+func GoEditControllerSetComponentState(componentID C.uintptr_t, state unsafe.Pointer) (result C.Steinberg_tresult) {
+	defer recoverPanicResult("GoEditControllerSetComponentState", &result)
+
 	// Component state received from processor - apply to edit controller
-	return GoComponentSetState(componentPtr, state)
+	return GoComponentSetState(componentID, state)
 }
 
 //export GoEditControllerSetState
-func GoEditControllerSetState(componentPtr unsafe.Pointer, state unsafe.Pointer) C.Steinberg_tresult {
+func GoEditControllerSetState(componentID C.uintptr_t, state unsafe.Pointer) (result C.Steinberg_tresult) {
+	defer recoverPanicResult("GoEditControllerSetState", &result)
+
 	// Edit controller state is typically the same as component state
-	return GoComponentSetState(componentPtr, state)
+	return GoComponentSetState(componentID, state)
 }
 
 //export GoEditControllerGetState
-func GoEditControllerGetState(componentPtr unsafe.Pointer, state unsafe.Pointer) C.Steinberg_tresult {
+func GoEditControllerGetState(componentID C.uintptr_t, state unsafe.Pointer) (result C.Steinberg_tresult) {
+	defer recoverPanicResult("GoEditControllerGetState", &result)
+
 	// Edit controller state is typically the same as component state
-	return GoComponentGetState(componentPtr, state)
+	return GoComponentGetState(componentID, state)
 }
 
 //export GoEditControllerGetParameterCount
-func GoEditControllerGetParameterCount(componentPtr unsafe.Pointer) C.int32_t {
-	wrapper := getComponent(uintptr(componentPtr))
+func GoEditControllerGetParameterCount(componentID C.uintptr_t) C.int32_t {
+	defer recoverPanic("GoEditControllerGetParameterCount")
+
+	wrapper := getComponent(uintptr(componentID))
 	if wrapper == nil {
 		return 0
 	}
@@ -41,8 +49,10 @@ func GoEditControllerGetParameterCount(componentPtr unsafe.Pointer) C.int32_t {
 }
 
 //export GoEditControllerGetParameterInfo
-func GoEditControllerGetParameterInfo(componentPtr unsafe.Pointer, paramIndex C.int32_t, info *C.struct_Steinberg_Vst_ParameterInfo) C.Steinberg_tresult {
-	wrapper := getComponent(uintptr(componentPtr))
+func GoEditControllerGetParameterInfo(componentID C.uintptr_t, paramIndex C.int32_t, info *C.struct_Steinberg_Vst_ParameterInfo) (result C.Steinberg_tresult) {
+	defer recoverPanicResult("GoEditControllerGetParameterInfo", &result)
+
+	wrapper := getComponent(uintptr(componentID))
 	if wrapper == nil {
 		return C.Steinberg_tresult(vst3.ResultFalse)
 	}
@@ -56,50 +66,23 @@ func GoEditControllerGetParameterInfo(componentPtr unsafe.Pointer, paramIndex C.
 	cInfo := info
 	cInfo.id = C.Steinberg_Vst_ParamID(paramInfo.ID)
 
-	// Copy title
-	titleBytes := []byte(paramInfo.Title)
-	if len(titleBytes) > 127 {
-		titleBytes = titleBytes[:127]
-	}
-	for i, b := range titleBytes {
-		cInfo.title[i] = C.Steinberg_char16(b)
-	}
-	cInfo.title[len(titleBytes)] = 0
-
-	// Copy short title
-	shortTitleBytes := []byte(paramInfo.ShortTitle)
-	if len(shortTitleBytes) > 127 {
-		shortTitleBytes = shortTitleBytes[:127]
-	}
-	for i, b := range shortTitleBytes {
-		cInfo.shortTitle[i] = C.Steinberg_char16(b)
-	}
-	cInfo.shortTitle[len(shortTitleBytes)] = 0
-
-	// Copy units
-	unitsBytes := []byte(paramInfo.Units)
-	if len(unitsBytes) > 127 {
-		unitsBytes = unitsBytes[:127]
-	}
-	for i, b := range unitsBytes {
-		cInfo.units[i] = C.Steinberg_char16(b)
-	}
-	cInfo.units[len(unitsBytes)] = 0
+	copyStringToTChar(paramInfo.Title, &cInfo.title[0], len(cInfo.title))
+	copyStringToTChar(paramInfo.ShortTitle, &cInfo.shortTitle[0], len(cInfo.shortTitle))
+	copyStringToTChar(paramInfo.Units, &cInfo.units[0], len(cInfo.units))
 
 	cInfo.stepCount = C.Steinberg_int32(paramInfo.StepCount)
 	cInfo.defaultNormalizedValue = C.Steinberg_Vst_ParamValue(paramInfo.DefaultValue)
 	cInfo.unitId = C.Steinberg_Vst_UnitID(paramInfo.UnitID)
 	cInfo.flags = C.Steinberg_int32(paramInfo.Flags)
 
-	// Debug: Print parameter info
-	// fmt.Printf("Parameter %d: StepCount=%d, Flags=%d, Name=%s\n", paramInfo.ID, paramInfo.StepCount, paramInfo.Flags, paramInfo.Title)
-
 	return C.Steinberg_tresult(vst3.ResultOK)
 }
 
 //export GoEditControllerGetParamStringByValue
-func GoEditControllerGetParamStringByValue(componentPtr unsafe.Pointer, id C.Steinberg_Vst_ParamID, valueNormalized C.Steinberg_Vst_ParamValue, string *C.Steinberg_Vst_TChar) C.Steinberg_tresult {
-	wrapper := getComponent(uintptr(componentPtr))
+func GoEditControllerGetParamStringByValue(componentID C.uintptr_t, id C.Steinberg_Vst_ParamID, valueNormalized C.Steinberg_Vst_ParamValue, string *C.Steinberg_Vst_TChar) (result C.Steinberg_tresult) {
+	defer recoverPanicResult("GoEditControllerGetParamStringByValue", &result)
+
+	wrapper := getComponent(uintptr(componentID))
 	if wrapper == nil {
 		return C.Steinberg_tresult(vst3.ResultFalse)
 	}
@@ -117,8 +100,10 @@ func GoEditControllerGetParamStringByValue(componentPtr unsafe.Pointer, id C.Ste
 }
 
 //export GoEditControllerGetParamValueByString
-func GoEditControllerGetParamValueByString(componentPtr unsafe.Pointer, id C.Steinberg_Vst_ParamID, string *C.Steinberg_Vst_TChar, valueNormalized *C.Steinberg_Vst_ParamValue) C.Steinberg_tresult {
-	wrapper := getComponent(uintptr(componentPtr))
+func GoEditControllerGetParamValueByString(componentID C.uintptr_t, id C.Steinberg_Vst_ParamID, string *C.Steinberg_Vst_TChar, valueNormalized *C.Steinberg_Vst_ParamValue) (result C.Steinberg_tresult) {
+	defer recoverPanicResult("GoEditControllerGetParamValueByString", &result)
+
+	wrapper := getComponent(uintptr(componentID))
 	if wrapper == nil {
 		return C.Steinberg_tresult(vst3.ResultFalse)
 	}
@@ -137,8 +122,10 @@ func GoEditControllerGetParamValueByString(componentPtr unsafe.Pointer, id C.Ste
 }
 
 //export GoEditControllerNormalizedParamToPlain
-func GoEditControllerNormalizedParamToPlain(componentPtr unsafe.Pointer, id C.uint32_t, valueNormalized C.double) C.double {
-	wrapper := getComponent(uintptr(componentPtr))
+func GoEditControllerNormalizedParamToPlain(componentID C.uintptr_t, id C.uint32_t, valueNormalized C.double) C.double {
+	defer recoverPanic("GoEditControllerNormalizedParamToPlain")
+
+	wrapper := getComponent(uintptr(componentID))
 	if wrapper == nil {
 		return valueNormalized
 	}
@@ -147,8 +134,10 @@ func GoEditControllerNormalizedParamToPlain(componentPtr unsafe.Pointer, id C.ui
 }
 
 //export GoEditControllerPlainParamToNormalized
-func GoEditControllerPlainParamToNormalized(componentPtr unsafe.Pointer, id C.uint32_t, plainValue C.double) C.double {
-	wrapper := getComponent(uintptr(componentPtr))
+func GoEditControllerPlainParamToNormalized(componentID C.uintptr_t, id C.uint32_t, plainValue C.double) C.double {
+	defer recoverPanic("GoEditControllerPlainParamToNormalized")
+
+	wrapper := getComponent(uintptr(componentID))
 	if wrapper == nil {
 		return plainValue
 	}
@@ -157,8 +146,10 @@ func GoEditControllerPlainParamToNormalized(componentPtr unsafe.Pointer, id C.ui
 }
 
 //export GoEditControllerGetParamNormalized
-func GoEditControllerGetParamNormalized(componentPtr unsafe.Pointer, id C.uint32_t) C.double {
-	wrapper := getComponent(uintptr(componentPtr))
+func GoEditControllerGetParamNormalized(componentID C.uintptr_t, id C.uint32_t) C.double {
+	defer recoverPanic("GoEditControllerGetParamNormalized")
+
+	wrapper := getComponent(uintptr(componentID))
 	if wrapper == nil {
 		return 0
 	}
@@ -167,8 +158,10 @@ func GoEditControllerGetParamNormalized(componentPtr unsafe.Pointer, id C.uint32
 }
 
 //export GoEditControllerSetParamNormalized
-func GoEditControllerSetParamNormalized(componentPtr unsafe.Pointer, id C.uint32_t, value C.double) C.Steinberg_tresult {
-	wrapper := getComponent(uintptr(componentPtr))
+func GoEditControllerSetParamNormalized(componentID C.uintptr_t, id C.uint32_t, value C.double) (result C.Steinberg_tresult) {
+	defer recoverPanicResult("GoEditControllerSetParamNormalized", &result)
+
+	wrapper := getComponent(uintptr(componentID))
 	if wrapper == nil {
 		return C.Steinberg_tresult(vst3.ResultFalse)
 	}
@@ -181,22 +174,24 @@ func GoEditControllerSetParamNormalized(componentPtr unsafe.Pointer, id C.uint32
 }
 
 //export GoEditControllerSetComponentHandler
-func GoEditControllerSetComponentHandler(componentPtr unsafe.Pointer, handler unsafe.Pointer) C.Steinberg_tresult {
-	wrapper := getComponent(uintptr(componentPtr))
+func GoEditControllerSetComponentHandler(componentID C.uintptr_t, handler unsafe.Pointer) (result C.Steinberg_tresult) {
+	defer recoverPanicResult("GoEditControllerSetComponentHandler", &result)
+
+	wrapper := getComponent(uintptr(componentID))
 	if wrapper == nil {
 		return C.Steinberg_tresult(vst3.ResultFalse)
 	}
 
 	// Store the component handler for parameter change notifications
-	wrapper.handlerMu.Lock()
-	wrapper.componentHandler = handler
-	wrapper.handlerMu.Unlock()
+	wrapper.setComponentHandler(handler)
 
 	return C.Steinberg_tresult(vst3.ResultOK)
 }
 
 //export GoEditControllerCreateView
-func GoEditControllerCreateView(componentPtr unsafe.Pointer, name *C.char) unsafe.Pointer {
+func GoEditControllerCreateView(componentID C.uintptr_t, name *C.char) unsafe.Pointer {
+	defer recoverPanic("GoEditControllerCreateView")
+
 	// No GUI support
 	return nil
 }

@@ -25,41 +25,63 @@ type (
 	Sample64   = C.Steinberg_Vst_Sample64
 )
 
-// Interface IDs
-var (
-	IIDFUnknown = [16]byte{
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-		0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46,
-	}
-	IIDIPluginFactory = [16]byte{
-		0x7A, 0x4D, 0x81, 0x1C, 0x52, 0x11, 0x4A, 0x1F,
-		0xAE, 0xD9, 0xD2, 0xEE, 0x0B, 0x43, 0xBF, 0x9F,
-	}
-)
-
 // Class categories
 const (
 	CategoryAudioEffect = "Audio Module Class"
 )
 
-// Error codes
+// Error is a sentinel error class for the binding layer. Values are distinct so
+// that callers can tell a host refusal apart from a corrupt payload; previously
+// every failure collapsed onto ErrNotImplemented.
 type Error int
 
 const (
-	ErrNotImplemented  Error = -1
+	// ErrNotImplemented means the host does not provide the requested operation.
+	ErrNotImplemented Error = -1
+	// ErrInvalidArgument means the caller supplied an unusable argument.
 	ErrInvalidArgument Error = -2
+	// ErrNilStream means the stream (or its wrapper) is nil.
+	ErrNilStream Error = -3
+	// ErrShortRead means the stream delivered fewer bytes than the format requires.
+	ErrShortRead Error = -4
+	// ErrInvalidLength means a length prefix read from the stream is negative or
+	// exceeds the documented cap. Typically a corrupt or hostile preset.
+	ErrInvalidLength Error = -5
+	// ErrStreamFailure means the host stream returned a non-OK tresult. Wrapped by
+	// StreamError, which carries the actual code.
+	ErrStreamFailure Error = -6
+	// ErrShortWrite means the stream accepted fewer bytes than were offered.
+	ErrShortWrite Error = -7
 )
 
 func (e Error) Error() string {
 	switch e {
 	case ErrNotImplemented:
 		return "not implemented"
+	case ErrInvalidArgument:
+		return "invalid argument"
+	case ErrNilStream:
+		return "nil stream"
+	case ErrShortRead:
+		return "short read"
+	case ErrInvalidLength:
+		return "invalid length"
+	case ErrStreamFailure:
+		return "stream failure"
+	case ErrShortWrite:
+		return "short write"
 	default:
 		return "unknown error"
 	}
 }
 
-// Helper to convert Go interface ID to C TUID
+// ToTUID exposes an interface ID as a pointer to 16 contiguous bytes, the layout
+// the C API's Steinberg_TUID expects.
+//
+// The argument is copied, so the returned pointer refers to that copy and not to
+// the caller's array; it stays valid as long as the returned pointer is
+// reachable. Per the cgo pointer rules it may be handed to C for the duration of
+// a call, but C must not retain it.
 func ToTUID(iid [16]byte) unsafe.Pointer {
 	return unsafe.Pointer(&iid[0])
 }

@@ -13,8 +13,10 @@ import (
 // IAudioProcessor callbacks
 //
 //export GoAudioSetBusArrangements
-func GoAudioSetBusArrangements(componentPtr unsafe.Pointer, inputs unsafe.Pointer, numIns C.int32_t, outputs unsafe.Pointer, numOuts C.int32_t) C.Steinberg_tresult {
-	wrapper := getComponent(uintptr(componentPtr))
+func GoAudioSetBusArrangements(componentID C.uintptr_t, inputs unsafe.Pointer, numIns C.int32_t, outputs unsafe.Pointer, numOuts C.int32_t) (result C.Steinberg_tresult) {
+	defer recoverPanicResult("GoAudioSetBusArrangements", &result)
+
+	wrapper := getComponent(uintptr(componentID))
 	if wrapper == nil {
 		return C.Steinberg_tresult(vst3.ResultFalse)
 	}
@@ -22,12 +24,12 @@ func GoAudioSetBusArrangements(componentPtr unsafe.Pointer, inputs unsafe.Pointe
 	// Convert arrangements
 	var inputArrs []int64
 	if numIns > 0 && inputs != nil {
-		inputArrs = (*[16]int64)(inputs)[:numIns:numIns]
+		inputArrs = unsafe.Slice((*int64)(inputs), int(numIns))
 	}
 
 	var outputArrs []int64
 	if numOuts > 0 && outputs != nil {
-		outputArrs = (*[16]int64)(outputs)[:numOuts:numOuts]
+		outputArrs = unsafe.Slice((*int64)(outputs), int(numOuts))
 	}
 
 	err := wrapper.component.SetBusArrangements(inputArrs, outputArrs)
@@ -38,8 +40,10 @@ func GoAudioSetBusArrangements(componentPtr unsafe.Pointer, inputs unsafe.Pointe
 }
 
 //export GoAudioGetBusArrangement
-func GoAudioGetBusArrangement(componentPtr unsafe.Pointer, dir, index C.int32_t, arr unsafe.Pointer) C.Steinberg_tresult {
-	wrapper := getComponent(uintptr(componentPtr))
+func GoAudioGetBusArrangement(componentID C.uintptr_t, dir, index C.int32_t, arr unsafe.Pointer) (result C.Steinberg_tresult) {
+	defer recoverPanicResult("GoAudioGetBusArrangement", &result)
+
+	wrapper := getComponent(uintptr(componentID))
 	if wrapper == nil {
 		return C.Steinberg_tresult(vst3.ResultFalse)
 	}
@@ -54,8 +58,10 @@ func GoAudioGetBusArrangement(componentPtr unsafe.Pointer, dir, index C.int32_t,
 }
 
 //export GoAudioCanProcessSampleSize
-func GoAudioCanProcessSampleSize(componentPtr unsafe.Pointer, symbolicSampleSize C.int32_t) C.Steinberg_tresult {
-	wrapper := getComponent(uintptr(componentPtr))
+func GoAudioCanProcessSampleSize(componentID C.uintptr_t, symbolicSampleSize C.int32_t) (result C.Steinberg_tresult) {
+	defer recoverPanicResult("GoAudioCanProcessSampleSize", &result)
+
+	wrapper := getComponent(uintptr(componentID))
 	if wrapper == nil {
 		return C.Steinberg_tresult(vst3.ResultFalse)
 	}
@@ -68,8 +74,10 @@ func GoAudioCanProcessSampleSize(componentPtr unsafe.Pointer, symbolicSampleSize
 }
 
 //export GoAudioGetLatencySamples
-func GoAudioGetLatencySamples(componentPtr unsafe.Pointer) C.uint32_t {
-	wrapper := getComponent(uintptr(componentPtr))
+func GoAudioGetLatencySamples(componentID C.uintptr_t) C.uint32_t {
+	defer recoverPanic("GoAudioGetLatencySamples")
+
+	wrapper := getComponent(uintptr(componentID))
 	if wrapper == nil {
 		return 0
 	}
@@ -78,8 +86,10 @@ func GoAudioGetLatencySamples(componentPtr unsafe.Pointer) C.uint32_t {
 }
 
 //export GoAudioSetupProcessing
-func GoAudioSetupProcessing(componentPtr unsafe.Pointer, setup unsafe.Pointer) C.Steinberg_tresult {
-	wrapper := getComponent(uintptr(componentPtr))
+func GoAudioSetupProcessing(componentID C.uintptr_t, setup unsafe.Pointer) (result C.Steinberg_tresult) {
+	defer recoverPanicResult("GoAudioSetupProcessing", &result)
+
+	wrapper := getComponent(uintptr(componentID))
 	if wrapper == nil {
 		return C.Steinberg_tresult(vst3.ResultFalse)
 	}
@@ -101,8 +111,10 @@ func GoAudioSetupProcessing(componentPtr unsafe.Pointer, setup unsafe.Pointer) C
 }
 
 //export GoAudioSetProcessing
-func GoAudioSetProcessing(componentPtr unsafe.Pointer, state C.int32_t) C.Steinberg_tresult {
-	wrapper := getComponent(uintptr(componentPtr))
+func GoAudioSetProcessing(componentID C.uintptr_t, state C.int32_t) (result C.Steinberg_tresult) {
+	defer recoverPanicResult("GoAudioSetProcessing", &result)
+
+	wrapper := getComponent(uintptr(componentID))
 	if wrapper == nil {
 		return C.Steinberg_tresult(vst3.ResultFalse)
 	}
@@ -115,10 +127,10 @@ func GoAudioSetProcessing(componentPtr unsafe.Pointer, state C.int32_t) C.Steinb
 }
 
 //export GoAudioProcess
-func GoAudioProcess(componentPtr unsafe.Pointer, data unsafe.Pointer) C.Steinberg_tresult {
+func GoAudioProcess(componentID C.uintptr_t, data unsafe.Pointer) C.Steinberg_tresult {
 	defer recoverPanic("GoAudioProcess")
 
-	wrapper := getComponent(uintptr(componentPtr))
+	wrapper := getComponent(uintptr(componentID))
 	if wrapper == nil {
 		return C.Steinberg_tresult(vst3.ResultFalse)
 	}
@@ -131,8 +143,10 @@ func GoAudioProcess(componentPtr unsafe.Pointer, data unsafe.Pointer) C.Steinber
 }
 
 //export GoAudioGetTailSamples
-func GoAudioGetTailSamples(componentPtr unsafe.Pointer) C.uint32_t {
-	wrapper := getComponent(uintptr(componentPtr))
+func GoAudioGetTailSamples(componentID C.uintptr_t) C.uint32_t {
+	defer recoverPanic("GoAudioGetTailSamples")
+
+	wrapper := getComponent(uintptr(componentID))
 	if wrapper == nil {
 		return 0
 	}

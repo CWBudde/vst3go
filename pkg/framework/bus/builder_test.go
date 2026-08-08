@@ -1,6 +1,7 @@
 package bus
 
 import (
+	"errors"
 	"testing"
 )
 
@@ -182,6 +183,52 @@ func TestBuilderConvenienceMethods(t *testing.T) {
 			bus := config.GetBusInfo(MediaTypeAudio, DirectionInput, 0)
 			if bus != nil && bus.ChannelCount != tt.expected {
 				t.Errorf("Expected %d channels, got %d", tt.expected, bus.ChannelCount)
+			}
+		})
+	}
+}
+
+func TestBuilderErrorsAreMatchable(t *testing.T) {
+	tests := []struct {
+		name    string
+		builder func() *Builder
+		wantErr error
+	}{
+		{
+			name:    "no main output",
+			builder: func() *Builder { return NewBuilder().WithStereoInput("In") },
+			wantErr: ErrNoMainOutputBus,
+		},
+		{
+			name: "zero channel bus",
+			builder: func() *Builder {
+				return NewBuilder().WithAudioOutput("Out", 0)
+			},
+			wantErr: ErrInvalidChannelCount,
+		},
+		{
+			name: "too many channels",
+			builder: func() *Builder {
+				return NewBuilder().WithAudioOutput("Out", MaxChannelsPerBus+1)
+			},
+			wantErr: ErrChannelCountTooHigh,
+		},
+		{
+			name: "SetBusActive on missing bus",
+			builder: func() *Builder {
+				return NewBuilder().
+					WithStereoOutput("Out").
+					SetBusActive(MediaTypeAudio, DirectionInput, 3, false)
+			},
+			wantErr: ErrBusNotFound,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := tt.builder().Build()
+			if !errors.Is(err, tt.wantErr) {
+				t.Fatalf("expected %v, got %v", tt.wantErr, err)
 			}
 		})
 	}

@@ -58,4 +58,11 @@ just test
 
 ## License
 
-This project is licensed under the MIT License. The bundled VST3 SDK headers remain under their respective licenses.
+This project's own source is licensed under the MIT License — see [LICENSE](LICENSE).
+
+The VST 3 C API headers are **not** redistributed here; they are a git submodule
+(`include/vst3`) under Steinberg's dual license (the VST 3 License Agreement *or*
+GPLv3). A compiled plug-in is a combined work with those headers, so the terms
+under which you may distribute a binary come from whichever Steinberg license you
+have accepted — without a signed agreement, that is the GPLv3. See the third-party
+notice in [LICENSE](LICENSE) for details.

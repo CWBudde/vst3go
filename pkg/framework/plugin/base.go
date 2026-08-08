@@ -36,6 +36,14 @@ func (b *Base) Parameters() *param.Registry {
 	return b.params
 }
 
+// State returns the state manager backing this plugin's preset save/load.
+//
+// It is wired to the same registry as Parameters, so a Save/Load round-trip
+// through it covers every registered parameter.
+func (b *Base) State() *state.Manager {
+	return b.state
+}
+
 // AudioProcessor is a legacy minimal audio-only processing contract used by
 // helper layers that do not need the full runtime Processor interface.
 //

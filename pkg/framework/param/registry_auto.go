@@ -1,14 +1,22 @@
 package param
 
 import (
+	"errors"
 	"fmt"
-	"sync/atomic"
 )
 
-// AutoRegistry extends Registry with automatic ID management
+// firstAutoID is the first automatically assigned ID. ID 0 doubles as "unset"
+// on an incoming Parameter, so auto-assignment must not hand it out.
+const firstAutoID uint32 = 1
+
+// AutoRegistry wraps a Registry with automatic ID management and name lookup.
+//
+// The Registry is deliberately a plain field rather than an embedded one: a
+// promoted Add would insert parameters behind the name index and break the
+// name/ID invariant.
 type AutoRegistry struct {
-	*Registry
-	nextID      atomic.Uint32
+	registry    *Registry
+	nextID      uint32 // guarded by registry.mu
 	nameToID    map[string]uint32
 	autoEnabled bool
 }
@@ -16,117 +24,172 @@ type AutoRegistry struct {
 // NewAutoRegistry creates a registry with automatic ID management
 func NewAutoRegistry() *AutoRegistry {
 	return &AutoRegistry{
-		Registry:    NewRegistry(),
+		registry:    NewRegistry(),
+		nextID:      firstAutoID,
 		nameToID:    make(map[string]uint32),
 		autoEnabled: true,
 	}
 }
 
+// Registry returns the underlying registry for APIs that take a *Registry.
+func (r *AutoRegistry) Registry() *Registry {
+	return r.registry
+}
+
 // EnableAutoID enables or disables automatic ID assignment
 func (r *AutoRegistry) EnableAutoID(enabled bool) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	r.registry.mu.Lock()
+	defer r.registry.mu.Unlock()
 	r.autoEnabled = enabled
 }
 
-// Register adds a parameter with automatic ID assignment
+// Register adds parameters, assigning IDs automatically when their ID is 0.
+// Registering a name twice is an error; use Replace to overwrite deliberately.
 func (r *AutoRegistry) Register(params ...*Parameter) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	r.registry.mu.Lock()
+	defer r.registry.mu.Unlock()
 
 	for _, p := range params {
-		// Check if we already have this parameter by name
-		if existingID, exists := r.nameToID[p.Name]; exists {
-			// Update existing parameter
-			p.ID = existingID
-			r.params[existingID] = p
-			continue
+		if _, exists := r.nameToID[p.Name]; exists {
+			return fmt.Errorf("%w: %q", ErrDuplicateName, p.Name)
 		}
 
-		// Assign new ID if auto-enabled and ID is 0
 		if r.autoEnabled && p.ID == 0 {
-			p.ID = r.nextID.Add(1) - 1
+			p.ID = r.nextID
+			r.nextID++
 		}
 
-		// Check for ID conflicts
-		if _, exists := r.params[p.ID]; exists {
-			return fmt.Errorf("parameter ID %d already exists", p.ID)
+		if _, exists := r.registry.params[p.ID]; exists {
+			return fmt.Errorf("%w: %d", ErrDuplicateID, p.ID)
 		}
 
-		// Register the parameter
-		r.params[p.ID] = p
-		r.order = append(r.order, p.ID)
-		r.nameToID[p.Name] = p.ID
+		r.insertLocked(p.ID, p)
 	}
 
+	return nil
+}
+
+// Replace registers a parameter, overwriting any parameter with the same name.
+func (r *AutoRegistry) Replace(p *Parameter) error {
+	r.registry.mu.Lock()
+	defer r.registry.mu.Unlock()
+
+	if existingID, exists := r.nameToID[p.Name]; exists {
+		p.ID = existingID
+		r.registry.params[existingID] = p
+		return nil
+	}
+
+	if r.autoEnabled && p.ID == 0 {
+		p.ID = r.nextID
+		r.nextID++
+	}
+	if _, exists := r.registry.params[p.ID]; exists {
+		return fmt.Errorf("%w: %d", ErrDuplicateID, p.ID)
+	}
+
+	r.insertLocked(p.ID, p)
 	return nil
 }
 
 // RegisterWithID adds a parameter with a specific ID
 func (r *AutoRegistry) RegisterWithID(id uint32, param *Parameter) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	r.registry.mu.Lock()
+	defer r.registry.mu.Unlock()
 
-	// Force the ID
+	if existing, exists := r.registry.params[id]; exists {
+		return fmt.Errorf("%w: %d already used by %q", ErrDuplicateID, id, existing.Name)
+	}
+	if _, exists := r.nameToID[param.Name]; exists {
+		return fmt.Errorf("%w: %q", ErrDuplicateName, param.Name)
+	}
+
 	param.ID = id
 
-	// Check for conflicts
-	if existing, exists := r.params[id]; exists {
-		return fmt.Errorf("parameter ID %d already used by '%s'", id, existing.Name)
+	// Keep auto-assignment clear of manually placed IDs.
+	if id >= r.nextID {
+		r.nextID = id + 1
 	}
 
-	// Update next ID if necessary
-	if id >= r.nextID.Load() {
-		r.nextID.Store(id + 1)
-	}
-
-	// Register
-	r.params[id] = param
-	r.order = append(r.order, id)
-	r.nameToID[param.Name] = id
-
+	r.insertLocked(id, param)
 	return nil
+}
+
+// insertLocked adds a parameter to all three indices. Caller holds the lock.
+func (r *AutoRegistry) insertLocked(id uint32, p *Parameter) {
+	r.registry.params[id] = p
+	r.registry.order = append(r.registry.order, id)
+	r.nameToID[p.Name] = id
 }
 
 // GetByName retrieves a parameter by name
 func (r *AutoRegistry) GetByName(name string) *Parameter {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
+	r.registry.mu.RLock()
+	defer r.registry.mu.RUnlock()
 
 	id, exists := r.nameToID[name]
 	if !exists {
 		return nil
 	}
 
-	return r.params[id]
+	return r.registry.params[id]
 }
 
 // GetID returns the ID for a parameter name
 func (r *AutoRegistry) GetID(name string) (uint32, bool) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
+	r.registry.mu.RLock()
+	defer r.registry.mu.RUnlock()
 
 	id, exists := r.nameToID[name]
 	return id, exists
 }
 
+// Get retrieves a parameter by ID.
+func (r *AutoRegistry) Get(id uint32) *Parameter { return r.registry.Get(id) }
+
+// GetOK retrieves a parameter by ID and reports whether it exists.
+func (r *AutoRegistry) GetOK(id uint32) (*Parameter, bool) { return r.registry.GetOK(id) }
+
+// Has reports whether a parameter with the given ID exists.
+func (r *AutoRegistry) Has(id uint32) bool { return r.registry.Has(id) }
+
+// GetNormalized returns the normalized value of a parameter if it exists.
+func (r *AutoRegistry) GetNormalized(id uint32) (float64, bool) { return r.registry.GetNormalized(id) }
+
+// GetPlain returns the plain value of a parameter if it exists.
+func (r *AutoRegistry) GetPlain(id uint32) (float64, bool) { return r.registry.GetPlain(id) }
+
+// GetByIndex retrieves a parameter by index.
+func (r *AutoRegistry) GetByIndex(index int32) *Parameter { return r.registry.GetByIndex(index) }
+
+// Count returns the number of parameters.
+func (r *AutoRegistry) Count() int32 { return r.registry.Count() }
+
+// All returns all parameters in order.
+func (r *AutoRegistry) All() []*Parameter { return r.registry.All() }
+
 // Clear removes all parameters and resets the ID counter
 func (r *AutoRegistry) Clear() {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	r.registry.mu.Lock()
+	defer r.registry.mu.Unlock()
 
-	r.params = make(map[uint32]*Parameter)
-	r.order = make([]uint32, 0)
+	r.registry.params = make(map[uint32]*Parameter)
+	r.registry.order = make([]uint32, 0)
 	r.nameToID = make(map[string]uint32)
-	r.nextID.Store(0)
+	r.nextID = firstAutoID
 }
 
-// Reserve reserves a range of IDs for manual assignment
+// Reserve reserves a range of IDs for manual assignment and returns the first.
 func (r *AutoRegistry) Reserve(count uint32) uint32 {
-	return r.nextID.Add(count) - count
+	r.registry.mu.Lock()
+	defer r.registry.mu.Unlock()
+
+	first := r.nextID
+	r.nextID += count
+	return first
 }
 
-// Builder for fluent parameter registration
+// RegistryBuilder provides fluent parameter registration.
 type RegistryBuilder struct {
 	registry *AutoRegistry
 	errors   []error
@@ -158,10 +221,7 @@ func (b *RegistryBuilder) AddWithID(id uint32, param *Parameter) *RegistryBuilde
 
 // Build finalizes the registration and returns any errors
 func (b *RegistryBuilder) Build() error {
-	if len(b.errors) > 0 {
-		return fmt.Errorf("registration errors: %v", b.errors)
-	}
-	return nil
+	return errors.Join(b.errors...)
 }
 
 // Helper functions for common parameter groups
@@ -188,7 +248,10 @@ func (r *AutoRegistry) RegisterCompressorControls() error {
 			Default(2).
 			Formatter(func(v float64) string { return fmt.Sprintf("%.1f dB", v) }, nil).
 			Build()).
-		Add(BypassParameter(0, "Auto Gain").Build()).
+		Add(Choice(0, "Auto Gain", []ChoiceOption{
+			{Value: 0, Name: displayOff},
+			{Value: 1, Name: displayOn},
+		}).Build()).
 		Build()
 }
 
@@ -198,15 +261,18 @@ func (r *AutoRegistry) RegisterEQBand(bandNumber int) error {
 
 	filterTypes := []ChoiceOption{
 		{Value: 0, Name: "Bell"},
-		{Value: 1, Name: "Low Shelf"},
-		{Value: 2, Name: "High Shelf"},
+		{Value: 1, Name: filterNameLowShelf},
+		{Value: 2, Name: filterNameHighShelf},
 		{Value: 3, Name: "Low Pass"},
 		{Value: 4, Name: "High Pass"},
-		{Value: 5, Name: "Notch"},
+		{Value: 5, Name: filterNameNotch},
 	}
 
 	return NewRegistryBuilder(r).
-		Add(BypassParameter(0, prefix+" Enable").Build()).
+		Add(Choice(0, prefix+" Enable", []ChoiceOption{
+			{Value: 0, Name: displayOff},
+			{Value: 1, Name: displayOn},
+		}).Build()).
 		Add(FrequencyParameter(0, prefix+" Frequency", 20, 20000, 1000).Build()).
 		Add(GainParameter(0, prefix+" Gain").Build()).
 		Add(QParameter(0, prefix+" Q", 0.1, 10, 0.7).Build()).

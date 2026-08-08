@@ -24,7 +24,7 @@ func NewAudioBuffer(cBuffers *C.struct_Steinberg_Vst_AudioBusBuffers, numSamples
 	}
 
 	numChannels := int(cBuffers.numChannels)
-	if numChannels == 0 {
+	if numChannels <= 0 || numSamples < 0 {
 		return nil
 	}
 
@@ -35,13 +35,15 @@ func NewAudioBuffer(cBuffers *C.struct_Steinberg_Vst_AudioBusBuffers, numSamples
 	channelBuffers32 := C.getChannelBuffers32(cBuffers)
 
 	if channelBuffers32 != nil {
-		// Convert the double pointer to a slice of pointers
-		channelPtrs := (*[MaxArraySize]*C.Steinberg_Vst_Sample32)(unsafe.Pointer(channelBuffers32))[:numChannels:numChannels]
+		// unsafe.Slice rather than (*[MaxArraySize]T)(p)[:n:n]: the array-pointer
+		// form silently caps the length at MaxArraySize and panics outright once
+		// the host presents more elements than that.
+		channelPtrs := unsafe.Slice(channelBuffers32, numChannels)
 
 		for i := 0; i < numChannels; i++ {
 			if channelPtrs[i] != nil {
 				// Create a Go slice from the C buffer without copying
-				channelBuffers[i] = (*[MaxArraySize]float32)(unsafe.Pointer(channelPtrs[i]))[:numSamples:numSamples]
+				channelBuffers[i] = unsafe.Slice((*float32)(unsafe.Pointer(channelPtrs[i])), numSamples)
 			}
 		}
 	}
@@ -54,7 +56,7 @@ func NewAudioBuffer(cBuffers *C.struct_Steinberg_Vst_AudioBusBuffers, numSamples
 
 // GetChannel returns a specific channel's buffer
 func (b *AudioBuffer) GetChannel(index int) []float32 {
-	if index < 0 || index >= len(b.channelBuffers) {
+	if b == nil || index < 0 || index >= len(b.channelBuffers) {
 		return nil
 	}
 	return b.channelBuffers[index]
@@ -62,11 +64,17 @@ func (b *AudioBuffer) GetChannel(index int) []float32 {
 
 // NumChannels returns the number of channels
 func (b *AudioBuffer) NumChannels() int {
+	if b == nil {
+		return 0
+	}
 	return len(b.channelBuffers)
 }
 
 // NumSamples returns the number of samples per channel
 func (b *AudioBuffer) NumSamples() int32 {
+	if b == nil {
+		return 0
+	}
 	return b.numSamples
 }
 
@@ -131,36 +139,57 @@ func NewProcessContext(ctx *C.struct_Steinberg_Vst_ProcessContext) *ProcessConte
 
 // IsPlaying returns true if transport is playing
 func (c *ProcessContext) IsPlaying() bool {
+	if c == nil {
+		return false
+	}
 	return c.State&ProcessContextFlagPlaying != 0
 }
 
 // IsRecording returns true if transport is recording
 func (c *ProcessContext) IsRecording() bool {
+	if c == nil {
+		return false
+	}
 	return c.State&ProcessContextFlagRecording != 0
 }
 
 // IsCycleActive returns true if loop/cycle is active
 func (c *ProcessContext) IsCycleActive() bool {
+	if c == nil {
+		return false
+	}
 	return c.State&ProcessContextFlagCycleActive != 0
 }
 
 // HasTempo returns true if tempo information is valid
 func (c *ProcessContext) HasTempo() bool {
+	if c == nil {
+		return false
+	}
 	return c.State&ProcessContextFlagTempoValid != 0
 }
 
 // HasTimeSignature returns true if time signature information is valid
 func (c *ProcessContext) HasTimeSignature() bool {
+	if c == nil {
+		return false
+	}
 	return c.State&ProcessContextFlagTimeSigValid != 0
 }
 
 // HasBarPosition returns true if bar position information is valid
 func (c *ProcessContext) HasBarPosition() bool {
+	if c == nil {
+		return false
+	}
 	return c.State&ProcessContextFlagBarPositionValid != 0
 }
 
 // HasProjectTimeMusic returns true if musical time position is valid
 func (c *ProcessContext) HasProjectTimeMusic() bool {
+	if c == nil {
+		return false
+	}
 	return c.State&ProcessContextFlagProjectTimeValid != 0
 }
 
@@ -183,14 +212,20 @@ func NewProcessDataWrapper(dataPtr unsafe.Pointer) *ProcessDataWrapper {
 		ptr: data,
 	}
 
-	// Wrap input buffers
+	numSamples := int32(data.numSamples)
+	if numSamples < 0 {
+		numSamples = 0
+	}
+
+	// Wrap input buffers. unsafe.Slice replaces the (*[MaxArraySize]T)(p)[:n:n]
+	// idiom, which caps silently at MaxArraySize and panics beyond it.
 	if data.numInputs > 0 && data.inputs != nil {
 		numInputs := int(data.numInputs)
 		wrapper.inputBuffers = make([]*AudioBuffer, numInputs)
-		inputPtrs := (*[MaxArraySize]C.struct_Steinberg_Vst_AudioBusBuffers)(unsafe.Pointer(data.inputs))[:numInputs:numInputs]
+		inputPtrs := unsafe.Slice(data.inputs, numInputs)
 
 		for i := 0; i < numInputs; i++ {
-			wrapper.inputBuffers[i] = NewAudioBuffer(&inputPtrs[i], int32(data.numSamples))
+			wrapper.inputBuffers[i] = NewAudioBuffer(&inputPtrs[i], numSamples)
 		}
 	}
 
@@ -198,10 +233,10 @@ func NewProcessDataWrapper(dataPtr unsafe.Pointer) *ProcessDataWrapper {
 	if data.numOutputs > 0 && data.outputs != nil {
 		numOutputs := int(data.numOutputs)
 		wrapper.outputBuffers = make([]*AudioBuffer, numOutputs)
-		outputPtrs := (*[MaxArraySize]C.struct_Steinberg_Vst_AudioBusBuffers)(unsafe.Pointer(data.outputs))[:numOutputs:numOutputs]
+		outputPtrs := unsafe.Slice(data.outputs, numOutputs)
 
 		for i := 0; i < numOutputs; i++ {
-			wrapper.outputBuffers[i] = NewAudioBuffer(&outputPtrs[i], int32(data.numSamples))
+			wrapper.outputBuffers[i] = NewAudioBuffer(&outputPtrs[i], numSamples)
 		}
 	}
 
@@ -215,7 +250,7 @@ func NewProcessDataWrapper(dataPtr unsafe.Pointer) *ProcessDataWrapper {
 
 // GetInput returns an input buffer by index
 func (w *ProcessDataWrapper) GetInput(index int) *AudioBuffer {
-	if index < 0 || index >= len(w.inputBuffers) {
+	if w == nil || index < 0 || index >= len(w.inputBuffers) {
 		return nil
 	}
 	return w.inputBuffers[index]
@@ -223,7 +258,7 @@ func (w *ProcessDataWrapper) GetInput(index int) *AudioBuffer {
 
 // GetOutput returns an output buffer by index
 func (w *ProcessDataWrapper) GetOutput(index int) *AudioBuffer {
-	if index < 0 || index >= len(w.outputBuffers) {
+	if w == nil || index < 0 || index >= len(w.outputBuffers) {
 		return nil
 	}
 	return w.outputBuffers[index]
@@ -231,10 +266,16 @@ func (w *ProcessDataWrapper) GetOutput(index int) *AudioBuffer {
 
 // NumSamples returns the number of samples to process
 func (w *ProcessDataWrapper) NumSamples() int32 {
+	if w == nil || w.ptr == nil {
+		return 0
+	}
 	return int32(w.ptr.numSamples)
 }
 
 // GetContext returns the process context
 func (w *ProcessDataWrapper) GetContext() *ProcessContext {
+	if w == nil {
+		return nil
+	}
 	return w.context
 }

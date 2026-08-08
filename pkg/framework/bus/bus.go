@@ -1,7 +1,10 @@
 // Package bus provides VST3 audio bus configuration and management.
 package bus
 
-import "fmt"
+import (
+	"fmt"
+	"sync/atomic"
+)
 
 // MediaType represents the type of bus
 type MediaType int32
@@ -33,14 +36,72 @@ const (
 	TypeAux Type = 1
 )
 
-// Info contains bus configuration
+// Info contains bus configuration.
+//
+// The host activates and deactivates buses from its UI/main thread while the
+// audio thread reads the activation state, so the flag lives in a shared atomic
+// that survives copying an Info by value. Everything else in an Info is
+// immutable once the Configuration has been built.
 type Info struct {
 	MediaType    MediaType
 	Direction    Direction
 	ChannelCount int32
 	Name         string
 	BusType      Type
-	IsActive     bool
+
+	// IsActive is a snapshot of the activation state taken when this Info was
+	// handed out. It stays valid for descriptive use (filling in a VST3
+	// BusInfo, tests, logging); call Active for the live value.
+	IsActive bool
+
+	// active is the authoritative activation flag, shared by every copy of this
+	// Info. It is nil for Info values constructed outside this package, in
+	// which case Active falls back to IsActive.
+	active *atomic.Bool
+}
+
+// newInfo builds an Info with its shared activation flag initialized. Every
+// Info stored in a Configuration must go through here, otherwise Active has no
+// live value to read.
+func newInfo(mediaType MediaType, direction Direction, channelCount int32, name string, busType Type, active bool) Info {
+	info := Info{
+		MediaType:    mediaType,
+		Direction:    direction,
+		ChannelCount: channelCount,
+		Name:         name,
+		BusType:      busType,
+		IsActive:     active,
+		active:       new(atomic.Bool),
+	}
+	info.active.Store(active)
+	return info
+}
+
+// Active reports the current activation state. It is safe to call from the
+// audio thread while the host toggles the bus from another thread.
+func (i *Info) Active() bool {
+	if i.active != nil {
+		return i.active.Load()
+	}
+	return i.IsActive
+}
+
+// setActive publishes a new activation state to every copy of this Info.
+func (i *Info) setActive(active bool) {
+	if i.active != nil {
+		i.active.Store(active)
+		return
+	}
+	i.IsActive = active
+}
+
+// snapshot returns a detached copy with IsActive refreshed from the shared
+// flag. Callers get a value that cannot be invalidated by a later append to the
+// Configuration's bus slices, while still sharing the activation atomic.
+func (i *Info) snapshot() Info {
+	out := *i
+	out.IsActive = i.Active()
+	return out
 }
 
 // Configuration manages audio and event buses
@@ -53,22 +114,8 @@ type Configuration struct {
 func Stereo() *Configuration {
 	return &Configuration{
 		audioBuses: []Info{
-			{
-				MediaType:    MediaTypeAudio,
-				Direction:    DirectionInput,
-				ChannelCount: 2,
-				Name:         "Stereo In",
-				BusType:      TypeMain,
-				IsActive:     true,
-			},
-			{
-				MediaType:    MediaTypeAudio,
-				Direction:    DirectionOutput,
-				ChannelCount: 2,
-				Name:         "Stereo Out",
-				BusType:      TypeMain,
-				IsActive:     true,
-			},
+			newInfo(MediaTypeAudio, DirectionInput, 2, "Stereo In", TypeMain, true),
+			newInfo(MediaTypeAudio, DirectionOutput, 2, "Stereo Out", TypeMain, true),
 		},
 	}
 }
@@ -77,22 +124,8 @@ func Stereo() *Configuration {
 func Mono() *Configuration {
 	return &Configuration{
 		audioBuses: []Info{
-			{
-				MediaType:    MediaTypeAudio,
-				Direction:    DirectionInput,
-				ChannelCount: 1,
-				Name:         "Mono In",
-				BusType:      TypeMain,
-				IsActive:     true,
-			},
-			{
-				MediaType:    MediaTypeAudio,
-				Direction:    DirectionOutput,
-				ChannelCount: 1,
-				Name:         "Mono Out",
-				BusType:      TypeMain,
-				IsActive:     true,
-			},
+			newInfo(MediaTypeAudio, DirectionInput, 1, "Mono In", TypeMain, true),
+			newInfo(MediaTypeAudio, DirectionOutput, 1, "Mono Out", TypeMain, true),
 		},
 	}
 }
@@ -111,17 +144,21 @@ func NewMonoConfiguration() *Configuration {
 	return Mono()
 }
 
+// busesFor returns the slice backing the given media type.
+func (c *Configuration) busesFor(mediaType MediaType) []Info {
+	if mediaType == MediaTypeEvent {
+		return c.eventBuses
+	}
+	return c.audioBuses
+}
+
 // GetBusCount returns the number of buses for a given type and direction
 func (c *Configuration) GetBusCount(mediaType MediaType, direction Direction) int32 {
 	count := int32(0)
+	buses := c.busesFor(mediaType)
 
-	buses := c.audioBuses
-	if mediaType == MediaTypeEvent {
-		buses = c.eventBuses
-	}
-
-	for _, bus := range buses {
-		if bus.Direction == direction {
+	for i := range buses {
+		if buses[i].Direction == direction {
 			count++
 		}
 	}
@@ -129,18 +166,19 @@ func (c *Configuration) GetBusCount(mediaType MediaType, direction Direction) in
 	return count
 }
 
-// GetBusInfo returns information about a specific bus
+// GetBusInfo returns information about a specific bus, or nil if it does not
+// exist. The returned Info is a copy: adding buses later reallocates the
+// internal slices, so a pointer into them would go stale. Mutating the copy
+// does not affect the Configuration.
 func (c *Configuration) GetBusInfo(mediaType MediaType, direction Direction, index int32) *Info {
-	buses := c.audioBuses
-	if mediaType == MediaTypeEvent {
-		buses = c.eventBuses
-	}
+	buses := c.busesFor(mediaType)
 
 	busIndex := int32(0)
 	for i := range buses {
 		if buses[i].Direction == direction {
 			if busIndex == index {
-				return &buses[i]
+				info := buses[i].snapshot()
+				return &info
 			}
 			busIndex++
 		}
@@ -151,43 +189,34 @@ func (c *Configuration) GetBusInfo(mediaType MediaType, direction Direction, ind
 
 // AddEventBus adds an event bus (for MIDI input)
 func (c *Configuration) AddEventBus(direction Direction, name string) {
-	c.eventBuses = append(c.eventBuses, Info{
-		MediaType:    MediaTypeEvent,
-		Direction:    direction,
-		ChannelCount: 1,
-		Name:         name,
-		BusType:      TypeMain,
-		IsActive:     true,
-	})
+	c.eventBuses = append(c.eventBuses, newInfo(MediaTypeEvent, direction, 1, name, TypeMain, true))
 }
 
-// SetBusActive activates or deactivates a specific bus
+// SetBusActive activates or deactivates a specific bus. It is safe to call
+// while the audio thread reads the activation state through Info.Active.
 func (c *Configuration) SetBusActive(mediaType MediaType, direction Direction, index int32, active bool) error {
-	buses := c.audioBuses
-	if mediaType == MediaTypeEvent {
-		buses = c.eventBuses
-	}
+	buses := c.busesFor(mediaType)
 
 	busIndex := int32(0)
 	for i := range buses {
 		if buses[i].Direction == direction {
 			if busIndex == index {
-				buses[i].IsActive = active
+				buses[i].setActive(active)
 				return nil
 			}
 			busIndex++
 		}
 	}
 
-	return fmt.Errorf("bus not found: mediaType=%d, direction=%d, index=%d", mediaType, direction, index)
+	return fmt.Errorf("%w: mediaType=%d, direction=%d, index=%d", ErrBusNotFound, mediaType, direction, index)
 }
 
 // GetActiveInputChannelCount returns the total number of active input channels
 func (c *Configuration) GetActiveInputChannelCount() int32 {
 	count := int32(0)
-	for _, bus := range c.audioBuses {
-		if bus.Direction == DirectionInput && bus.IsActive {
-			count += bus.ChannelCount
+	for i := range c.audioBuses {
+		if c.audioBuses[i].Direction == DirectionInput && c.audioBuses[i].Active() {
+			count += c.audioBuses[i].ChannelCount
 		}
 	}
 	return count
@@ -196,25 +225,22 @@ func (c *Configuration) GetActiveInputChannelCount() int32 {
 // GetActiveOutputChannelCount returns the total number of active output channels
 func (c *Configuration) GetActiveOutputChannelCount() int32 {
 	count := int32(0)
-	for _, bus := range c.audioBuses {
-		if bus.Direction == DirectionOutput && bus.IsActive {
-			count += bus.ChannelCount
+	for i := range c.audioBuses {
+		if c.audioBuses[i].Direction == DirectionOutput && c.audioBuses[i].Active() {
+			count += c.audioBuses[i].ChannelCount
 		}
 	}
 	return count
 }
 
-// GetActiveBuses returns all active buses of a given type and direction
+// GetActiveBuses returns copies of all active buses of a given type and direction
 func (c *Configuration) GetActiveBuses(mediaType MediaType, direction Direction) []Info {
-	buses := c.audioBuses
-	if mediaType == MediaTypeEvent {
-		buses = c.eventBuses
-	}
+	buses := c.busesFor(mediaType)
 
 	var active []Info
-	for _, bus := range buses {
-		if bus.Direction == direction && bus.IsActive {
-			active = append(active, bus)
+	for i := range buses {
+		if buses[i].Direction == direction && buses[i].Active() {
+			active = append(active, buses[i].snapshot())
 		}
 	}
 	return active
@@ -222,19 +248,21 @@ func (c *Configuration) GetActiveBuses(mediaType MediaType, direction Direction)
 
 // HasSidechain returns true if the configuration has a sidechain input
 func (c *Configuration) HasSidechain() bool {
-	for _, bus := range c.audioBuses {
-		if bus.Direction == DirectionInput && bus.BusType == TypeAux {
+	for i := range c.audioBuses {
+		if c.audioBuses[i].Direction == DirectionInput && c.audioBuses[i].BusType == TypeAux {
 			return true
 		}
 	}
 	return false
 }
 
-// GetSidechainBus returns the first sidechain (aux input) bus if it exists
+// GetSidechainBus returns a copy of the first sidechain (aux input) bus if it
+// exists. As with GetBusInfo the copy is detached from the internal slice.
 func (c *Configuration) GetSidechainBus() *Info {
-	for i, bus := range c.audioBuses {
-		if bus.Direction == DirectionInput && bus.BusType == TypeAux {
-			return &c.audioBuses[i]
+	for i := range c.audioBuses {
+		if c.audioBuses[i].Direction == DirectionInput && c.audioBuses[i].BusType == TypeAux {
+			info := c.audioBuses[i].snapshot()
+			return &info
 		}
 	}
 	return nil

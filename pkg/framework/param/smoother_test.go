@@ -136,7 +136,7 @@ func TestSmoothedParameter(t *testing.T) {
 		// Should smooth towards the new value
 		prev := 0.5
 		for i := 0; i < 10; i++ {
-			value := smoothed.GetSmoothedValue()
+			value := smoothed.Advance()
 			if value <= prev {
 				t.Error("Value should be increasing")
 			}
@@ -164,7 +164,7 @@ func TestSmoothedParameter(t *testing.T) {
 		smoothed.SetValue(1.0)
 
 		// Should jump immediately
-		if smoothed.GetSmoothedValue() != 1.0 {
+		if smoothed.Advance() != 1.0 {
 			t.Error("Should not smooth when disabled")
 		}
 	})
@@ -189,8 +189,8 @@ func TestSmoothedParameter(t *testing.T) {
 		smoothed.UpdateSampleRate(48000, 20) // 20ms at 48kHz
 
 		// Should have updated the rate
-		if smoothed.smoother.rate != 960 { // 48000 * 20 / 1000
-			t.Errorf("Expected rate 960, got %f", smoothed.smoother.rate)
+		if smoothed.smoother.Rate() != 960 { // 48000 * 20 / 1000
+			t.Errorf("Expected rate 960, got %f", smoothed.smoother.Rate())
 		}
 	})
 }
@@ -227,8 +227,8 @@ func TestParameterSmoother(t *testing.T) {
 		ps.SetValue(2, 1.0)
 
 		// Get smoothed values
-		val1 := ps.GetSmoothed(1)
-		val2 := ps.GetSmoothed(2)
+		val1 := ps.Advance(1)
+		val2 := ps.Advance(2)
 
 		// For linear smoothing with 5 steps, first value should be 0.2
 		if val1 <= 0.0 || val1 >= 0.3 {
@@ -256,7 +256,7 @@ func TestParameterSmoother(t *testing.T) {
 		ps.SetSmoothing(1, false)
 
 		ps.SetValue(1, 1.0)
-		if ps.GetSmoothed(1) != 1.0 {
+		if ps.Advance(1) != 1.0 {
 			t.Error("Should not smooth when disabled")
 		}
 	})
@@ -305,4 +305,175 @@ func BenchmarkSmoother(b *testing.B) {
 			})
 		}
 	})
+}
+
+func TestSmootherDegenerateRateDoesNotHang(t *testing.T) {
+	tests := []struct {
+		name          string
+		smoothingType SmoothingType
+		rate          float64
+		start, target float64
+	}{
+		{"linear zero rate", LinearSmoothing, 0, 0, 1},
+		{"linear negative rate", LinearSmoothing, -5, 0, 1},
+		{"logarithmic zero rate", LogarithmicSmoothing, 0, 100, 1000},
+		{"exponential pole one", ExponentialSmoothing, 1, 0, 1},
+		{"exponential negative pole", ExponentialSmoothing, -1, 0, 1},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := NewSmoother(tt.smoothingType, tt.rate)
+			s.Reset(tt.start)
+			s.SetTarget(tt.target)
+
+			// A degenerate rate must snap instead of ramping forever.
+			if got := s.Next(); got != tt.target {
+				t.Errorf("Next() = %v, want %v", got, tt.target)
+			}
+			if s.IsSmoothing() {
+				t.Error("smoother stuck in an infinite ramp")
+			}
+		})
+	}
+}
+
+func TestSmootherUpdateSampleRateZeroTime(t *testing.T) {
+	p := &Parameter{Min: 0, Max: 1}
+	p.SetValue(0)
+
+	sp := NewSmoothedParameter(p, LinearSmoothing, 10)
+	sp.UpdateSampleRate(48000, 0) // rate becomes 0
+	sp.SetValue(1.0)
+
+	if got := sp.Advance(); got != 1.0 {
+		t.Errorf("Advance() = %v, want 1.0", got)
+	}
+	if sp.Smoother().IsSmoothing() {
+		t.Error("smoother stuck after a zero-length ramp")
+	}
+}
+
+func TestSmootherUpdateSampleRateLogarithmic(t *testing.T) {
+	p := &Parameter{Min: 20, Max: 20000}
+	p.SetPlain(100)
+
+	sp := NewSmoothedParameter(p, LogarithmicSmoothing, 10)
+	sp.UpdateSampleRate(48000, 20)
+
+	if got := sp.Smoother().Rate(); got != 960 {
+		t.Errorf("Rate() = %v, want 960", got)
+	}
+}
+
+func TestSmootherLogarithmicNonPositiveRange(t *testing.T) {
+	// dB gain and pan ranges include zero and negatives, where log
+	// interpolation is undefined; the ramp must fall back to linear.
+	s := NewSmoother(LogarithmicSmoothing, 4)
+	s.Reset(-1.0)
+	s.SetTarget(1.0)
+
+	want := []float64{-0.5, 0, 0.5, 1.0}
+	for i, w := range want {
+		if got := s.Next(); math.Abs(got-w) > 1e-9 {
+			t.Fatalf("sample %d: Next() = %v, want %v", i, got, w)
+		}
+	}
+	if s.IsSmoothing() {
+		t.Error("ramp should be complete")
+	}
+}
+
+func TestSmootherRejectsNonFiniteTarget(t *testing.T) {
+	s := NewSmoother(LinearSmoothing, 10)
+	s.Reset(0.5)
+
+	for _, v := range []float64{math.NaN(), math.Inf(1), math.Inf(-1)} {
+		s.SetTarget(v)
+		if got := s.Next(); got != 0.5 {
+			t.Errorf("SetTarget(%v) poisoned the smoother: %v", v, got)
+		}
+	}
+}
+
+func TestSmootherConcurrentRetarget(t *testing.T) {
+	// The audio thread must be able to advance while the UI thread retargets.
+	s := NewSmoother(LinearSmoothing, 32)
+	s.Reset(0)
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for i := 0; i < 10000; i++ {
+			s.SetTarget(float64(i % 2))
+		}
+	}()
+
+	for i := 0; i < 10000; i++ {
+		if v := s.Next(); v < -0.001 || v > 1.001 {
+			t.Errorf("smoothed value out of range: %v", v)
+			break
+		}
+	}
+	<-done
+}
+
+func TestSmootherAdvanceDoesNotAllocate(t *testing.T) {
+	p := &Parameter{Min: 0, Max: 1}
+	p.SetValue(0)
+	p.EnableSmoothing(LinearSmoothing, 1024)
+	p.SetValue(1.0)
+
+	allocs := testing.AllocsPerRun(1000, func() {
+		p.Advance()
+	})
+
+	if allocs != 0 {
+		t.Fatalf("expected zero allocations per sample, got %f", allocs)
+	}
+}
+
+func TestParameterSmootherAdvanceIsExplicit(t *testing.T) {
+	ps := NewParameterSmoother()
+
+	p := &Parameter{Min: 0, Max: 1}
+	p.SetValue(0)
+	ps.Add(1, p, LinearSmoothing, 4)
+	ps.SetValue(1, 1.0)
+
+	// Value must be a pure read, no matter how often it is called.
+	if got := ps.Value(1); got != 0 {
+		t.Errorf("Value() = %v before any advance, want 0", got)
+	}
+	if got := ps.Value(1); got != 0 {
+		t.Errorf("Value() advanced the ramp: %v", got)
+	}
+
+	ps.AdvanceAll()
+	if got := ps.Value(1); math.Abs(got-0.25) > 1e-9 {
+		t.Errorf("Value() = %v after one advance, want 0.25", got)
+	}
+
+	ps.AdvanceAll()
+	if got := ps.Value(1); math.Abs(got-0.5) > 1e-9 {
+		t.Errorf("Value() = %v after two advances, want 0.5", got)
+	}
+}
+
+func TestParameterSmootherAdvanceAllDoesNotAllocate(t *testing.T) {
+	ps := NewParameterSmoother()
+	for id := uint32(1); id <= 8; id++ {
+		p := &Parameter{Min: 0, Max: 1}
+		p.SetValue(0)
+		ps.Add(id, p, LinearSmoothing, 4096)
+		ps.SetValue(id, 1.0)
+	}
+
+	allocs := testing.AllocsPerRun(1000, func() {
+		ps.AdvanceAll()
+	})
+
+	if allocs != 0 {
+		t.Fatalf("expected zero allocations per sample, got %f", allocs)
+	}
 }

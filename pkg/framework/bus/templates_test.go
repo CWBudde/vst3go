@@ -1,6 +1,7 @@
 package bus
 
 import (
+	"errors"
 	"testing"
 )
 
@@ -86,7 +87,10 @@ func TestTemplates(t *testing.T) {
 }
 
 func TestMixerChannel(t *testing.T) {
-	config := NewMixerChannel(4)
+	config, err := NewMixerChannel(4)
+	if err != nil {
+		t.Fatalf("NewMixerChannel(4) failed: %v", err)
+	}
 
 	// Should have 1 input, 5 outputs (main + 4 sends)
 	if config.GetBusCount(MediaTypeAudio, DirectionInput) != 1 {
@@ -159,7 +163,10 @@ func TestSurroundConfigs(t *testing.T) {
 
 func TestSpecialTemplates(t *testing.T) {
 	t.Run("Crossover", func(t *testing.T) {
-		config := NewCrossover(3)
+		config, err := NewCrossover(3)
+		if err != nil {
+			t.Fatalf("NewCrossover(3) failed: %v", err)
+		}
 
 		// 1 input, 4 outputs (3 bands + main)
 		if config.GetBusCount(MediaTypeAudio, DirectionOutput) != 4 {
@@ -182,7 +189,10 @@ func TestSpecialTemplates(t *testing.T) {
 	})
 
 	t.Run("Splitter", func(t *testing.T) {
-		config := NewSplitter(3)
+		config, err := NewSplitter(3)
+		if err != nil {
+			t.Fatalf("NewSplitter(3) failed: %v", err)
+		}
 
 		if config.GetBusCount(MediaTypeAudio, DirectionInput) != 1 {
 			t.Error("Expected 1 input")
@@ -222,7 +232,10 @@ func TestSpecialTemplates(t *testing.T) {
 	})
 
 	t.Run("MultiChannelEffect", func(t *testing.T) {
-		config := NewMultiChannelEffect(12)
+		config, err := NewMultiChannelEffect(12)
+		if err != nil {
+			t.Fatalf("NewMultiChannelEffect(12) failed: %v", err)
+		}
 
 		in := config.GetBusInfo(MediaTypeAudio, DirectionInput, 0)
 		out := config.GetBusInfo(MediaTypeAudio, DirectionOutput, 0)
@@ -234,4 +247,72 @@ func TestSpecialTemplates(t *testing.T) {
 			t.Errorf("Expected 12 output channels, got %d", out.ChannelCount)
 		}
 	})
+}
+
+// Templates that take a caller-supplied count must report bad input as an
+// error instead of panicking out of the library.
+func TestParameterizedTemplatesReturnErrors(t *testing.T) {
+	tests := []struct {
+		name    string
+		build   func() (*Configuration, error)
+		wantErr error
+	}{
+		{
+			name:    "multi-channel zero channels",
+			build:   func() (*Configuration, error) { return NewMultiChannelEffect(0) },
+			wantErr: ErrInvalidChannelCount,
+		},
+		{
+			name:    "multi-channel negative channels",
+			build:   func() (*Configuration, error) { return NewMultiChannelEffect(-4) },
+			wantErr: ErrInvalidChannelCount,
+		},
+		{
+			name:    "multi-channel above maximum",
+			build:   func() (*Configuration, error) { return NewMultiChannelEffect(MaxChannelsPerBus + 1) },
+			wantErr: ErrChannelCountTooHigh,
+		},
+		{
+			name:    "splitter without outputs",
+			build:   func() (*Configuration, error) { return NewSplitter(0) },
+			wantErr: ErrNoMainOutputBus,
+		},
+		{
+			name:  "multi-channel at maximum",
+			build: func() (*Configuration, error) { return NewMultiChannelEffect(MaxChannelsPerBus) },
+		},
+		{
+			name:  "mixer without sends",
+			build: func() (*Configuration, error) { return NewMixerChannel(0) },
+		},
+		{
+			name:  "crossover without bands",
+			build: func() (*Configuration, error) { return NewCrossover(0) },
+		},
+		{
+			name:  "splitter with one output",
+			build: func() (*Configuration, error) { return NewSplitter(1) },
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config, err := tt.build()
+			if tt.wantErr != nil {
+				if !errors.Is(err, tt.wantErr) {
+					t.Fatalf("expected %v, got %v", tt.wantErr, err)
+				}
+				if config != nil {
+					t.Error("expected nil configuration on error")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if config == nil {
+				t.Fatal("expected a configuration")
+			}
+		})
+	}
 }

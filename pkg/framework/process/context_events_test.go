@@ -164,3 +164,35 @@ func TestContextParameterAccessorsHandleMissingParameters(t *testing.T) {
 		t.Fatalf("ParamPlain(999) = %f, want 0", got)
 	}
 }
+
+// HasInputEvents used to build a full copy of the block's events just to test
+// emptiness, which allocates on the audio thread.
+func TestHasInputEventsDoesNotAllocate(t *testing.T) {
+	ctx := NewContext(512, param.NewRegistry())
+	ctx.Input = [][]float32{make([]float32, 512)}
+
+	for i := 0; i < 16; i++ {
+		ctx.AddInputEvent(midi.NoteOnEvent{
+			BaseEvent:  midi.BaseEvent{Offset: int32(i * 8)},
+			NoteNumber: 60,
+			Velocity:   100,
+		})
+	}
+
+	if !ctx.HasInputEvents() {
+		t.Fatal("expected input events")
+	}
+
+	if allocs := testing.AllocsPerRun(100, func() {
+		_ = ctx.HasInputEvents()
+	}); allocs != 0 {
+		t.Fatalf("expected zero allocations, got %f", allocs)
+	}
+
+	ctx.ClearInputEvents()
+	if allocs := testing.AllocsPerRun(100, func() {
+		_ = ctx.HasInputEvents()
+	}); allocs != 0 {
+		t.Fatalf("expected zero allocations when empty, got %f", allocs)
+	}
+}

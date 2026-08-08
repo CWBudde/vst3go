@@ -1,6 +1,8 @@
 package midi
 
 import (
+	"errors"
+	"sync"
 	"testing"
 )
 
@@ -122,7 +124,9 @@ func TestOffsetEvents(t *testing.T) {
 	q.Add(PitchBendEvent{BaseEvent: BaseEvent{Offset: 150}, Value: 1000})
 
 	// Offset all events by 100
-	q.OffsetEvents(100)
+	if err := q.OffsetEvents(100); err != nil {
+		t.Fatalf("OffsetEvents() error = %v", err)
+	}
 
 	events := q.GetAllEvents()
 	expectedOffsets := []int32{150, 200, 250, 300} // Sorted order
@@ -228,5 +232,288 @@ func TestConcurrentAccess(t *testing.T) {
 	// Verify final state
 	if q.Size() != 100 {
 		t.Errorf("Expected 100 events, got %d", q.Size())
+	}
+}
+
+func TestGetEventsInRangeIsHalfOpen(t *testing.T) {
+	q := NewEventQueue()
+	for _, off := range []int32{0, 64, 128, 192} {
+		q.Add(NoteOnEvent{BaseEvent: BaseEvent{Offset: off}, NoteNumber: 60, Velocity: 100})
+	}
+
+	tests := []struct {
+		name    string
+		start   int32
+		end     int32
+		offsets []int32
+	}{
+		{"start bound is inclusive", 64, 128, []int32{64}},
+		{"end bound is exclusive", 0, 128, []int32{0, 64}},
+		{"empty range on an event", 64, 64, nil},
+		{"single event window", 128, 129, []int32{128}},
+		{"past the end", 192, 1000, []int32{192}},
+		{"inverted range", 128, 0, nil},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := q.GetEventsInRange(tt.start, tt.end)
+			if len(got) != len(tt.offsets) {
+				t.Fatalf("GetEventsInRange(%d, %d) returned %d events, want %d",
+					tt.start, tt.end, len(got), len(tt.offsets))
+			}
+			for i, want := range tt.offsets {
+				if got[i].SampleOffset() != want {
+					t.Errorf("event %d offset = %d, want %d", i, got[i].SampleOffset(), want)
+				}
+			}
+		})
+	}
+}
+
+// A chunk boundary event must survive RemoveProcessedEvents: GetEventsInRange is
+// half-open, so an event at exactly the boundary has not been delivered yet.
+func TestRemoveProcessedEventsBoundaryIsExclusive(t *testing.T) {
+	const boundary int32 = 128
+
+	tests := []struct {
+		name     string
+		upTo     int32
+		inputs   []int32
+		expected []int32
+	}{
+		{"keeps event exactly on the boundary", boundary, []int32{0, 127, 128, 129}, []int32{128, 129}},
+		{"removes nothing before the first event", 0, []int32{0, 64}, []int32{0, 64}},
+		{"removes everything below the bound", 200, []int32{0, 64, 128}, nil},
+		{"duplicate offsets on the boundary all survive", boundary, []int32{128, 128, 64}, []int32{128, 128}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			q := NewEventQueue()
+			for _, off := range tt.inputs {
+				q.Add(NoteOnEvent{BaseEvent: BaseEvent{Offset: off}, NoteNumber: 60, Velocity: 100})
+			}
+
+			q.RemoveProcessedEvents(tt.upTo)
+
+			remaining := q.GetAllEvents()
+			if len(remaining) != len(tt.expected) {
+				t.Fatalf("after RemoveProcessedEvents(%d): %d events remain, want %d",
+					tt.upTo, len(remaining), len(tt.expected))
+			}
+			for i, want := range tt.expected {
+				if remaining[i].SampleOffset() != want {
+					t.Errorf("remaining event %d offset = %d, want %d", i, remaining[i].SampleOffset(), want)
+				}
+			}
+		})
+	}
+}
+
+// A block processed as chunks [0,128) then [128,256) must deliver each event
+// exactly once, which only holds if both bounds use the same convention.
+func TestChunkedDeliveryLosesNoEvent(t *testing.T) {
+	q := NewEventQueue()
+	offsets := []int32{0, 127, 128, 129, 255}
+	for _, off := range offsets {
+		q.Add(NoteOnEvent{BaseEvent: BaseEvent{Offset: off}, NoteNumber: 60, Velocity: 100})
+	}
+
+	var delivered []int32
+	for start := int32(0); start < 256; start += 128 {
+		for _, e := range q.GetEventsInRange(start, start+128) {
+			delivered = append(delivered, e.SampleOffset())
+		}
+		q.RemoveProcessedEvents(start + 128)
+	}
+
+	if len(delivered) != len(offsets) {
+		t.Fatalf("delivered %v, want %v", delivered, offsets)
+	}
+	for i, want := range offsets {
+		if delivered[i] != want {
+			t.Fatalf("delivered %v, want %v", delivered, offsets)
+		}
+	}
+	if !q.IsEmpty() {
+		t.Errorf("queue not drained, %d events remain", q.Size())
+	}
+}
+
+func TestAppendEventsInRange(t *testing.T) {
+	q := NewEventQueue()
+	for _, off := range []int32{10, 20, 30, 40} {
+		q.Add(NoteOnEvent{BaseEvent: BaseEvent{Offset: off}, NoteNumber: 60, Velocity: 100})
+	}
+
+	dst := make([]Event, 0, 8)
+	dst = q.AppendEventsInRange(dst, 20, 40)
+	if len(dst) != 2 || dst[0].SampleOffset() != 20 || dst[1].SampleOffset() != 30 {
+		t.Fatalf("AppendEventsInRange = %v, want events at 20 and 30", dst)
+	}
+
+	// Appending again must extend rather than replace.
+	dst = q.AppendEventsInRange(dst, 40, 50)
+	if len(dst) != 3 || dst[2].SampleOffset() != 40 {
+		t.Fatalf("second AppendEventsInRange = %v, want a third event at 40", dst)
+	}
+
+	all := q.AppendAllEvents(dst[:0])
+	if len(all) != 4 {
+		t.Fatalf("AppendAllEvents returned %d events, want 4", len(all))
+	}
+}
+
+func TestAppendEventsInRangeDoesNotAllocate(t *testing.T) {
+	q := NewEventQueue()
+	for i := int32(0); i < 32; i++ {
+		q.Add(NoteOnEvent{BaseEvent: BaseEvent{Offset: i * 8}, NoteNumber: 60, Velocity: 100})
+	}
+
+	dst := make([]Event, 0, 64)
+	dst = q.AppendEventsInRange(dst, 0, 256) // warm up
+
+	allocs := testing.AllocsPerRun(100, func() {
+		dst = q.AppendEventsInRange(dst[:0], 0, 256)
+	})
+	if allocs != 0 {
+		t.Fatalf("AppendEventsInRange allocated %f times, want 0", allocs)
+	}
+
+	allocs = testing.AllocsPerRun(100, func() {
+		dst = q.AppendAllEvents(dst[:0])
+	})
+	if allocs != 0 {
+		t.Fatalf("AppendAllEvents allocated %f times, want 0", allocs)
+	}
+}
+
+func TestOffsetEventsCoversEveryEventType(t *testing.T) {
+	events := []Event{
+		NoteOnEvent{BaseEvent: BaseEvent{Offset: 1}},
+		NoteOffEvent{BaseEvent: BaseEvent{Offset: 2}},
+		ControlChangeEvent{BaseEvent: BaseEvent{Offset: 3}},
+		PitchBendEvent{BaseEvent: BaseEvent{Offset: 4}},
+		PolyPressureEvent{BaseEvent: BaseEvent{Offset: 5}},
+		ChannelPressureEvent{BaseEvent: BaseEvent{Offset: 6}},
+		ProgramChangeEvent{BaseEvent: BaseEvent{Offset: 7}},
+		SystemExclusiveEvent{BaseEvent: BaseEvent{Offset: 8}},
+		ClockEvent{BaseEvent: BaseEvent{Offset: 9}},
+		StartEvent{BaseEvent: BaseEvent{Offset: 10}},
+		StopEvent{BaseEvent: BaseEvent{Offset: 11}},
+		ContinueEvent{BaseEvent: BaseEvent{Offset: 12}},
+		ResetEvent{BaseEvent: BaseEvent{Offset: 13}},
+		ActiveSensingEvent{BaseEvent: BaseEvent{Offset: 14}},
+	}
+
+	q := NewEventQueue()
+	q.AddMultiple(events)
+
+	const delta int32 = 1000
+	if err := q.OffsetEvents(delta); err != nil {
+		t.Fatalf("OffsetEvents() error = %v", err)
+	}
+
+	got := q.GetAllEvents()
+	if len(got) != len(events) {
+		t.Fatalf("got %d events, want %d", len(got), len(events))
+	}
+	for i, e := range got {
+		want := events[i].SampleOffset() + delta
+		if e.SampleOffset() != want {
+			t.Errorf("%T offset = %d, want %d", e, e.SampleOffset(), want)
+		}
+		if e.Type() != events[i].Type() {
+			t.Errorf("event %d type changed from %v to %v", i, events[i].Type(), e.Type())
+		}
+	}
+}
+
+// foreignEvent is an Event implementation from outside this package; it cannot be
+// time-shifted and must be reported rather than silently left in place.
+type foreignEvent struct{}
+
+func (foreignEvent) Type() EventType     { return EventTypeNoteOn }
+func (foreignEvent) Channel() uint8      { return 0 }
+func (foreignEvent) SampleOffset() int32 { return 0 }
+func (foreignEvent) String() string      { return "foreign" }
+
+func TestOffsetEventsRejectsUnshiftableEvent(t *testing.T) {
+	q := NewEventQueue()
+	q.Add(foreignEvent{})
+
+	if err := q.OffsetEvents(10); !errors.Is(err, ErrUnshiftableEvent) {
+		t.Fatalf("OffsetEvents() error = %v, want ErrUnshiftableEvent", err)
+	}
+}
+
+// TestEventQueueRace hammers the queue from a writer and a reader to catch the
+// read-lock upgrade that used to drop the lock mid-read. Run with -race.
+func TestEventQueueRace(t *testing.T) {
+	q := NewEventQueue()
+
+	const iterations = 2000
+	var wg sync.WaitGroup
+	wg.Add(3)
+
+	// Writer: deliberately interleaves ascending and descending offsets so the
+	// ordering invariant is exercised, not just the append fast path.
+	go func() {
+		defer wg.Done()
+		for i := 0; i < iterations; i++ {
+			q.Add(NoteOnEvent{BaseEvent: BaseEvent{Offset: int32(i % 512)}, NoteNumber: 60, Velocity: 100})
+			q.AddMultiple([]Event{
+				ControlChangeEvent{BaseEvent: BaseEvent{Offset: int32(511 - i%512)}, Controller: CCVolume},
+			})
+		}
+	}()
+
+	// Reader: both the allocating and the append-based read paths.
+	go func() {
+		defer wg.Done()
+		buf := make([]Event, 0, 1024)
+		for i := 0; i < iterations; i++ {
+			prev := int32(-1)
+			for _, e := range q.GetEventsInRange(0, 512) {
+				if e.SampleOffset() < prev {
+					t.Errorf("events out of order: %d after %d", e.SampleOffset(), prev)
+					return
+				}
+				prev = e.SampleOffset()
+			}
+			buf = q.AppendAllEvents(buf[:0])
+			_ = q.Size()
+			_ = q.IsEmpty()
+		}
+	}()
+
+	// Mutator: clears and trims underneath the reader.
+	go func() {
+		defer wg.Done()
+		for i := 0; i < iterations; i++ {
+			q.RemoveProcessedEvents(int32(i % 512))
+			if i%128 == 0 {
+				q.Clear()
+			}
+		}
+	}()
+
+	wg.Wait()
+}
+
+func TestEventQueueKeepsInsertionOrderForEqualOffsets(t *testing.T) {
+	q := NewEventQueue()
+	q.Add(NoteOnEvent{BaseEvent: BaseEvent{Offset: 100}, NoteNumber: 1})
+	q.Add(NoteOnEvent{BaseEvent: BaseEvent{Offset: 50}, NoteNumber: 2})
+	q.Add(NoteOnEvent{BaseEvent: BaseEvent{Offset: 100}, NoteNumber: 3})
+	q.Add(NoteOnEvent{BaseEvent: BaseEvent{Offset: 100}, NoteNumber: 4})
+
+	want := []uint8{2, 1, 3, 4}
+	for i, e := range q.GetAllEvents() {
+		note := e.(NoteOnEvent).NoteNumber
+		if note != want[i] {
+			t.Errorf("position %d holds note %d, want %d", i, note, want[i])
+		}
 	}
 }

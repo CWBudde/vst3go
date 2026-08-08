@@ -134,7 +134,7 @@ func NewSurround7_1Effect() *Configuration {
 
 // NewMixerChannel creates a mixer channel configuration
 // Stereo in, multiple outputs (main + sends)
-func NewMixerChannel(numSends int) *Configuration {
+func NewMixerChannel(numSends int) (*Configuration, error) {
 	b := NewBuilder().
 		WithStereoInput("Channel In").
 		WithStereoOutput("Main Out")
@@ -144,7 +144,7 @@ func NewMixerChannel(numSends int) *Configuration {
 		b = b.WithAuxOutput(fmt.Sprintf("Send %d", i+1), 2)
 	}
 
-	return b.MustBuild()
+	return b.Build()
 }
 
 // NewAnalyzer creates an analyzer configuration
@@ -184,17 +184,18 @@ func NewVocoder() *Configuration {
 		MustBuild()
 }
 
-// NewMultiChannelEffect creates a flexible multi-channel effect
-func NewMultiChannelEffect(numChannels int32) *Configuration {
+// NewMultiChannelEffect creates a flexible multi-channel effect.
+// numChannels must be within 1..MaxChannelsPerBus.
+func NewMultiChannelEffect(numChannels int32) (*Configuration, error) {
 	return NewBuilder().
 		WithAudioInput("Multi In", numChannels).
 		WithAudioOutput("Multi Out", numChannels).
-		MustBuild()
+		Build()
 }
 
 // NewCrossover creates a crossover/band splitter configuration
 // Stereo in, multiple band outputs
-func NewCrossover(numBands int) *Configuration {
+func NewCrossover(numBands int) (*Configuration, error) {
 	b := NewBuilder().
 		WithStereoInput("Stereo In")
 
@@ -206,12 +207,12 @@ func NewCrossover(numBands int) *Configuration {
 	// Also add a main stereo output for the summed result
 	b = b.WithStereoOutput("Main Out")
 
-	return b.MustBuild()
+	return b.Build()
 }
 
 // NewSplitter creates a signal splitter configuration
-// One input, multiple identical outputs
-func NewSplitter(numOutputs int) *Configuration {
+// One input, multiple identical outputs. numOutputs must be at least 1.
+func NewSplitter(numOutputs int) (*Configuration, error) {
 	b := NewBuilder().
 		WithStereoInput("Input")
 
@@ -219,5 +220,5 @@ func NewSplitter(numOutputs int) *Configuration {
 		b = b.WithStereoOutput(fmt.Sprintf("Output %d", i+1))
 	}
 
-	return b.MustBuild()
+	return b.Build()
 }

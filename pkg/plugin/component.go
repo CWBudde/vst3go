@@ -7,8 +7,11 @@ import "C"
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	"math"
 	"sync"
+	"sync/atomic"
 	"unsafe"
 
 	"github.com/cwbudde/vst3go/pkg/framework/bus"
@@ -19,16 +22,44 @@ import (
 	"github.com/cwbudde/vst3go/pkg/vst3"
 )
 
-// componentImpl wraps a Processor to implement VST3 interfaces
+// Sentinel errors for the process path: constructing an error there would
+// allocate on the realtime thread.
+var (
+	errNilProcessData  = errors.New("process: nil process data")
+	errSampleSize      = errors.New("process: host requested an unsupported sample size")
+	errNoProcessConfig = errors.New("process: processing not set up")
+)
+
+// componentImpl wraps a Processor to implement VST3 interfaces.
+//
+// Everything the audio callback reads is held in an atomic so that Process
+// never blocks on a lifecycle call from the host's UI or scanner thread. mu
+// only serializes those lifecycle calls against each other.
 type componentImpl struct {
-	processor    Processor
-	processCtx   *process.Context
-	sampleRate   float64
+	processor  Processor
+	processCtx atomic.Pointer[process.Context]
+
+	// sampleRateBits is the current sample rate as math.Float64bits.
+	sampleRateBits atomic.Uint64
+	processing     atomic.Bool
+
 	maxBlockSize int32
 	active       bool
-	processing   bool
-	mu           sync.RWMutex
+	mu           sync.Mutex
 	wrapper      *componentWrapper // Reference to wrapper for notifications
+
+	// Audio-thread scratch. Reused across blocks so the chunk loop and the
+	// event fan-out stay allocation-free.
+	chunkInput  [][]float32
+	chunkOutput [][]float32
+	blockEvents []midi.Event
+
+	// Out-parameters for cgo calls. Taking the address of a local would make it
+	// escape to the heap on every call; a field is allocated once with the
+	// component. None of these contain Go pointers, so passing them to C is safe.
+	cSampleOffset C.int32_t
+	cValue        C.double
+	cEvent        C.struct_Steinberg_Vst_Event
 }
 
 func (c *componentImpl) parameterRegistry() (*param.Registry, error) {
@@ -62,11 +93,12 @@ func (c *componentImpl) stateManager() (*state.Manager, error) {
 // newComponent creates a new component implementation
 func newComponent(processor Processor) *componentImpl {
 	params := processor.GetParameters()
-	return &componentImpl{
+	c := &componentImpl{
 		processor:    processor,
-		processCtx:   process.NewContext(8192, params), // Default max block size
 		maxBlockSize: 8192,
 	}
+	c.processCtx.Store(process.NewContext(8192, params)) // Default max block size
+	return c
 }
 
 // IComponent implementation
@@ -127,9 +159,9 @@ func (c *componentImpl) SetActive(active bool) error {
 	defer c.mu.Unlock()
 
 	c.active = active
-	if !active && c.processCtx != nil {
-		c.processCtx.ResetParameterChanges()
-		c.processCtx.ClearAllEvents()
+	if ctx := c.processCtx.Load(); !active && ctx != nil {
+		ctx.ResetParameterChanges()
+		ctx.ClearAllEvents()
 	}
 	return c.processor.SetActive(active)
 }
@@ -191,74 +223,81 @@ func (c *componentImpl) SetupProcessing(setup *vst3.ProcessSetup) error {
 		return fmt.Errorf("setup processing: nil process setup")
 	}
 
-	c.sampleRate = setup.SampleRate
+	c.sampleRateBits.Store(math.Float64bits(setup.SampleRate))
 	if setup.MaxSamplesPerBlock > 0 {
 		c.maxBlockSize = setup.MaxSamplesPerBlock
 		// Recreate process context with new max block size
 		params := c.processor.GetParameters()
-		c.processCtx = process.NewContext(int(c.maxBlockSize), params)
+		c.processCtx.Store(process.NewContext(int(c.maxBlockSize), params))
 	}
 
-	if err := c.processor.Initialize(c.sampleRate, c.maxBlockSize); err != nil {
+	if err := c.processor.Initialize(setup.SampleRate, c.maxBlockSize); err != nil {
 		return fmt.Errorf("setup processing: initialize processor: %w", err)
 	}
 	return nil
 }
 
 func (c *componentImpl) SetProcessing(state bool) error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	c.processing = state
+	c.processing.Store(state)
 	return nil
 }
 
 func (c *componentImpl) Process(data unsafe.Pointer) error {
-	c.mu.RLock()
-	defer c.mu.RUnlock()
-
 	if data == nil {
-		return fmt.Errorf("process: nil process data")
+		return errNilProcessData
 	}
 
-	if !c.processing {
+	if !c.processing.Load() {
 		return nil
+	}
+
+	ctx := c.processCtx.Load()
+	if ctx == nil {
+		return errNoProcessConfig
 	}
 
 	// Get raw process data struct
 	processData := (*C.struct_Steinberg_Vst_ProcessData)(data)
 
-	c.prepareProcessContext()
-	c.updateTransport(processData.processContext)
-	c.mapAudioBuffers(processData)
-	c.processInputEvents(processData.inputEvents)
-	c.collectParameterChanges(unsafe.Pointer(processData.inputParameterChanges))
+	// In double-precision mode the host hands us double[] buffers. Reading
+	// those as float[] would yield garbage and read only half the block, so
+	// refuse the block rather than misinterpret it.
+	if processData.symbolicSampleSize != C.Steinberg_Vst_SymbolicSampleSizes_kSample32 {
+		return errSampleSize
+	}
+
+	c.prepareProcessContext(ctx)
+	c.updateTransport(ctx, processData.processContext)
+	c.mapAudioBuffers(ctx, processData)
+	c.collectInputEvents(processData.inputEvents)
+	c.collectParameterChanges(ctx, unsafe.Pointer(processData.inputParameterChanges))
 
 	// Process audio with sample-accurate parameter automation
-	if c.processCtx.HasParameterChanges() {
+	if ctx.HasParameterChanges() {
 		// Sort parameter changes by sample offset
-		c.processCtx.SortParameterChanges()
+		ctx.SortParameterChanges()
 
 		// Process audio in chunks between parameter changes
-		c.processSampleAccurate()
+		c.processSampleAccurate(ctx)
 	} else {
 		// No parameter changes - process entire block
-		c.processor.ProcessAudio(c.processCtx)
+		c.publishInputEvents(ctx, 0, math.MaxInt32)
+		c.processor.ProcessAudio(ctx)
 	}
 
 	return nil
 }
 
-func (c *componentImpl) prepareProcessContext() {
-	c.processCtx.SampleRate = c.sampleRate
-	c.processCtx.ResetParameterChanges()
-	c.processCtx.ClearAllEvents()
-	c.processCtx.Input = c.processCtx.Input[:0]
-	c.processCtx.Output = c.processCtx.Output[:0]
+func (c *componentImpl) prepareProcessContext(ctx *process.Context) {
+	ctx.SampleRate = math.Float64frombits(c.sampleRateBits.Load())
+	ctx.ResetParameterChanges()
+	ctx.ClearAllEvents()
+	ctx.Input = ctx.Input[:0]
+	ctx.Output = ctx.Output[:0]
 }
 
-func (c *componentImpl) updateTransport(ctx *C.struct_Steinberg_Vst_ProcessContext) {
-	transport := c.processCtx.Transport
+func (c *componentImpl) updateTransport(processCtx *process.Context, ctx *C.struct_Steinberg_Vst_ProcessContext) {
+	transport := processCtx.Transport
 	*transport = process.TransportInfo{}
 
 	if ctx == nil {
@@ -304,40 +343,48 @@ func (c *componentImpl) updateTransport(ctx *C.struct_Steinberg_Vst_ProcessConte
 	}
 }
 
-func (c *componentImpl) mapAudioBuffers(processData *C.struct_Steinberg_Vst_ProcessData) {
+func (c *componentImpl) mapAudioBuffers(ctx *process.Context, processData *C.struct_Steinberg_Vst_ProcessData) {
 	numSamples := int(processData.numSamples)
 
 	if processData.numInputs > 0 && processData.inputs != nil {
-		inputBuses := (*[1]C.struct_Steinberg_Vst_AudioBusBuffers)(unsafe.Pointer(processData.inputs))[:processData.numInputs:processData.numInputs]
-		c.appendAudioBuffers(&c.processCtx.Input, inputBuses, numSamples)
+		inputBuses := unsafe.Slice(processData.inputs, int(processData.numInputs))
+		c.appendAudioBuffers(&ctx.Input, inputBuses, numSamples)
 	}
 
 	if processData.numOutputs > 0 && processData.outputs != nil {
-		outputBuses := (*[1]C.struct_Steinberg_Vst_AudioBusBuffers)(unsafe.Pointer(processData.outputs))[:processData.numOutputs:processData.numOutputs]
-		c.appendAudioBuffers(&c.processCtx.Output, outputBuses, numSamples)
+		outputBuses := unsafe.Slice(processData.outputs, int(processData.numOutputs))
+		c.appendAudioBuffers(&ctx.Output, outputBuses, numSamples)
 	}
 }
 
 func (c *componentImpl) appendAudioBuffers(dst *[][]float32, buses []C.struct_Steinberg_Vst_AudioBusBuffers, numSamples int) {
-	for _, bus := range buses {
-		channelBuffers32 := getChannelBuffers32(&bus)
-		if bus.numChannels <= 0 || channelBuffers32 == nil {
-			continue
-		}
-
-		channels := (*[16]*float32)(unsafe.Pointer(channelBuffers32))[:bus.numChannels:bus.numChannels]
-		for _, channel := range channels {
-			if channel == nil {
-				continue
-			}
-
-			samples := (*[vst3.MaxArraySize]float32)(unsafe.Pointer(channel))[:numSamples:numSamples]
-			*dst = append(*dst, samples)
-		}
+	for i := range buses {
+		bus := &buses[i]
+		table := (**float32)(unsafe.Pointer(getChannelBuffers32(bus)))
+		*dst = appendBusChannels(*dst, table, int(bus.numChannels), numSamples)
 	}
 }
 
-func (c *componentImpl) collectParameterChanges(inputParameterChanges unsafe.Pointer) {
+// appendBusChannels maps one bus's channel pointer table onto Go slices that
+// alias the host's memory. Split out from appendAudioBuffers so it is reachable
+// from tests, which cgo does not allow to name C types.
+func appendBusChannels(dst [][]float32, table **float32, numChannels, numSamples int) [][]float32 {
+	if table == nil || numChannels <= 0 {
+		return dst
+	}
+
+	channels := unsafe.Slice(table, numChannels)
+	for _, channel := range channels {
+		if channel == nil {
+			continue
+		}
+		dst = append(dst, unsafe.Slice(channel, numSamples))
+	}
+
+	return dst
+}
+
+func (c *componentImpl) collectParameterChanges(ctx *process.Context, inputParameterChanges unsafe.Pointer) {
 	if inputParameterChanges == nil {
 		return
 	}
@@ -352,12 +399,9 @@ func (c *componentImpl) collectParameterChanges(inputParameterChanges unsafe.Poi
 		paramID := C.getParameterId(paramQueue)
 		pointCount := C.getPointCount(paramQueue)
 		for j := C.int32_t(0); j < pointCount; j++ {
-			var sampleOffset C.int32_t
-			var value C.double
-
-			result := C.getPoint(paramQueue, j, &sampleOffset, &value)
+			result := C.getPoint(paramQueue, j, &c.cSampleOffset, &c.cValue)
 			if result == 0 {
-				c.processCtx.AddParameterChange(uint32(paramID), float64(value), int(sampleOffset))
+				ctx.AddParameterChange(uint32(paramID), float64(c.cValue), int(c.cSampleOffset))
 			}
 		}
 	}
@@ -367,8 +411,12 @@ func (c *componentImpl) GetTailSamples() uint32 {
 	return uint32(c.processor.GetTailSamples())
 }
 
-// processInputEvents processes MIDI events from the host
-func (c *componentImpl) processInputEvents(eventList *C.struct_Steinberg_Vst_IEventList) {
+// collectInputEvents converts the host's events into blockEvents, keeping the
+// host's block-absolute offsets. Publication into the process context is
+// deferred so the chunk loop can hand each chunk only its own events.
+func (c *componentImpl) collectInputEvents(eventList *C.struct_Steinberg_Vst_IEventList) {
+	c.blockEvents = c.blockEvents[:0]
+
 	if eventList == nil {
 		return
 	}
@@ -379,47 +427,97 @@ func (c *componentImpl) processInputEvents(eventList *C.struct_Steinberg_Vst_IEv
 		return
 	}
 
-	// Process each event
 	for i := C.int32_t(0); i < eventCount; i++ {
-		var event C.struct_Steinberg_Vst_Event
-		if C.getEvent(unsafe.Pointer(eventList), i, &event) == 0 { // kResultOk
-			c.processSingleEvent(&event)
+		if C.getEvent(unsafe.Pointer(eventList), i, &c.cEvent) != 0 { // not kResultOk
+			continue
+		}
+		if event, ok := convertEvent(&c.cEvent); ok {
+			c.blockEvents = append(c.blockEvents, event)
 		}
 	}
 }
 
-// processSingleEvent converts a VST3 event to our MIDI event format
-func (c *componentImpl) processSingleEvent(event *C.struct_Steinberg_Vst_Event) {
+// convertEvent converts a VST3 event to our MIDI event format.
+func convertEvent(event *C.struct_Steinberg_Vst_Event) (midi.Event, bool) {
 	// Use helper function to get event type
-	eventType := C.getEventType(event)
-
-	switch eventType {
+	switch C.getEventType(event) {
 	case C.Steinberg_Vst_Event_EventTypes_kNoteOnEvent:
-		// Note On event - use helper to get the event data
 		noteOn := C.getNoteOnEvent(event)
-		c.processCtx.AddInputEvent(midi.NoteOnEvent{
+		return midi.NoteOnEvent{
 			BaseEvent: midi.BaseEvent{
 				EventChannel: uint8(noteOn.channel),
 				Offset:       int32(event.sampleOffset),
 			},
 			NoteNumber: uint8(noteOn.pitch),
-			Velocity:   uint8(noteOn.velocity * 127), // VST3 uses 0-1, MIDI uses 0-127
-		})
+			Velocity:   velocityToMIDI(float64(noteOn.velocity)),
+		}, true
 
 	case C.Steinberg_Vst_Event_EventTypes_kNoteOffEvent:
-		// Note Off event - use helper to get the event data
 		noteOff := C.getNoteOffEvent(event)
-		c.processCtx.AddInputEvent(midi.NoteOffEvent{
+		return midi.NoteOffEvent{
 			BaseEvent: midi.BaseEvent{
 				EventChannel: uint8(noteOff.channel),
 				Offset:       int32(event.sampleOffset),
 			},
 			NoteNumber: uint8(noteOff.pitch),
-			Velocity:   uint8(noteOff.velocity * 127),
-		})
+			Velocity:   velocityToMIDI(float64(noteOff.velocity)),
+		}, true
 
 		// Add more event types as needed
 	}
+
+	return nil, false
+}
+
+// velocityToMIDI maps VST3's normalized 0..1 velocity onto MIDI's 0..127.
+// Rounding rather than truncating keeps values just below 1.0 from dropping a
+// step, and clamping matters because an out-of-range value from the host would
+// otherwise wrap silently in the uint8 conversion.
+func velocityToMIDI(velocity float64) uint8 {
+	scaled := math.Round(velocity * 127)
+	if !(scaled > 0) { // also catches NaN
+		return 0
+	}
+	if scaled > 127 {
+		return 127
+	}
+	return uint8(scaled)
+}
+
+// publishInputEvents hands the context the events falling in [start, end),
+// rebased so their offsets match the chunk-relative audio buffers the user's
+// DSP sees. Without the range filter a note-on would retrigger once per chunk.
+func (c *componentImpl) publishInputEvents(ctx *process.Context, start, end int32) {
+	ctx.ClearInputEvents()
+
+	for _, event := range c.blockEvents {
+		offset := event.SampleOffset()
+		if offset < start || offset >= end {
+			continue
+		}
+		ctx.AddInputEvent(shiftEvent(event, -start))
+	}
+}
+
+// shiftEvent rebases a single event's offset. midi.EventQueue.OffsetEvents does
+// the same job for a whole queue, but process.Context does not expose its
+// queue, and shifting after insertion would also move events from other chunks.
+// Only the types convertEvent produces need handling here.
+func shiftEvent(event midi.Event, delta int32) midi.Event {
+	if delta == 0 {
+		return event
+	}
+
+	switch e := event.(type) {
+	case midi.NoteOnEvent:
+		e.Offset += delta
+		return e
+	case midi.NoteOffEvent:
+		e.Offset += delta
+		return e
+	}
+
+	return event
 }
 
 // IEditController implementation
@@ -488,9 +586,6 @@ func (c *componentImpl) GetParamNormalized(id uint32) float64 {
 
 func (c *componentImpl) SetParamNormalized(id uint32, value float64) error {
 	if p, ok := c.processor.GetParameters().GetOK(id); ok {
-		// Debug parameter changes
-		fmt.Printf("[PARAM_CHANGE] SetParamNormalized: id=%d, value=%.3f, plain=%.1f\n",
-			id, value, p.Denormalize(value))
 		p.SetNormalized(value)
 		return nil
 	}
@@ -505,8 +600,15 @@ func (c *componentImpl) CreateView(name string) (interface{}, error) {
 	return nil, vst3.ErrNotImplemented
 }
 
-// SetParamNormalizedWithNotification sets a parameter value and notifies the host
-// This should be used when the plugin changes a parameter value internally
+// SetParamNormalizedWithNotification sets a parameter value and notifies the
+// host that the plugin changed it internally.
+//
+// UI THREAD ONLY. beginEdit/performEdit/endEdit are IComponentHandler calls,
+// which VST3 permits only from the host's UI thread; invoking them from
+// Process would violate the realtime contract and can deadlock a host. A
+// processor that needs to emit parameter values from the audio callback must
+// write them into ProcessData.outputParameterChanges instead. Nothing on the
+// Process path calls this today, and it must stay that way.
 func (c *componentImpl) SetParamNormalizedWithNotification(id uint32, value float64) error {
 	if p, ok := c.processor.GetParameters().GetOK(id); ok {
 		// Notify host of parameter change
@@ -524,89 +626,69 @@ func (c *componentImpl) SetParamNormalizedWithNotification(id uint32, value floa
 	return vst3.ErrInvalidArgument
 }
 
-// processSampleAccurate processes audio with sample-accurate parameter automation
-func (c *componentImpl) processSampleAccurate() {
-	changes := c.processCtx.GetParameterChanges()
-	numSamples := c.processCtx.NumSamples()
+// processSampleAccurate processes audio in chunks delimited by parameter
+// changes, so each change takes effect on exactly the sample the host asked for.
+func (c *componentImpl) processSampleAccurate(ctx *process.Context) {
+	changes := ctx.GetParameterChanges()
+	numSamples := ctx.NumSamples()
 	lastOffset := 0
 
 	// Store original buffers
-	origInput := c.processCtx.Input
-	origOutput := c.processCtx.Output
+	origInput := ctx.Input
+	origOutput := ctx.Output
 
-	// Process each chunk between parameter changes
 	for _, change := range changes {
 		if change.SampleOffset > lastOffset {
-			// Process chunk from lastOffset to change.SampleOffset
-			chunkSize := change.SampleOffset - lastOffset
-
-			// Temporarily update context buffers to point to sub-slices (no allocation)
-			c.processCtx.Input = nil
-			c.processCtx.Output = nil
-
-			// Set up input sub-slices
-			for ch := 0; ch < len(origInput); ch++ {
-				if lastOffset < len(origInput[ch]) {
-					endOffset := lastOffset + chunkSize
-					if endOffset > len(origInput[ch]) {
-						endOffset = len(origInput[ch])
-					}
-					c.processCtx.Input = append(c.processCtx.Input, origInput[ch][lastOffset:endOffset])
-				}
+			end := change.SampleOffset
+			if end > numSamples {
+				end = numSamples
 			}
-
-			// Set up output sub-slices
-			for ch := 0; ch < len(origOutput); ch++ {
-				if lastOffset < len(origOutput[ch]) {
-					endOffset := lastOffset + chunkSize
-					if endOffset > len(origOutput[ch]) {
-						endOffset = len(origOutput[ch])
-					}
-					c.processCtx.Output = append(c.processCtx.Output, origOutput[ch][lastOffset:endOffset])
-				}
-			}
-
-			// Process this chunk
-			c.processor.ProcessAudio(c.processCtx)
-
+			c.processChunk(ctx, origInput, origOutput, lastOffset, end)
 			lastOffset = change.SampleOffset
 		}
 
 		// Apply the parameter change
-		c.processCtx.ApplyParameterChange(change)
-
-		// Debug output
-		if p, ok := c.processor.GetParameters().GetOK(change.ParamID); ok {
-			fmt.Printf("[SAMPLE_ACCURATE] Applied param %d change at sample %d: value=%.6f, plain=%.1f\n",
-				change.ParamID, change.SampleOffset, change.Value, p.GetPlain())
-		}
+		ctx.ApplyParameterChange(change)
 	}
 
 	// Process final chunk if there are samples remaining
 	if lastOffset < numSamples {
-		// Temporarily update context buffers for final chunk
-		c.processCtx.Input = nil
-		c.processCtx.Output = nil
-
-		// Set up input sub-slices for final chunk
-		for ch := 0; ch < len(origInput); ch++ {
-			if lastOffset < len(origInput[ch]) {
-				c.processCtx.Input = append(c.processCtx.Input, origInput[ch][lastOffset:])
-			}
-		}
-
-		// Set up output sub-slices for final chunk
-		for ch := 0; ch < len(origOutput); ch++ {
-			if lastOffset < len(origOutput[ch]) {
-				c.processCtx.Output = append(c.processCtx.Output, origOutput[ch][lastOffset:])
-			}
-		}
-
-		// Process final chunk
-		c.processor.ProcessAudio(c.processCtx)
+		c.processChunk(ctx, origInput, origOutput, lastOffset, numSamples)
 	}
 
 	// Restore original buffers
-	c.processCtx.Input = origInput
-	c.processCtx.Output = origOutput
+	ctx.Input = origInput
+	ctx.Output = origOutput
+}
+
+// processChunk points the context at [start, end) of the block and runs one
+// pass of user DSP over it. The chunk slice headers live in reusable scratch so
+// the loop keeps ProcessAudio's zero-allocation promise.
+func (c *componentImpl) processChunk(ctx *process.Context, input, output [][]float32, start, end int) {
+	c.chunkInput = sliceChannels(c.chunkInput[:0], input, start, end)
+	c.chunkOutput = sliceChannels(c.chunkOutput[:0], output, start, end)
+	ctx.Input = c.chunkInput
+	ctx.Output = c.chunkOutput
+
+	c.publishInputEvents(ctx, int32(start), int32(end))
+
+	c.processor.ProcessAudio(ctx)
+}
+
+// sliceChannels appends the [start, end) window of every channel in src to dst,
+// which the caller supplies pre-truncated so no allocation occurs after warmup.
+func sliceChannels(dst, src [][]float32, start, end int) [][]float32 {
+	for _, channel := range src {
+		if start >= len(channel) {
+			continue
+		}
+
+		stop := end
+		if stop > len(channel) {
+			stop = len(channel)
+		}
+		dst = append(dst, channel[start:stop])
+	}
+
+	return dst
 }

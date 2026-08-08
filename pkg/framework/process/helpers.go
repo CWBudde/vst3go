@@ -1,5 +1,12 @@
 package process
 
+// stereoChannelCount is the number of channels in a stereo pair; the stereo
+// helpers below cap their channel loop at it.
+const stereoChannelCount = 2
+
+// ensureSampleScratch sizes the per-sample scratch buffers. NewContext already
+// reserves maxScratchChannels, so this only allocates for a channel count above
+// that limit - not RT-safe, but unreachable for any sane bus layout.
 func (ctx *Context) ensureSampleScratch(numChannels int) {
 	if cap(ctx.sampleIn) < numChannels {
 		ctx.sampleIn = make([]float32, numChannels)
@@ -32,8 +39,8 @@ func (ctx *Context) ProcessStereo(fn func(ch int, input, output []float32)) {
 	if ctx.NumOutputChannels() < numChannels {
 		numChannels = ctx.NumOutputChannels()
 	}
-	if numChannels > 2 {
-		numChannels = 2 // Limit to stereo
+	if numChannels > stereoChannelCount {
+		numChannels = stereoChannelCount // Limit to stereo
 	}
 
 	for ch := 0; ch < numChannels; ch++ {
@@ -93,7 +100,7 @@ func (ctx *Context) ProcessChannelsSeparately(fns ...func(input, output []float3
 
 // CopyInputToOutput copies input to output for all channels
 func (ctx *Context) CopyInputToOutput() {
-	ctx.ProcessChannels(func(ch int, input, output []float32) {
+	ctx.ProcessChannels(func(_ int, input, output []float32) {
 		copy(output, input)
 	})
 }
@@ -110,8 +117,8 @@ func (ctx *Context) GetNumChannels() int {
 // GetNumStereoChannels returns the number of channels capped at 2
 func (ctx *Context) GetNumStereoChannels() int {
 	numChannels := ctx.GetNumChannels()
-	if numChannels > 2 {
-		return 2
+	if numChannels > stereoChannelCount {
+		return stereoChannelCount
 	}
 	return numChannels
 }

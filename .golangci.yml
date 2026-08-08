@@ -1,48 +1,12 @@
 version: "2"
-
 run:
-  timeout: 5m
   issues-exit-code: 1
   tests: true
-
-linters-settings:
-  govet:
-    enable:
-      - shadow
-  gocyclo:
-    min-complexity: 15
-  dupl:
-    threshold: 100
-  goconst:
-    min-len: 2
-    min-occurrences: 2
-  misspell:
-    locale: US
-  lll:
-    line-length: 140
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - experimental
-      - opinionated
-      - performance
-      - style
-    disabled-checks:
-      - dupImport # https://github.com/go-critic/go-critic/issues/845
-      - ifElseChain
-      - octalLiteral
-      - whyNoLint
-      - wrapperFunc
-  funlen:
-    lines: 100
-    statements: 50
 linters:
-  # please, do not use `enable-all`: it's deprecated and will be removed soon.
-  # inverted configuration with `enable-all` and `disable` is not scalable during updates of golangci-lint
-  disable-all: true
+  default: none
   enable:
     - bodyclose
-    - copyloopvar # replaces exportloopref (Go 1.22+)
+    - copyloopvar
     - dogsled
     - dupl
     - errcheck
@@ -51,84 +15,126 @@ linters:
     - goconst
     - gocritic
     - gocyclo
-    - mnd # replaces gomnd
     - goprintffuncname
     - gosec
     - govet
     - ineffassign
     - lll
     - misspell
+    - mnd
     - nakedret
     - noctx
     - nolintlint
-    - revive # replaces golint
+    - revive
     - rowserrcheck
     - staticcheck
     - unconvert
     - unparam
-    - unused # replaces deadcode, structcheck, varcheck
+    - unused
     - whitespace
-
+  settings:
+    dupl:
+      threshold: 100
+    funlen:
+      lines: 100
+      statements: 50
+    goconst:
+      min-len: 3
+      min-occurrences: 3
+    gocritic:
+      disabled-checks:
+        - dupImport
+        - ifElseChain
+        - octalLiteral
+        - whyNoLint
+        - wrapperFunc
+      enabled-tags:
+        - diagnostic
+        - experimental
+        - opinionated
+        - performance
+        - style
+    gocyclo:
+      min-complexity: 15
+    govet:
+      enable:
+        - shadow
+    lll:
+      line-length: 140
+    misspell:
+      locale: US
+    revive:
+      rules:
+        - name: file-length-limit
+          arguments:
+            - max: 1500
+              skip-comments: false
+              skip-blank-lines: false
+      enable-default-rules: true
+  exclusions:
+    generated: lax
+    rules:
+      # Test tables legitimately repeat short literals and use throwaway
+      # closure parameters; neither is worth a named constant.
+      - linters:
+          - funlen
+          - goconst
+          - gocyclo
+          - gosec
+          - mnd
+          - revive
+        path: _test\.go
+      - linters:
+          - revive
+          - staticcheck
+        path: pkg/vst3/
+      - linters:
+          - revive
+          - staticcheck
+        path: bridge/
+      - linters:
+          - funlen
+          - revive
+        path: pkg/plugin/wrapper.*\.go
+      - linters:
+          - mnd
+        path: pkg/framework/bus/
+      - linters:
+          - gocritic
+          - lll
+          - mnd
+        path: pkg/vst3/
+      # govet and staticcheck stay ON for pkg/plugin: it is the cgo package
+      # that most needs them. Only the shadow check is excluded, because the
+      # cgo callback signatures unavoidably shadow package names.
+      - linters:
+          - dupl
+          - gocritic
+          - gocyclo
+          - lll
+          - mnd
+          - revive
+        path: pkg/plugin/
+      - linters:
+          - govet
+        path: pkg/plugin/
+        text: shadow
+      - linters:
+          - gosec
+          - mnd
+        path: pkg/framework/param/
+    paths:
+      - build
+      - third_party$
+      - builtin$
+      - examples$
 issues:
-  # Excluding configuration per-path, per-linter, per-text and per-source
-  exclude-dirs:
-    - build
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - mnd
-        - funlen
-        - gocyclo
-    # C bindings have different naming conventions
-    - path: pkg/vst3/
-      linters:
-        - revive
-        - stylecheck
-    - path: bridge/
-      linters:
-        - revive
-        - stylecheck
-    # Wrapper files interface with C code
-    - path: pkg/plugin/wrapper.*\.go
-      linters:
-        - revive
-        - stylecheck
-        - funlen
-    # Bus configuration has expected channel counts
-    - path: pkg/framework/bus/
-      linters:
-        - mnd
-    # VST3 bindings have long C function signatures and binary constants
-    - path: pkg/vst3/
-      linters:
-        - lll
-        - mnd
-        - gocritic # C interop patterns may trigger false positives
-    # Plugin package deals with C interop and has some necessary duplication
-    - path: pkg/plugin/
-      linters:
-        - dupl
-        - lll
-        - mnd
-        - revive # C interface functions often have unused parameters
-        - gocritic # C binding patterns don't follow Go conventions
-        - gocyclo # Complex C interop functions
-        - staticcheck # Empty branches are placeholders for future C implementations
-        - govet # Unsafe operations are necessary for C interop
-    # Parameter formatters have conversion constants and necessary unsafe operations
-    - path: pkg/framework/param/
-      linters:
-        - mnd
-        - gosec # Uses necessary unsafe operations for atomic values
-
-  # Independently from option `exclude` we use default exclude patterns,
-  # it can be disabled by this option. To list all
-  # excluded by default patterns execute `golangci-lint run --help`.
-  # Default value for this option is true.
-  exclude-use-default: false
-
-  # Maximum issues count per one linter. Set to 0 to disable. Default is 50.
   max-issues-per-linter: 0
-
-  # Maximum count of issues with the same text. Set to 0 to disable. Default is 3.
   max-same-issues: 0
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

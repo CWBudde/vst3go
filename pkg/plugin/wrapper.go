@@ -28,10 +28,30 @@ package plugin
 //     }
 //     return Steinberg_kResultFalse;
 // }
+//
+// // Every COM-style interface begins with the FUnknown vtable, so retain/release
+// // can be reached through an opaque pointer without knowing the concrete type.
+// static inline void funknown_addRef(void* obj) {
+//     struct Steinberg_FUnknown* unknown = (struct Steinberg_FUnknown*)obj;
+//     if (unknown && unknown->lpVtbl && unknown->lpVtbl->addRef) {
+//         unknown->lpVtbl->addRef(unknown);
+//     }
+// }
+//
+// static inline void funknown_release(void* obj) {
+//     struct Steinberg_FUnknown* unknown = (struct Steinberg_FUnknown*)obj;
+//     if (unknown && unknown->lpVtbl && unknown->lpVtbl->release) {
+//         unknown->lpVtbl->release(unknown);
+//     }
+// }
 import "C"
 
 import (
+	"fmt"
+	"os"
+	"runtime/debug"
 	"sync"
+	"sync/atomic"
 	"unsafe"
 
 	"github.com/cwbudde/vst3go/pkg/vst3"
@@ -54,9 +74,15 @@ type componentWrapper struct {
 }
 
 var (
-	// Global map of component wrappers indexed by ID
-	components   = make(map[uintptr]*componentWrapper)
-	componentsMu sync.RWMutex
+	// componentTable maps an ID to its wrapper. IDs are dense and monotonically
+	// increasing, so a slice indexed by ID replaces a hash lookup. It is
+	// copy-on-write behind an atomic pointer because getComponent runs on the
+	// realtime audio thread: a lock there would let a host scanner thread
+	// holding the writer side stall audio (priority inversion).
+	componentTable atomic.Pointer[[]*componentWrapper]
+
+	// componentsMu serializes writers only; readers never take it.
+	componentsMu sync.Mutex
 	nextID       uintptr = 1
 )
 
@@ -86,47 +112,139 @@ func SetFactoryInfo(info FactoryInfo) {
 	globalFactoryInfo = info
 }
 
-// recoverPanic is a helper to recover from panics in callbacks
+// recoverPanic stops a Go panic from unwinding into the C++ host, where it
+// would be undefined behavior. Use it on callbacks whose zero return value is
+// a safe fallback (counts, doubles, pointers) or that return nothing.
 func recoverPanic(operation string) {
 	if r := recover(); r != nil {
-		// Log the panic but don't propagate it to C code
-		_ = r
+		logPanic(operation, r)
 	}
 }
 
-// registerComponent registers a component wrapper and returns its ID
+// recoverPanicResult is recoverPanic for callbacks returning Steinberg_tresult.
+// It reports failure to the host: the zero value of tresult is kResultOk on
+// non-Windows platforms, so swallowing a panic silently would claim success.
+func recoverPanicResult(operation string, result *C.Steinberg_tresult) {
+	if r := recover(); r != nil {
+		logPanic(operation, r)
+		if result != nil {
+			*result = C.Steinberg_tresult(vst3.ResultFalse)
+		}
+	}
+}
+
+// logPanic reports a recovered panic with a stack trace. A panic crossing the
+// cgo boundary is always a bug in this library; staying silent about it makes
+// such bugs effectively invisible, since the host just sees wrong behavior.
+func logPanic(operation string, r interface{}) {
+	fmt.Fprintf(os.Stderr, "vst3go: panic in %s: %v\n%s\n", operation, r, debug.Stack())
+}
+
+// storeComponent publishes a new table with slot id set to wrapper.
+// Callers must hold componentsMu.
+func storeComponent(id uintptr, wrapper *componentWrapper) {
+	var current []*componentWrapper
+	if loaded := componentTable.Load(); loaded != nil {
+		current = *loaded
+	}
+
+	size := len(current)
+	if int(id)+1 > size {
+		size = int(id) + 1
+	}
+
+	next := make([]*componentWrapper, size)
+	copy(next, current)
+	next[id] = wrapper
+	componentTable.Store(&next)
+}
+
+// registerComponent registers a component wrapper and returns its ID.
+// Index 0 is reserved so that a zero ID from C is always invalid.
 func registerComponent(wrapper *componentWrapper) uintptr {
 	componentsMu.Lock()
 	defer componentsMu.Unlock()
+
 	id := nextID
 	nextID++
 	wrapper.id = id
-	components[id] = wrapper
+	storeComponent(id, wrapper)
 	return id
 }
 
-// unregisterComponent removes a component wrapper by ID
-func unregisterComponent(id uintptr) {
+// unregisterComponent removes a component wrapper by ID and returns it.
+func unregisterComponent(id uintptr) *componentWrapper {
 	componentsMu.Lock()
 	defer componentsMu.Unlock()
-	delete(components, id)
+
+	index := int(id)
+	loaded := componentTable.Load()
+	if loaded == nil || index <= 0 || index >= len(*loaded) {
+		return nil
+	}
+
+	wrapper := (*loaded)[index]
+	if wrapper == nil {
+		return nil
+	}
+
+	storeComponent(id, nil)
+	return wrapper
 }
 
-// getComponent retrieves a component wrapper by ID
+// getComponent retrieves a component wrapper by ID. This is on the audio
+// callback path, so it must not lock or allocate.
 func getComponent(id uintptr) *componentWrapper {
-	componentsMu.RLock()
-	defer componentsMu.RUnlock()
-
 	if id == 0 {
 		return nil
 	}
 
-	wrapper, exists := components[id]
-	if !exists {
+	loaded := componentTable.Load()
+	if loaded == nil {
 		return nil
 	}
 
-	return wrapper
+	// int(id) can go negative for a garbage ID from C, so bound it both ways.
+	index := int(id)
+	table := *loaded
+	if index < 0 || index >= len(table) {
+		return nil
+	}
+
+	return table[index]
+}
+
+// setComponentHandler retains the host's handler and releases the one it
+// replaces. VST3 requires the plugin to addRef any interface it keeps beyond
+// the call; without it the host is free to destroy the handler and every later
+// notifyParam* call would touch freed memory.
+func (w *componentWrapper) setComponentHandler(handler unsafe.Pointer) {
+	if handler != nil {
+		C.funknown_addRef(handler)
+	}
+
+	w.handlerMu.Lock()
+	previous := w.componentHandler
+	w.componentHandler = handler
+	w.handlerMu.Unlock()
+
+	// Released unconditionally, even when it is the same object: we took a
+	// second reference above, so dropping the old one leaves a net count of one.
+	if previous != nil {
+		C.funknown_release(previous)
+	}
+}
+
+// releaseComponentHandler drops the retained handler, if any.
+func (w *componentWrapper) releaseComponentHandler() {
+	w.handlerMu.Lock()
+	previous := w.componentHandler
+	w.componentHandler = nil
+	w.handlerMu.Unlock()
+
+	if previous != nil {
+		C.funknown_release(previous)
+	}
 }
 
 // notifyParamBeginEdit notifies the host that parameter editing is beginning
@@ -173,14 +291,19 @@ func (w *componentWrapper) notifyParamEndEdit(paramID uint32) {
 
 //export GoGetFactoryInfo
 func GoGetFactoryInfo(vendor, url, email *C.char, flags *C.int32_t) {
-	C.strcpy(vendor, C.CString(globalFactoryInfo.Vendor))
-	C.strcpy(url, C.CString(globalFactoryInfo.URL))
-	C.strcpy(email, C.CString(globalFactoryInfo.Email))
+	defer recoverPanic("GoGetFactoryInfo")
+
+	// Buffer sizes come from Steinberg_PFactoryInfo in vst3_c_api.h.
+	copyStringToChar8(vendor, 64, globalFactoryInfo.Vendor)
+	copyStringToChar8(url, 256, globalFactoryInfo.URL)
+	copyStringToChar8(email, 128, globalFactoryInfo.Email)
 	*flags = C.Steinberg_PFactoryInfo_FactoryFlags_kUnicode
 }
 
 //export GoCountClasses
 func GoCountClasses() C.int32_t {
+	defer recoverPanic("GoCountClasses")
+
 	if globalPlugin == nil {
 		return 0
 	}
@@ -189,6 +312,8 @@ func GoCountClasses() C.int32_t {
 
 //export GoGetClassInfo
 func GoGetClassInfo(index C.int32_t, cid *C.char, cardinality *C.int32_t, category, name *C.char) {
+	defer recoverPanic("GoGetClassInfo")
+
 	if globalPlugin == nil || index != 0 {
 		return
 	}
@@ -202,13 +327,15 @@ func GoGetClassInfo(index C.int32_t, cid *C.char, cardinality *C.int32_t, catego
 	// Set cardinality
 	*cardinality = C.Steinberg_PClassInfo_ClassCardinality_kManyInstances
 
-	// Set category and name
-	C.strcpy(category, C.CString("Audio Module Class"))
-	C.strcpy(name, C.CString(info.Name))
+	// Buffer sizes come from Steinberg_PClassInfo in vst3_c_api.h.
+	copyStringToChar8(category, 32, "Audio Module Class")
+	copyStringToChar8(name, 64, info.Name)
 }
 
 //export GoCreateInstance
 func GoCreateInstance(cid *C.char, iid *C.char) unsafe.Pointer {
+	defer recoverPanic("GoCreateInstance")
+
 	if globalPlugin == nil {
 		return nil
 	}
@@ -244,7 +371,7 @@ func GoCreateInstance(cid *C.char, iid *C.char) unsafe.Pointer {
 	id := registerComponent(wrapper)
 
 	// Create C component with ID instead of Go pointer
-	cComponent := C.createComponent(unsafe.Pointer(id))
+	cComponent := C.createComponent(C.uintptr_t(id))
 	if cComponent == nil {
 		unregisterComponent(id)
 		return nil
@@ -256,23 +383,27 @@ func GoCreateInstance(cid *C.char, iid *C.char) unsafe.Pointer {
 }
 
 //export GoReleaseComponent
-func GoReleaseComponent(componentPtr unsafe.Pointer) {
-	id := uintptr(componentPtr)
+func GoReleaseComponent(componentID C.uintptr_t) {
+	defer recoverPanic("GoReleaseComponent")
+
+	id := uintptr(componentID)
 
 	if id == 0 {
 		return
 	}
 
-	unregisterComponent(id)
+	if wrapper := unregisterComponent(id); wrapper != nil {
+		wrapper.releaseComponentHandler()
+	}
 }
 
 // All the IComponent callbacks
 //
 //export GoComponentInitialize
-func GoComponentInitialize(componentPtr unsafe.Pointer, context unsafe.Pointer) C.Steinberg_tresult {
+func GoComponentInitialize(componentID C.uintptr_t, context unsafe.Pointer) C.Steinberg_tresult {
 	defer recoverPanic("GoComponentInitialize")
 
-	wrapper := getComponent(uintptr(componentPtr))
+	wrapper := getComponent(uintptr(componentID))
 	if wrapper == nil {
 		return C.Steinberg_tresult(vst3.ResultFalse)
 	}
@@ -285,10 +416,10 @@ func GoComponentInitialize(componentPtr unsafe.Pointer, context unsafe.Pointer) 
 }
 
 //export GoComponentTerminate
-func GoComponentTerminate(componentPtr unsafe.Pointer) C.Steinberg_tresult {
+func GoComponentTerminate(componentID C.uintptr_t) C.Steinberg_tresult {
 	defer recoverPanic("GoComponentTerminate")
 
-	wrapper := getComponent(uintptr(componentPtr))
+	wrapper := getComponent(uintptr(componentID))
 	if wrapper == nil {
 		return C.Steinberg_tresult(vst3.ResultFalse)
 	}
@@ -301,8 +432,10 @@ func GoComponentTerminate(componentPtr unsafe.Pointer) C.Steinberg_tresult {
 }
 
 //export GoComponentGetControllerClassId
-func GoComponentGetControllerClassId(componentPtr unsafe.Pointer, classId *C.char) {
-	wrapper := getComponent(uintptr(componentPtr))
+func GoComponentGetControllerClassId(componentID C.uintptr_t, classId *C.char) {
+	defer recoverPanic("GoComponentGetControllerClassId")
+
+	wrapper := getComponent(uintptr(componentID))
 	if wrapper == nil {
 		return
 	}
@@ -312,8 +445,10 @@ func GoComponentGetControllerClassId(componentPtr unsafe.Pointer, classId *C.cha
 }
 
 //export GoComponentSetIoMode
-func GoComponentSetIoMode(componentPtr unsafe.Pointer, mode C.int32_t) C.Steinberg_tresult {
-	wrapper := getComponent(uintptr(componentPtr))
+func GoComponentSetIoMode(componentID C.uintptr_t, mode C.int32_t) (result C.Steinberg_tresult) {
+	defer recoverPanicResult("GoComponentSetIoMode", &result)
+
+	wrapper := getComponent(uintptr(componentID))
 	if wrapper == nil {
 		return C.Steinberg_tresult(vst3.ResultFalse)
 	}
@@ -326,8 +461,10 @@ func GoComponentSetIoMode(componentPtr unsafe.Pointer, mode C.int32_t) C.Steinbe
 }
 
 //export GoComponentGetBusCount
-func GoComponentGetBusCount(componentPtr unsafe.Pointer, mediaType, dir C.int32_t) C.int32_t {
-	wrapper := getComponent(uintptr(componentPtr))
+func GoComponentGetBusCount(componentID C.uintptr_t, mediaType, dir C.int32_t) C.int32_t {
+	defer recoverPanic("GoComponentGetBusCount")
+
+	wrapper := getComponent(uintptr(componentID))
 	if wrapper == nil {
 		return 0
 	}
@@ -336,8 +473,10 @@ func GoComponentGetBusCount(componentPtr unsafe.Pointer, mediaType, dir C.int32_
 }
 
 //export GoComponentGetBusInfo
-func GoComponentGetBusInfo(componentPtr unsafe.Pointer, mediaType, dir, index C.int32_t, bus unsafe.Pointer) C.Steinberg_tresult {
-	wrapper := getComponent(uintptr(componentPtr))
+func GoComponentGetBusInfo(componentID C.uintptr_t, mediaType, dir, index C.int32_t, bus unsafe.Pointer) (result C.Steinberg_tresult) {
+	defer recoverPanicResult("GoComponentGetBusInfo", &result)
+
+	wrapper := getComponent(uintptr(componentID))
 	if wrapper == nil {
 		return C.Steinberg_tresult(vst3.ResultFalse)
 	}
@@ -353,15 +492,7 @@ func GoComponentGetBusInfo(componentPtr unsafe.Pointer, mediaType, dir, index C.
 	cBus.direction = C.Steinberg_Vst_BusDirection(info.Direction)
 	cBus.channelCount = C.Steinberg_int32(info.ChannelCount)
 
-	// Copy name
-	nameBytes := []byte(info.Name)
-	if len(nameBytes) > 127 {
-		nameBytes = nameBytes[:127]
-	}
-	for i, b := range nameBytes {
-		cBus.name[i] = C.Steinberg_char16(b)
-	}
-	cBus.name[len(nameBytes)] = 0
+	copyStringToTChar(info.Name, &cBus.name[0], len(cBus.name))
 
 	cBus.busType = C.Steinberg_Vst_BusType(info.BusType)
 	cBus.flags = C.Steinberg_uint32(info.Flags)
@@ -370,8 +501,10 @@ func GoComponentGetBusInfo(componentPtr unsafe.Pointer, mediaType, dir, index C.
 }
 
 //export GoComponentActivateBus
-func GoComponentActivateBus(componentPtr unsafe.Pointer, mediaType, dir, index, state C.int32_t) C.Steinberg_tresult {
-	wrapper := getComponent(uintptr(componentPtr))
+func GoComponentActivateBus(componentID C.uintptr_t, mediaType, dir, index, state C.int32_t) (result C.Steinberg_tresult) {
+	defer recoverPanicResult("GoComponentActivateBus", &result)
+
+	wrapper := getComponent(uintptr(componentID))
 	if wrapper == nil {
 		return C.Steinberg_tresult(vst3.ResultFalse)
 	}
@@ -384,8 +517,10 @@ func GoComponentActivateBus(componentPtr unsafe.Pointer, mediaType, dir, index, 
 }
 
 //export GoComponentSetActive
-func GoComponentSetActive(componentPtr unsafe.Pointer, state C.int32_t) C.Steinberg_tresult {
-	wrapper := getComponent(uintptr(componentPtr))
+func GoComponentSetActive(componentID C.uintptr_t, state C.int32_t) (result C.Steinberg_tresult) {
+	defer recoverPanicResult("GoComponentSetActive", &result)
+
+	wrapper := getComponent(uintptr(componentID))
 	if wrapper == nil {
 		return C.Steinberg_tresult(vst3.ResultFalse)
 	}
@@ -398,8 +533,10 @@ func GoComponentSetActive(componentPtr unsafe.Pointer, state C.int32_t) C.Steinb
 }
 
 //export GoComponentSetState
-func GoComponentSetState(componentPtr unsafe.Pointer, state unsafe.Pointer) C.Steinberg_tresult {
-	wrapper := getComponent(uintptr(componentPtr))
+func GoComponentSetState(componentID C.uintptr_t, state unsafe.Pointer) (result C.Steinberg_tresult) {
+	defer recoverPanicResult("GoComponentSetState", &result)
+
+	wrapper := getComponent(uintptr(componentID))
 	if wrapper == nil {
 		return C.Steinberg_tresult(vst3.ResultFalse)
 	}
@@ -424,8 +561,10 @@ func GoComponentSetState(componentPtr unsafe.Pointer, state unsafe.Pointer) C.St
 }
 
 //export GoComponentGetState
-func GoComponentGetState(componentPtr unsafe.Pointer, state unsafe.Pointer) C.Steinberg_tresult {
-	wrapper := getComponent(uintptr(componentPtr))
+func GoComponentGetState(componentID C.uintptr_t, state unsafe.Pointer) (result C.Steinberg_tresult) {
+	defer recoverPanicResult("GoComponentGetState", &result)
+
+	wrapper := getComponent(uintptr(componentID))
 	if wrapper == nil {
 		return C.Steinberg_tresult(vst3.ResultFalse)
 	}

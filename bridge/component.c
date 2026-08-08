@@ -1,4 +1,5 @@
 #include "component.h"
+#include <stdatomic.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -33,10 +34,11 @@ struct Component {
     AudioProcessorInterface audioProcessor;
     // Edit controller interface
     EditControllerInterface editController;
-    // Reference count
-    int refCount;
-    // Go component handle
-    void* goComponent;
+    // Reference count. Atomic: hosts call addRef/release concurrently from the
+    // audio thread, the UI thread and background scanner threads.
+    _Atomic int refCount;
+    // Go component registry ID (an opaque integer, never a pointer)
+    uintptr_t goComponent;
 };
 
 // Forward declarations for IComponent methods
@@ -150,8 +152,8 @@ static struct Steinberg_Vst_IEditControllerVtbl editControllerVtbl = {
 };
 
 // Create a new component instance
-void* createComponent(void* goComponent) {
-    DBG_LOG("createComponent: Creating component with Go handle %p", goComponent);
+void* createComponent(uintptr_t goComponent) {
+    DBG_LOG("createComponent: Creating component with Go handle %zu", (size_t)goComponent);
     Component* component = (Component*)malloc(sizeof(Component));
     if (!component) {
         DBG_LOG("createComponent: Failed to allocate memory");
@@ -205,24 +207,25 @@ static Steinberg_tresult SMTG_STDMETHODCALLTYPE component_queryInterface(void* t
 
 static Steinberg_uint32 SMTG_STDMETHODCALLTYPE component_addRef(void* thisInterface) {
     Component* component = (Component*)thisInterface;
-    return ++component->refCount;
+    return (Steinberg_uint32)atomic_fetch_add(&component->refCount, 1) + 1;
 }
 
 static Steinberg_uint32 SMTG_STDMETHODCALLTYPE component_release(void* thisInterface) {
     Component* component = (Component*)thisInterface;
-    if (--component->refCount == 0) {
+    int remaining = atomic_fetch_sub(&component->refCount, 1) - 1;
+    if (remaining == 0) {
         // Release Go component
         GoReleaseComponent(component->goComponent);
         free(component);
         return 0;
     }
-    return component->refCount;
+    return (Steinberg_uint32)remaining;
 }
 
 // IPluginBase implementation
 static Steinberg_tresult SMTG_STDMETHODCALLTYPE component_initialize(void* thisInterface, struct Steinberg_FUnknown* context) {
     Component* component = (Component*)thisInterface;
-    DBG_LOG("component_initialize: component=%p, goComponent=%p", component, component->goComponent);
+    DBG_LOG("component_initialize: component=%p, goComponent=%zu", component, (size_t)component->goComponent);
     Steinberg_tresult result = GoComponentInitialize(component->goComponent, context);
     DBG_LOG("component_initialize: result=%d", result);
     return result;
@@ -235,9 +238,13 @@ static Steinberg_tresult SMTG_STDMETHODCALLTYPE component_terminate(void* thisIn
 
 // IComponent implementation
 static Steinberg_tresult SMTG_STDMETHODCALLTYPE component_getControllerClassId(void* thisInterface, Steinberg_TUID classId) {
-    Component* component = (Component*)thisInterface;
-    GoComponentGetControllerClassId(component->goComponent, classId);
-    return ((Steinberg_tresult)0);
+    (void)thisInterface;
+    (void)classId;
+    // This is a single-component plugin: the IEditController is reachable via
+    // queryInterface on the component itself, so there is no separate
+    // controller class to name. Reporting kResultOk with a null CID would make
+    // the host try to instantiate a controller with CID 000... and fail.
+    return Steinberg_kNotImplemented;
 }
 
 static Steinberg_tresult SMTG_STDMETHODCALLTYPE component_setIoMode(void* thisInterface, Steinberg_Vst_IoMode mode) {

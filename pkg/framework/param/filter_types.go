@@ -18,8 +18,16 @@ const (
 )
 
 const (
-	// unknownFilterType represents an unknown filter type
-	unknownFilterType = "Unknown"
+	// unknownValue is the display string for an out-of-range enumerated value
+	unknownValue = "Unknown"
+)
+
+// Display names for the filter types shared between FilterTypeNames and the
+// auto-generated enum lists in registry_auto.go.
+const (
+	filterNameNotch     = "Notch"
+	filterNameLowShelf  = "Low Shelf"
+	filterNameHighShelf = "High Shelf"
 )
 
 // FilterTypeNames provides display names for filter types
@@ -27,11 +35,11 @@ var FilterTypeNames = []string{
 	"Lowpass",
 	"Highpass",
 	"Bandpass",
-	"Notch",
+	filterNameNotch,
 	"Allpass",
 	"Peaking EQ",
-	"Low Shelf",
-	"High Shelf",
+	filterNameLowShelf,
+	filterNameHighShelf,
 }
 
 // FilterTypeFormatter formats filter type values
@@ -40,7 +48,7 @@ func FilterTypeFormatter(value float64) string {
 	if index >= 0 && index < len(FilterTypeNames) {
 		return FilterTypeNames[index]
 	}
-	return unknownFilterType
+	return unknownValue
 }
 
 // FilterTypeParser parses filter type strings
@@ -97,7 +105,7 @@ func FilterTypeParser(str string) (float64, error) {
 		}
 	}
 
-	return 0, fmt.Errorf("unknown filter type: %s", str)
+	return 0, fmt.Errorf("%w: %q", ErrUnknownFilterType, str)
 }
 
 // Gate type constants
@@ -122,7 +130,7 @@ func GateTypeFormatter(value float64) string {
 	if index >= 0 && index < len(GateTypeNames) {
 		return GateTypeNames[index]
 	}
-	return unknownFilterType
+	return unknownValue
 }
 
 // GateTypeParser parses gate type strings
@@ -153,5 +161,5 @@ func GateTypeParser(str string) (float64, error) {
 		}
 	}
 
-	return 0, fmt.Errorf("unknown gate type: %s", str)
+	return 0, fmt.Errorf("%w: %q", ErrUnknownGateType, str)
 }

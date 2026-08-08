@@ -2,6 +2,7 @@ package param
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -12,8 +13,20 @@ type ChoiceOption struct {
 	Aliases []string
 }
 
-// Choice creates a parameter builder for a multiple choice parameter
+// Choice creates a parameter builder for a multiple choice parameter.
+//
+// Option values must be consecutive integers (0, 1, 2, ...): VST3 addresses a
+// list parameter through StepCount intervals, so the plain range has to span
+// exactly len(options)-1. TryBuild reports a violation.
 func Choice(id uint32, name string, options []ChoiceOption) *Builder {
+	if len(options) == 0 {
+		// A choice without options has no valid detent; produce a harmless
+		// constant parameter and surface the mistake through TryBuild.
+		b := New(id, name).Formatter(func(float64) string { return "" }, nil)
+		b.errs = append(b.errs, fmt.Errorf("%q: %w", name, ErrNoOptions))
+		return b
+	}
+
 	// Create name list for formatter
 	names := make([]string, len(options))
 	for i, opt := range options {
@@ -51,21 +64,15 @@ func Choice(id uint32, name string, options []ChoiceOption) *Builder {
 			}
 		}
 
-		return 0, fmt.Errorf("unknown option: %s", str)
+		return 0, fmt.Errorf("%w: %s", ErrUnknownOption, str)
 	}
 
-	// Determine range and steps
-	minVal := 0.0
-	maxVal := float64(len(options) - 1)
-	if len(options) > 0 {
-		minVal = options[0].Value
-		maxVal = options[len(options)-1].Value
-	}
-
+	// StepCount counts intervals between detents, not detents themselves.
 	return New(id, name).
-		Range(minVal, maxVal).
-		Steps(int32(len(options))).
+		Range(options[0].Value, options[len(options)-1].Value).
+		Steps(int32(len(options)-1)).
 		Default(options[0].Value).
+		AddFlags(IsList).
 		Formatter(formatter, parser)
 }
 
@@ -79,17 +86,10 @@ func GainParameter(id uint32, name string) *Builder {
 		Unit("dB").
 		Formatter(func(v float64) string {
 			if v <= -80 {
-				return "-∞ dB"
+				return displaySilence
 			}
 			return fmt.Sprintf("%.1f dB", v)
-		}, func(s string) (float64, error) {
-			// Handle infinity symbol
-			if strings.Contains(strings.ToLower(s), "inf") || strings.Contains(s, "∞") {
-				return -80, nil
-			}
-			// Standard dB parsing
-			return DecibelParser(s)
-		})
+		}, DecibelParser) // "-∞" yields SilenceDB, which Normalize clamps to Min
 }
 
 // MixParameter creates a standard mix/blend parameter (0-100%)
@@ -178,54 +178,13 @@ func QParameter(id uint32, name string, minQ, maxQ, defaultQ float64) *Builder {
 		}, nil)
 }
 
-// PanParameter creates a stereo pan parameter
+// PanParameter creates a stereo pan parameter on the package-wide pan
+// convention: plain values run from -100 (hard left) to +100 (hard right).
 func PanParameter(id uint32, name string) *Builder {
 	return New(id, name).
 		Range(-100, 100).
 		Default(0).
-		Formatter(func(v float64) string {
-			switch {
-			case v == 0:
-				return "Center"
-			case v < 0:
-				return fmt.Sprintf("%.0f%% L", -v)
-			default:
-				return fmt.Sprintf("%.0f%% R", v)
-			}
-		}, func(s string) (float64, error) {
-			s = strings.TrimSpace(strings.ToLower(s))
-
-			// Handle center
-			if s == "center" || s == "c" {
-				return 0, nil
-			}
-
-			// Handle left
-			if strings.HasSuffix(s, "l") || strings.HasSuffix(s, "left") {
-				s = strings.TrimSuffix(s, "l")
-				s = strings.TrimSuffix(s, "left")
-				s = strings.TrimSuffix(s, "%")
-				s = strings.TrimSpace(s)
-				val, err := parseFloat(s)
-				if err != nil {
-					return 0, err
-				}
-				return -val, nil
-			}
-
-			// Handle right
-			if strings.HasSuffix(s, "r") || strings.HasSuffix(s, "right") {
-				s = strings.TrimSuffix(s, "r")
-				s = strings.TrimSuffix(s, "right")
-				s = strings.TrimSuffix(s, "%")
-				s = strings.TrimSpace(s)
-				return parseFloat(s)
-			}
-
-			// Plain number
-			s = strings.TrimSuffix(s, "%")
-			return parseFloat(s)
-		})
+		Formatter(PanFormatter, PanParser)
 }
 
 // PhaseParameter creates a phase parameter (0-360 degrees)
@@ -280,7 +239,7 @@ func OutputLevelMeter(id uint32, name string) *Builder {
 		Default(-60).
 		Unit("dB").
 		Formatter(DecibelFormatter, nil). // No parser for read-only
-		Flags(IsReadOnly)
+		ReadOnly()
 }
 
 // ThresholdParameter creates a threshold parameter (typically for dynamics)
@@ -325,20 +284,21 @@ func DepthParameter(id uint32, name string) *Builder {
 		Formatter(PercentFormatter, PercentParser)
 }
 
-// BypassParameter creates a bypass on/off switch
+// BypassParameter creates a bypass on/off switch. The IsBypass flag is what
+// makes host-level and offline-render bypass work, so it must be set.
 func BypassParameter(id uint32, name string) *Builder {
 	return Choice(id, name, []ChoiceOption{
 		{Value: 0, Name: "Active"},
 		{Value: 1, Name: "Bypassed"},
-	})
+	}).Bypass()
 }
 
-// Helper function to parse float with error handling
+// parseFloat parses a complete numeric string. Unlike fmt.Sscanf it rejects
+// trailing garbage such as "12notanumber".
 func parseFloat(s string) (float64, error) {
-	var value float64
-	_, err := fmt.Sscanf(s, "%f", &value)
+	value, err := strconv.ParseFloat(strings.TrimSpace(s), 64)
 	if err != nil {
-		return 0, fmt.Errorf("invalid number: %s", s)
+		return 0, fmt.Errorf("%w: %q", ErrInvalidNumber, s)
 	}
 	return value, nil
 }
