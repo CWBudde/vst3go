@@ -43,9 +43,9 @@ static struct Steinberg_IPluginFactoryVtbl factoryVtbl = {
 // Global factory instance
 static PluginFactory* globalFactory = NULL;
 
-// VST3 SDK entry point - this is what hosts look for
-__attribute__((visibility("default")))
-struct Steinberg_IPluginFactory* GetPluginFactory() {
+// VST3 SDK entry point. The host-visible GetPluginFactory is the Go //export
+// wrapper around this; see the comment in bridge.h.
+struct Steinberg_IPluginFactory* vst3goGetPluginFactory(void) {
     DBG_LOG("GetPluginFactory called");
     if (!globalFactory) {
         PluginFactory* factory = (PluginFactory*)malloc(sizeof(PluginFactory));
@@ -66,27 +66,26 @@ struct Steinberg_IPluginFactory* GetPluginFactory() {
 // Module initialization state
 static int moduleInitialized = 0;
 
-// Linux-specific module entry points
-#ifdef __linux__
-__attribute__((visibility("default")))
-int ModuleEntry(void* sharedLibraryHandle) {
+// The module entry/exit pair every VST3 host calls around GetPluginFactory.
+// Only the exported names and the (ignored) handle argument differ per
+// platform, so the platform split lives in Go and this is the shared body.
+//
+// There is barely any work to do: the Go runtime is brought up by the shared
+// library's own init, and the factory manages its own lifetime through
+// refcounting, so neither hook may free it.
+int vst3goModuleEntry(void) {
     if (moduleInitialized) {
-        return 1; // true
+        return 1;
     }
-    
-    // Module initialization
-    // Note: Go runtime is already initialized by the shared library
     moduleInitialized = 1;
-    return 1; // true
+    return 1;
 }
 
-__attribute__((visibility("default")))
-int ModuleExit() {
-    // Module cleanup - don't free the factory here as it has its own reference counting
+int vst3goModuleExit(void) {
+    // Don't free the factory here; it has its own reference counting.
     moduleInitialized = 0;
-    return 1; // true
+    return 1;
 }
-#endif
 
 // IUnknown implementation
 static Steinberg_tresult SMTG_STDMETHODCALLTYPE factory_queryInterface(void* thisInterface, const Steinberg_TUID iid, void** obj) {

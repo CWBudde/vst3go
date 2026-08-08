@@ -22,6 +22,7 @@ The higher-level audio and synth layer now lives in the companion `synthkit` rep
 - `pkg/vst3/`
 - `pkg/plugin/`
 - `pkg/midi/`
+- `pkg/bundle`
 - `pkg/framework/bus`
 - `pkg/framework/param`
 - `pkg/framework/plugin`
@@ -45,6 +46,29 @@ Purpose:
 - DSP building blocks
 - instrument/effect showcase plugins
 - higher-level audio helpers built on top of `vst3go`
+
+## Platform support
+
+| Platform                | Builds | Smoke test | Validator |
+| ----------------------- | ------ | ---------- | --------- |
+| `linux/amd64`           | CI     | CI         | CI        |
+| `darwin` (amd64, arm64) | CI     | —          | —         |
+| `windows/amd64`         | CI     | CI         | —         |
+| `windows/arm64`         | —      | —          | —         |
+
+A plug-in is not a bare shared library on any of these: it is a `.vst3` bundle
+directory with a per-architecture subdirectory inside. `pkg/bundle` computes
+that layout, so build scripts do not have to hard-code it:
+
+```go
+l, err := bundle.For("MyPlugin", runtime.GOOS, runtime.GOARCH)
+binary, err := l.Create(outputDir)  // where to write the c-shared build
+```
+
+Windows needs MinGW-w64 (MSVC cannot be driven by cgo) and has enough
+platform-specific behaviour — DLL file locking, the Go runtime's unload
+constraints, `MAX_PATH` — to warrant its own page:
+[docs/windows.md](docs/windows.md).
 
 ## Consuming this repo
 
@@ -80,13 +104,18 @@ just test
 ```
 
 Two heavier checks sit behind build tags. The first builds the runtime into a
-real loadable module and drives it from C; the second runs Steinberg's own
+real loadable module, drives it from C, and checks the module actually exports
+the entry points a host resolves by name; the second runs Steinberg's own
 conformance suite against it.
 
 ```bash
-go test -tags smoke ./test/smoke/...
-VST3_VALIDATOR=/path/to/validator go test -tags validator ./test/smoke/...
+just test-smoke                                   # go test -tags smoke ./test/smoke/...
+VST3_VALIDATOR=/path/to/validator just test-validator
 ```
+
+With a MinGW-w64 toolchain installed, `just test-smoke` also cross-builds the
+Windows DLL and inspects its export and import tables. `just build-windows`
+does the cross-build on its own.
 
 [docs/validation.md](docs/validation.md) explains what each of these covers, and
 — more importantly — what a downstream repo such as `synthkit` still has to
@@ -97,7 +126,7 @@ validate on its own.
 This project's own source is licensed under the MIT License — see [LICENSE](LICENSE).
 
 The VST 3 C API headers are **not** redistributed here; they are a git submodule
-(`include/vst3`) under Steinberg's dual license (the VST 3 License Agreement *or*
+(`include/vst3`) under Steinberg's dual license (the VST 3 License Agreement _or_
 GPLv3). A compiled plug-in is a combined work with those headers, so the terms
 under which you may distribute a binary come from whichever Steinberg license you
 have accepted — without a signed agreement, that is the GPLv3. See the third-party

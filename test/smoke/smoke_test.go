@@ -28,21 +28,24 @@ import (
 // process() panicking as soon as a host presented more than one input bus.
 func TestPluginLoadsAndAnswersHost(t *testing.T) {
 	switch runtime.GOOS {
-	case "linux", "darwin":
+	case "linux", "darwin", "windows":
 	default:
 		t.Skipf("smoke test not wired up for %s", runtime.GOOS)
 	}
 
-	if _, err := exec.LookPath("cc"); err != nil {
-		t.Skip("no C compiler available")
-	}
+	cc := findCC(t)
 
 	root := repoRoot(t)
 	tmp := t.TempDir()
 
 	libName := "vst3go_smoke.so"
-	if runtime.GOOS == "darwin" {
+	driverName := "driver"
+	switch runtime.GOOS {
+	case "darwin":
 		libName = "vst3go_smoke.dylib"
+	case "windows":
+		libName = "vst3go_smoke.dll"
+		driverName = "driver.exe"
 	}
 	lib := filepath.Join(tmp, libName)
 
@@ -54,14 +57,19 @@ func TestPluginLoadsAndAnswersHost(t *testing.T) {
 		"./test/smoke/plugin",
 	)
 
-	driver := filepath.Join(tmp, "driver")
-	run(t, root, nil, "cc",
+	driver := filepath.Join(tmp, driverName)
+	args := []string{
 		"-o", driver,
 		filepath.Join(root, "test", "smoke", "testdata", "driver.c"),
 		lib,
-		"-I"+filepath.Join(root, "include"),
-		"-Wl,-rpath,"+tmp,
-	)
+		"-I" + filepath.Join(root, "include"),
+	}
+	if runtime.GOOS != "windows" {
+		// PE has no rpath; Windows resolves the DLL from the executable's own
+		// directory, which is where both of these land.
+		args = append(args, "-Wl,-rpath,"+tmp)
+	}
+	run(t, root, nil, cc, args...)
 
 	out := run(t, tmp, []string{"LD_LIBRARY_PATH=" + tmp, "DYLD_LIBRARY_PATH=" + tmp}, driver)
 	t.Log("\n" + out)
@@ -69,4 +77,18 @@ func TestPluginLoadsAndAnswersHost(t *testing.T) {
 	if !strings.Contains(out, "ALL PASSED") {
 		t.Fatalf("driver reported failures:\n%s", out)
 	}
+}
+
+// findCC locates a C compiler. Windows toolchains generally ship gcc without
+// the "cc" alias that is conventional on Unix.
+func findCC(t *testing.T) string {
+	t.Helper()
+
+	for _, name := range []string{"cc", "gcc", "clang"} {
+		if _, err := exec.LookPath(name); err == nil {
+			return name
+		}
+	}
+	t.Skip("no C compiler available")
+	return ""
 }

@@ -22,18 +22,18 @@ package smoke
 import (
 	"os"
 	"os/exec"
-	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/cwbudde/vst3go/pkg/bundle"
 )
 
 // The build helpers shared with smoke_test.go live in helpers_test.go, which
 // carries both build tags.
 
-// bundleName is the plugin bundle the validator is pointed at. The .vst3
-// extension is what makes the module loader recognize it.
-const bundleName = "VST3GoSmoke.vst3"
+// bundleName is the plugin bundle the validator is pointed at.
+const bundleName = "VST3GoSmoke"
 
 // findValidator locates Steinberg's validator, preferring an explicit path.
 func findValidator(t *testing.T) string {
@@ -56,72 +56,30 @@ func findValidator(t *testing.T) string {
 }
 
 // buildBundle compiles the smoke plugin and lays it out as a VST3 bundle, which
-// is the only form the SDK's module loader accepts. The platform subdirectory
-// name is fixed by the VST3 bundle specification.
+// is the only form the SDK's module loader accepts. The layout itself comes
+// from pkg/bundle, so this test and any downstream build script agree on it by
+// construction rather than by two copies of the same table.
 func buildBundle(t *testing.T, root, dir string) string {
 	t.Helper()
 
-	base := strings.TrimSuffix(bundleName, ".vst3")
-
-	var subdir, binary string
-	switch runtime.GOOS {
-	case "linux":
-		switch runtime.GOARCH {
-		case "amd64":
-			subdir = "x86_64-linux"
-		case "arm64":
-			subdir = "aarch64-linux"
-		default:
-			t.Skipf("no VST3 bundle layout defined for linux/%s", runtime.GOARCH)
-		}
-		binary = base + ".so"
-	case "darwin":
-		subdir = "MacOS"
-		binary = base
-	default:
-		t.Skipf("validator test not wired up for %s", runtime.GOOS)
+	layout, err := bundle.For(bundleName, runtime.GOOS, runtime.GOARCH)
+	if err != nil {
+		t.Skipf("%v", err)
 	}
 
-	bundle := filepath.Join(dir, bundleName)
-	contents := filepath.Join(bundle, "Contents", subdir)
-	if err := os.MkdirAll(contents, 0o755); err != nil {
-		t.Fatalf("mkdir %s: %v", contents, err)
+	binary, err := layout.Create(dir)
+	if err != nil {
+		t.Fatalf("create bundle: %v", err)
 	}
 
 	run(t, root, nil, "go", "build",
 		"-buildvcs=false",
 		"-buildmode=c-shared",
-		"-o", filepath.Join(contents, binary),
+		"-o", binary,
 		"./test/smoke/plugin",
 	)
 
-	if runtime.GOOS == "darwin" {
-		// macOS refuses to load a bundle without an Info.plist, and the loader
-		// reads CFBundleExecutable from it to find the binary.
-		plist := `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-	<key>CFBundleExecutable</key>
-	<string>` + base + `</string>
-	<key>CFBundleIdentifier</key>
-	<string>com.vst3go.smoketest</string>
-	<key>CFBundleName</key>
-	<string>` + base + `</string>
-	<key>CFBundlePackageType</key>
-	<string>BNDL</string>
-	<key>CFBundleVersion</key>
-	<string>1.0.0</string>
-</dict>
-</plist>
-`
-		path := filepath.Join(bundle, "Contents", "Info.plist")
-		if err := os.WriteFile(path, []byte(plist), 0o644); err != nil {
-			t.Fatalf("write Info.plist: %v", err)
-		}
-	}
-
-	return bundle
+	return layout.Path(dir)
 }
 
 // TestValidatorAcceptsThePlugin is the closest thing to a real host in CI: it is

@@ -199,23 +199,73 @@ to 0, and `go vet ./...` is clean for the first time.
 
 ## Phase 5: Cross-Platform Windows Support
 
-- [ ] Update the build system for Windows.
-  - [ ] Detect Windows cleanly.
-  - [ ] Produce the correct library format and bundle layout.
-- [ ] Extend the bridge for Windows entry points.
-  - [ ] Add required DLL entry handling.
-  - [ ] Export `GetPluginFactory`.
-- [ ] Review platform-specific CGO directives.
-  - [ ] Add Windows-specific flags only where necessary.
-  - [ ] Minimize platform divergence.
-- [ ] Validate on real toolchains and hosts.
-  - [ ] Start with MinGW-w64.
-  - [ ] Keep MSVC as a later enhancement if justified.
-- [ ] Capture Windows-specific risks.
-  - [ ] Shared-library behavior with Go.
-  - [ ] Scheduler differences.
-  - [ ] File locking and reload friction.
-  - [ ] Path-length edge cases.
+The headline finding: `GetPluginFactory` was never exported from the Windows
+DLL, and nothing in the build said so. For a `c-shared` build the Go linker
+generates a `.def` file whose `EXPORTS` section is built solely from `//export`
+symbols and passes it to `ld`, which then exports exactly that set — a C-side
+`__declspec(dllexport)` is dropped without a diagnostic. The module compiled,
+linked and loaded, and every host would have rejected it as invalid.
+
+- [x] Update the build system for Windows.
+  - [x] Detect Windows cleanly.
+  - [x] Produce the correct library format and bundle layout. `pkg/bundle` now
+        owns the bundle layout for all three platforms — including the detail
+        that the Windows binary keeps the `.vst3` extension rather than `.dll`,
+        and the `x86_64-win`/`arm64-win` subdirectory names. The validator test
+        consumes it instead of carrying its own copy of the table, so the two
+        cannot drift.
+  - [x] `just build-windows`, `just test-smoke` and `just test-validator`
+        recipes; the first cross-builds with MinGW-w64.
+- [x] Extend the bridge for Windows entry points.
+  - [x] Add required DLL entry handling. `InitDll`/`ExitDll` on Windows,
+        `bundleEntry`/`bundleExit` on macOS (which were missing entirely — only
+        Linux had an entry pair), `ModuleEntry`/`ModuleExit` on Linux.
+  - [x] Export `GetPluginFactory` — see above. It and the entry pairs are now
+        Go `//export` functions in `pkg/plugin/cbridge`, because that is the
+        only export mechanism that reaches the export table on all three
+        platforms.
+- [x] Review platform-specific CGO directives.
+  - [x] Add Windows-specific flags only where necessary. None were: the DLL
+        imports only `KERNEL32.dll` and `msvcrt.dll`, so no `-static-libgcc`
+        style flags are needed. A test pins that, since picking up
+        `libwinpthread-1.dll` would only fail on a user's machine.
+  - [x] Minimize platform divergence. Net negative: moving the entry points to
+        Go removed every `#ifdef` from `bridge/bridge.c`, and the platform
+        split is now three small build-tagged Go files.
+- [x] Validate on real toolchains and hosts.
+  - [x] Start with MinGW-w64. The cross-built `windows/amd64` module was run
+        end to end under Wine against the existing C driver: factory lifecycle,
+        IID dispatch, refcount release/re-acquire and a multi-bus `process()`
+        call, 20/20 assertions.
+  - [x] Keep MSVC as a later enhancement if justified. Not justified: cgo
+        cannot drive MSVC, and nothing here needs it. Recorded as a
+        non-goal in `docs/windows.md`.
+  - [x] `test/smoke/exports_test.go` reads the real export table out of the
+        built module (PE, ELF and Mach-O) and asserts the host-visible entry
+        points are present. The Windows half is a cross-build, so it runs from
+        the Linux CI runner and does not depend on a Windows host.
+  - [x] CI: `windows-latest` added to the build matrix and to the smoke-test
+        job; the C bridge is now also compiled `-Werror` with MinGW-w64,
+        because `SMTG_STDMETHODCALLTYPE` is `__stdcall` there and empty
+        elsewhere.
+  - Not covered: Steinberg's `validator` on Windows (Linux only), any real DAW
+    on Windows, and `windows/arm64`, which has a bundle layout but no CI build.
+    `windows/386` is refused outright — the SDK's `PLUGIN_API` is `__stdcall`
+    there and cgo emits `cdecl` for `//export`.
+- [x] Capture Windows-specific risks. All in `docs/windows.md`.
+  - [x] Shared-library behavior with Go: the runtime has no teardown path, so
+        `FreeLibrary` does not restore a clean process and hosts that unload
+        and reload during a scan can crash; each loaded plug-in carries its own
+        runtime, GC and threads; the runtime installs a process-wide vectored
+        exception handler that also sees the host's and other plug-ins'
+        exceptions.
+  - [x] Scheduler differences: coarser default timer resolution, and Go threads
+        do not register with MMCSS, so the audio callback does not get the
+        priority class a native audio thread would ask for.
+  - [x] File locking and reload friction: Windows locks a loaded DLL, so the
+        development loop is build → close host → install → reopen, not
+        build-over-the-top.
+  - [x] Path-length edge cases: `MAX_PATH` is 260 and the bundle layout is deep.
 
 ## Phase 6: Release Readiness
 

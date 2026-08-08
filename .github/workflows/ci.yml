@@ -22,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       # The VST3 C API headers live in a submodule; every cgo package needs them.
       - uses: actions/checkout@v4
@@ -33,6 +33,16 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
+
+      # Every package here is cgo, so a missing C compiler fails as a confusing
+      # "undefined symbol" wall further down. Say so up front instead.
+      - name: report the C toolchain
+        # bash rather than the Windows default shell, so one script covers all
+        # three runners.
+        shell: bash
+        run: |
+          go env CC CGO_ENABLED
+          cc --version || gcc --version
 
       - name: go build
         run: go build ./...
@@ -101,18 +111,33 @@ jobs:
         with:
           submodules: recursive
 
+      - name: install the MinGW-w64 cross compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gcc-mingw-w64-x86-64
+
       - name: compile the bridge standalone
         run: |
           # -Wno-unused-parameter: COM vtable slots must match the SDK
           # signature whether or not the stub uses every argument.
-          for f in bridge/*.c; do
-            gcc -fsyntax-only -Wall -Wextra -Wno-unused-parameter \
-              -Werror -Iinclude -Ibridge "$f"
+          #
+          # The bridge is compiled for Windows too: SMTG_STDMETHODCALLTYPE is
+          # __stdcall there and empty everywhere else, so a vtable signature
+          # can be well-formed on Linux and wrong on Windows.
+          for cc in gcc x86_64-w64-mingw32-gcc; do
+            for f in bridge/*.c; do
+              "$cc" -fsyntax-only -Wall -Wextra -Wno-unused-parameter \
+                -Werror -Iinclude -Ibridge "$f"
+            done
           done
 
   plugin-smoke:
     name: plugin smoke test
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -123,10 +148,21 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
           cache: true
 
+      # Enables the cross-build half of the export-table test, which is what
+      # keeps Windows support honest without needing a Windows host: the
+      # entry points a host resolves by name are only reachable through Go's
+      # //export mechanism on PE, and nothing else in the build would notice
+      # if that regressed.
+      - name: install the MinGW-w64 cross compiler
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gcc-mingw-w64-x86-64
+
       # Nothing else in the repo links pkg/plugin into a loadable module, so
       # without this the entire cgo wrapper surface is unproven.
       - name: build and exercise a minimal plugin
-        run: go test -tags smoke -race ./test/smoke/...
+        run: go test -tags smoke -race -count=1 ./test/smoke/...
 
   validator:
     name: Steinberg validator

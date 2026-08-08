@@ -3,6 +3,25 @@
 
 #include "../include/vst3/vst3_c_api.h"
 
+// Module-level entry points.
+//
+// These carry vst3go-prefixed names rather than the names a host looks for
+// (GetPluginFactory, plus InitDll/ExitDll on Windows, bundleEntry/bundleExit on
+// macOS and ModuleEntry/ModuleExit on Linux). The host-visible names are
+// defined in Go with //export, in pkg/plugin/cbridge, because that is the only
+// mechanism that reaches a shared library's export table on all three
+// platforms: for a Windows c-shared build the Go linker hands ld an explicit
+// .def file built solely from //export symbols, so a C-side
+// __declspec(dllexport) is silently dropped and the module loads as if it
+// exported nothing at all.
+//
+// Keeping the platform naming in Go also means this file needs no #ifdef.
+struct Steinberg_IPluginFactory* vst3goGetPluginFactory(void);
+
+// vst3goModuleEntry and vst3goModuleExit return 1 on success, 0 on failure.
+int vst3goModuleEntry(void);
+int vst3goModuleExit(void);
+
 // Go callback functions (will be implemented in Go with //export)
 
 // Factory callbacks
