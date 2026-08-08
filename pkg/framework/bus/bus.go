@@ -1,4 +1,24 @@
 // Package bus provides VST3 audio bus configuration and management.
+//
+// A [Configuration] declares a plugin's audio and event buses. The templates
+// ([Stereo], [Mono], [EffectStereo], [Generator], [MIDIEffect]) cover the usual
+// topologies; the builder covers the rest.
+//
+// # Threading
+//
+// A Configuration is built once, during setup, and treated as immutable
+// afterwards: adding a bus reallocates the underlying slices, which is not
+// safe against a concurrent reader. The host, however, keeps toggling bus
+// activation for the lifetime of the plugin, so that one flag is separated out
+// and shared through an atomic.
+//
+//   - Control thread only: everything that adds or replaces a bus.
+//   - Safe on any thread, including the audio thread: [Info.Active] and
+//     [Configuration.SetBusActive].
+//   - Descriptive reads ([Configuration.GetBusInfo], [Configuration.GetBusCount])
+//     are safe once the configuration is built. GetBusInfo returns a detached
+//     copy whose IsActive field is a snapshot; call [Info.Active] for the live
+//     value.
 package bus
 
 import (

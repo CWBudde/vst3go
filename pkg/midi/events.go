@@ -1,5 +1,36 @@
 // Package midi provides MIDI event types and a sample-accurate event queue for
 // VST3 plugins.
+//
+// [Event] is one concrete tagged struct rather than an interface hierarchy, so
+// events never box and the audio path stays allocation-free. Build one with a
+// constructor ([NewNoteOn], [NewControlChange], …), discriminate on
+// [Event.Type], and read the payload through the type-guarded accessors
+// ([Event.Note], [Event.Velocity], [Event.Controller], …), which return zero
+// for an event of the wrong kind.
+//
+// SampleOffset positions an event inside the current block. The runtime rebases
+// offsets so they are relative to the buffer the plugin actually sees, which
+// matters when a block is split into chunks around parameter automation.
+//
+// # Threading
+//
+// [EventQueue] is guarded by an RWMutex and is safe for concurrent use. The
+// lock is uncontended in the normal case — one producer, one consumer — where
+// it costs a pair of atomics and allocates nothing, which is what makes it
+// usable from the audio thread. It is not lock-free, so a design in which the
+// control thread hammers the same queue during processing will make the audio
+// thread wait.
+//
+// Events themselves are values, so copying one is safe. The single exception
+// is [Event.SysEx]: [NewSysEx] retains the caller's slice rather than copying
+// it, so every copy of that event shares one backing array.
+//
+// [EventQueue.GetEventsInRange] and [EventQueue.GetAllEvents] return freshly
+// allocated copies and are therefore control-thread calls. Their audio-thread
+// counterparts, [EventQueue.AppendEventsInRange] and
+// [EventQueue.AppendAllEvents], append into caller-owned scratch and allocate
+// nothing as long as it has spare capacity; the result is valid only until the
+// queue is next mutated, so it must not outlive the process call that read it.
 package midi
 
 import (

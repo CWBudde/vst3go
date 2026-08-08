@@ -46,6 +46,29 @@ Purpose:
 - instrument/effect showcase plugins
 - higher-level audio helpers built on top of `vst3go`
 
+## Consuming this repo
+
+The module path is `github.com/cwbudde/vst3go`. Note that `go get` alone is not
+enough to build against it: the VST 3 C API header is a git submodule rather
+than a redistributed file, and submodule content is not part of what the Go
+module proxy serves, so a proxy-downloaded copy fails to compile. Depend on a
+checkout instead:
+
+```bash
+git clone --recurse-submodules git@github.com:CWBudde/vst3go.git
+```
+
+```
+// go.mod in the consuming repo
+require github.com/cwbudde/vst3go v0.0.0
+replace github.com/cwbudde/vst3go => ../vst3go
+```
+
+No versions are tagged yet. [docs/migration.md](docs/migration.md) covers this
+in full, along with the intended versioning scheme, the accumulated breaking
+changes (preset format v2, the `midi.Event` rework, the bypass-flag rule), and
+the deprecated parameter accessors.
+
 ## Development
 
 Core checks in this repo:

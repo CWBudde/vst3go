@@ -341,7 +341,7 @@ func (ps *ParameterSmoother) SetSmoothing(id uint32, enabled bool) {
 // SetValue sets the value for a parameter (normalized 0-1).
 func (ps *ParameterSmoother) SetValue(id uint32, value float64) {
 	if sp, ok := ps.smoothers[id]; ok {
-		sp.SetValue(value)
+		sp.SetNormalized(value)
 	}
 }
 

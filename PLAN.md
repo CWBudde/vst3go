@@ -134,44 +134,65 @@ to 0, and `go vet ./...` is clean for the first time.
   - [x] State the split boundary in README and PLAN.
   - [x] The README's "Scope" and "Companion Repo" sections list what belongs
         here against what `synthkit` owns.
-- [ ] Improve API documentation.
-  - [ ] package-level docs — every package has one except `pkg/vst3`, which is
-        the only one still opening straight into declarations.
-  - [ ] lifecycle expectations — `pkg/plugin` documents the
-        Plugin/Processor/StatefulProcessor relationship, but the call order a
-        host imposes (`Initialize` → `SetupProcessing` → `SetActive` →
-        `Process` → `SetActive(false)` → `Terminate`) is not written down
-        anywhere, nor is which hook may allocate.
-  - [ ] thread-safety guarantees — the rules exist as comments at individual
-        call sites; no package states which methods are audio-thread-safe,
-        which are control-thread only, and which are safe on both.
-  - [ ] state/persistence expectations — the v2 format is implemented and
-        tested but never described: no doc says what is serialized, in what
-        order, or what a custom payload must guarantee across versions.
-- [ ] Add migration guidance for the fork.
+- [x] Improve API documentation.
+  - [x] package-level docs — `pkg/vst3/doc.go` now covers the binding layer,
+        its untrusted-input caps, and the cgo constraint on tests.
+  - [x] lifecycle expectations — `pkg/plugin`'s package doc tabulates the host
+        call order against the hooks it invokes, and calls out the two traps:
+        `Initialize` runs twice (the first time with a placeholder 48 kHz rate,
+        the real one arriving with `SetupProcessing`), and there is no
+        `Terminate` hook, so `SetActive(false)` is where teardown belongs. Which
+        hook may allocate is stated per method.
+  - [x] thread-safety guarantees — `pkg/plugin`, `pkg/framework/param`,
+        `pkg/framework/process`, `pkg/framework/bus`, `pkg/midi` and `pkg/vst3`
+        each have a Threading section splitting their surface into
+        audio-thread-safe, control-thread-only, and both. Notable correction
+        captured while writing it: `param.Registry` *is* mutex-guarded, so it is
+        memory-safe but still wrong for the audio thread (a lookup can block on
+        the control thread, and `All` allocates) — resolve `*Parameter` pointers
+        during setup and hold them.
+  - [x] state/persistence expectations — `pkg/framework/state` documents the v2
+        wire format field by field, the v1/v2 compatibility direction, why
+        values are stored normalized (so ranges can change without invalidating
+        presets) and why parameter IDs must therefore be stable, and what a
+        custom payload has to guarantee on its own.
+- [x] Add migration guidance for the fork.
   - [x] Clarify intentional differences from the original project.
   - [x] Clarify the new module path.
-  - [ ] Document how downstream repos should consume this fork once versions are tagged.
+  - [x] Document how downstream repos should consume this fork once versions are
+        tagged — `docs/migration.md`, plus a README section.
+  - [ ] **Open problem found while writing that:** a tagged release is not
+        `go get`-able. `include/vst3` is a git submodule, submodule content is
+        absent from what the module proxy serves, and every cgo package then
+        fails on a missing `vst3_c_api.h` (verified against `git archive HEAD`).
+        `CGO_CFLAGS` cannot paper over it: the header is included by relative
+        path from several directory depths, so no single `-I` satisfies all of
+        them. Documented as a `replace`-directive workaround for now. Deciding
+        the real fix — vendor the header and accept the licensing implication,
+        generate a shim header at build time, or accept checkout-only
+        consumption — belongs to Phase 6 release scope.
 - [x] Add a `LICENSE` file and state the Steinberg dual-license implication for
       distributed binaries.
-- [ ] Write the breaking-change notes for downstream consumers. Three accumulated
-      breaks, none of them documented outside this file:
-  - [ ] Preset format: `state` now writes v2 (length-prefixed custom payload).
+- [x] Write the breaking-change notes for downstream consumers. All three are
+      now in `docs/migration.md`, with the migration table for each:
+  - [x] Preset format: `state` now writes v2 (length-prefixed custom payload).
         v1 presets still load; v2 cannot be read by older builds.
-  - [ ] `midi.Event`: the per-message types (`NoteOnEvent`, `ControlChangeEvent`,
+  - [x] `midi.Event`: the per-message types (`NoteOnEvent`, `ControlChangeEvent`,
         …) and `BaseEvent` are gone, replaced by one `midi.Event` struct with
         constructors (`NewNoteOn`, …) and type-guarded accessors (`Note`,
         `Velocity`, `Controller`, …). `EventQueue.OffsetEvents` no longer returns
         an error. Code that type-switched on events switches on `Event.Type`.
-  - [ ] `BypassParameter` now sets `IsBypass`, and VST3 permits only one such
+        The notes flag that the accessors return zero rather than panicking on a
+        mismatched type, so a missed case in a rewritten type switch is silent.
+  - [x] `BypassParameter` now sets `IsBypass`, and VST3 permits only one such
         parameter per plugin. `RegisterCompressorControls` ("Auto Gain") and
         `RegisterEQBand` ("Band N Enable") were switched to plain `Choice`.
-- [ ] Mark the deprecated `Parameter` aliases. `GetValue`/`SetValue`/
-      `GetPlainValue`/`SetPlainValue` need `// Deprecated:` markers pointing at
-      the `Normalized`/`Plain` forms, and the two remaining internal callers
-      (`process/context.go`, `param/smoother.go`) should move off them so the
-      runtime does not model the discouraged spelling. Closes the residual noted
-      under Phase 1.
+- [x] Mark the deprecated `Parameter` aliases. `GetValue`/`SetValue`/
+      `GetPlainValue`/`SetPlainValue` now carry `// Deprecated:` markers, the two
+      internal callers (`process/context.go`, `param/smoother.go`) use the
+      canonical forms, and the tests moved with them — the aliases keep a
+      dedicated `TestDeprecatedAliases` that pins them to their replacements.
+      Closes the residual noted under Phase 1.
 - [x] Keep build and validation instructions accurate for the retained runtime
       repo. The README's Development section now covers `just` targets, both
       tagged test suites, and links `docs/validation.md`.

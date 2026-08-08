@@ -1,4 +1,43 @@
-// Package param provides VST3 parameter management with formatting, validation, and thread-safe value handling.
+// Package param provides VST3 parameter management with formatting,
+// validation, and thread-safe value handling.
+//
+// A [Parameter] carries both a normalized value in 0..1, which is the domain
+// the host automates and the preset format stores, and a plain value in the
+// parameter's own units, which is what DSP wants. Prefer the explicit
+// [Parameter.GetNormalized]/[Parameter.SetNormalized] and
+// [Parameter.GetPlain]/[Parameter.SetPlain] spellings; the older Value forms
+// are deprecated aliases that do not say which domain they mean.
+//
+// # Threading
+//
+// The value of a Parameter is stored atomically and is the supported channel
+// between the control thread and the audio thread:
+//
+//   - Safe on any thread: GetNormalized, SetNormalized, GetPlain, SetPlain,
+//     Normalize, Denormalize, Advance, SmoothedValue, Smoother. All are
+//     lock-free and allocation-free.
+//   - Control thread only: EnableSmoothing, DisableSmoothing, SetFormatter,
+//     and every [Registry] mutation ([Registry.Add] and the builders).
+//   - Audio thread, once per sample: [Parameter.Advance]. It owns the ramp
+//     state, so exactly one thread may call it.
+//   - Formatting and parsing (FormatValue, ParseValue) allocate and are
+//     control-thread only.
+//
+// A [Registry] is guarded by an RWMutex, so concurrent use is memory-safe, but
+// that makes its accessors unsuitable for the audio thread twice over: a
+// lookup takes a lock the control thread can hold, and [Registry.All]
+// allocates. Build the registry during setup, resolve the *[Parameter] values
+// you need there, and hold those pointers for the audio path. Reading a
+// parameter through its pointer is always safe from ProcessAudio; looking one
+// up by ID is not.
+//
+// A [Smoother] follows the same split: the control thread publishes target and
+// rate through atomics, the audio thread owns the ramp and picks changes up in
+// [Smoother.Next]. [Smoother.Reset] touches ramp state directly and is
+// control-thread only, to be called while stopped.
+//
+// Note that nothing in the runtime calls Advance for you. A parameter with
+// smoothing enabled ramps only if the plugin's own DSP advances it per sample.
 package param
 
 import (
@@ -49,6 +88,9 @@ const (
 )
 
 // GetValue returns the current normalized value (0-1)
+//
+// Deprecated: use [Parameter.GetNormalized]. The Value spelling does not say
+// which of the two value domains it means; the runtime no longer calls it.
 func (p *Parameter) GetValue() float64 {
 	return p.GetNormalized()
 }
@@ -59,6 +101,9 @@ func (p *Parameter) GetNormalized() float64 {
 }
 
 // SetValue sets the normalized value (0-1)
+//
+// Deprecated: use [Parameter.SetNormalized]. The Value spelling does not say
+// which of the two value domains it means; the runtime no longer calls it.
 func (p *Parameter) SetValue(value float64) {
 	p.SetNormalized(value)
 }
@@ -81,6 +126,8 @@ func (p *Parameter) SetNormalized(value float64) {
 }
 
 // GetPlainValue converts normalized to plain value
+//
+// Deprecated: use [Parameter.GetPlain]. The runtime no longer calls it.
 func (p *Parameter) GetPlainValue() float64 {
 	return p.GetPlain()
 }
@@ -91,6 +138,8 @@ func (p *Parameter) GetPlain() float64 {
 }
 
 // SetPlainValue converts plain to normalized value
+//
+// Deprecated: use [Parameter.SetPlain]. The runtime no longer calls it.
 func (p *Parameter) SetPlainValue(plain float64) {
 	p.SetPlain(plain)
 }

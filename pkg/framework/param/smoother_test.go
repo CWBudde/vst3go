@@ -125,13 +125,13 @@ func TestSmoothedParameter(t *testing.T) {
 			Flags:        CanAutomate,
 			UnitID:       0,
 		}
-		param.SetValue(0.5)
+		param.SetNormalized(0.5)
 
 		// Wrap with smoothing
 		smoothed := NewSmoothedParameter(param, ExponentialSmoothing, 0.9)
 
 		// Set a new value
-		smoothed.SetValue(1.0)
+		smoothed.SetNormalized(1.0)
 
 		// Should smooth towards the new value
 		prev := 0.5
@@ -157,11 +157,11 @@ func TestSmoothedParameter(t *testing.T) {
 			Flags:        CanAutomate,
 			UnitID:       0,
 		}
-		param.SetValue(0.5)
+		param.SetNormalized(0.5)
 
 		smoothed := NewSmoothedParameter(param, LinearSmoothing, 10)
 		smoothed.SetSmoothing(false)
-		smoothed.SetValue(1.0)
+		smoothed.SetNormalized(1.0)
 
 		// Should jump immediately
 		if smoothed.Advance() != 1.0 {
@@ -182,7 +182,7 @@ func TestSmoothedParameter(t *testing.T) {
 			Flags:        CanAutomate,
 			UnitID:       0,
 		}
-		param.SetValue(0.5)
+		param.SetNormalized(0.5)
 
 		// Linear smoothing with time-based rate
 		smoothed := NewSmoothedParameter(param, LinearSmoothing, 10)
@@ -207,7 +207,7 @@ func TestParameterSmoother(t *testing.T) {
 			Max:          1.0,
 			DefaultValue: 0.0,
 		}
-		param1.SetValue(0.0)
+		param1.SetNormalized(0.0)
 
 		param2 := &Parameter{
 			ID:           2,
@@ -216,7 +216,7 @@ func TestParameterSmoother(t *testing.T) {
 			Max:          1.0,
 			DefaultValue: 0.5,
 		}
-		param2.SetValue(0.5)
+		param2.SetNormalized(0.5)
 
 		// Add with different smoothing types
 		ps.Add(1, param1, LinearSmoothing, 5)
@@ -250,7 +250,7 @@ func TestParameterSmoother(t *testing.T) {
 			Max:          1.0,
 			DefaultValue: 0.0,
 		}
-		param.SetValue(0.0)
+		param.SetNormalized(0.0)
 
 		ps.Add(1, param, LinearSmoothing, 10)
 		ps.SetSmoothing(1, false)
@@ -340,11 +340,11 @@ func TestSmootherDegenerateRateDoesNotHang(t *testing.T) {
 
 func TestSmootherUpdateSampleRateZeroTime(t *testing.T) {
 	p := &Parameter{Min: 0, Max: 1}
-	p.SetValue(0)
+	p.SetNormalized(0)
 
 	sp := NewSmoothedParameter(p, LinearSmoothing, 10)
 	sp.UpdateSampleRate(48000, 0) // rate becomes 0
-	sp.SetValue(1.0)
+	sp.SetNormalized(1.0)
 
 	if got := sp.Advance(); got != 1.0 {
 		t.Errorf("Advance() = %v, want 1.0", got)
@@ -420,9 +420,9 @@ func TestSmootherConcurrentRetarget(t *testing.T) {
 
 func TestSmootherAdvanceDoesNotAllocate(t *testing.T) {
 	p := &Parameter{Min: 0, Max: 1}
-	p.SetValue(0)
+	p.SetNormalized(0)
 	p.EnableSmoothing(LinearSmoothing, 1024)
-	p.SetValue(1.0)
+	p.SetNormalized(1.0)
 
 	allocs := testing.AllocsPerRun(1000, func() {
 		p.Advance()
@@ -437,7 +437,7 @@ func TestParameterSmootherAdvanceIsExplicit(t *testing.T) {
 	ps := NewParameterSmoother()
 
 	p := &Parameter{Min: 0, Max: 1}
-	p.SetValue(0)
+	p.SetNormalized(0)
 	ps.Add(1, p, LinearSmoothing, 4)
 	ps.SetValue(1, 1.0)
 
@@ -464,7 +464,7 @@ func TestParameterSmootherAdvanceAllDoesNotAllocate(t *testing.T) {
 	ps := NewParameterSmoother()
 	for id := uint32(1); id <= 8; id++ {
 		p := &Parameter{Min: 0, Max: 1}
-		p.SetValue(0)
+		p.SetNormalized(0)
 		ps.Add(id, p, LinearSmoothing, 4096)
 		ps.SetValue(id, 1.0)
 	}

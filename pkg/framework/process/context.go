@@ -1,4 +1,29 @@
-// Package process provides audio processing context and utilities for VST3 audio processing.
+// Package process provides the audio processing context handed to a plugin's
+// ProcessAudio callback.
+//
+// A [Context] carries one block: the input and output channel slices (which
+// alias the host's buffers directly, without copying), the transport state,
+// the parameter changes the host scheduled for this block, and the MIDI events
+// that fall inside it. The runtime owns the Context, reuses it across blocks,
+// and fills it in before each call.
+//
+// # Threading
+//
+// A Context belongs to the audio thread. Every method on it is intended to be
+// called from ProcessAudio and from nowhere else: none of them is synchronized,
+// and its buffers are only valid for the duration of the call that delivered
+// them. A Context, or any slice obtained from one, must never be retained past
+// the end of ProcessAudio or handed to another goroutine.
+//
+// The two exceptions are owned by the runtime, not by plugin code:
+// [NewContext] runs on the control thread during setup, and the reset paths
+// the runtime invokes on deactivation run there too, while the audio thread is
+// stopped.
+//
+// Within ProcessAudio the whole surface is allocation-free: the parameter-change
+// buffer is sized from the block size at construction and coalesces on
+// overflow, and event collection reads into retained scratch rather than
+// allocating a snapshot.
 package process
 
 import (
@@ -387,7 +412,7 @@ func (c *Context) ApplyParameterChange(change ParameterChange) {
 		return
 	}
 	if p := c.params.Get(change.ParamID); p != nil {
-		p.SetValue(change.Value)
+		p.SetNormalized(change.Value)
 	}
 }
 

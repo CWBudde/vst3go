@@ -1,4 +1,69 @@
-// Package state provides VST3 plugin state management for parameter and custom data persistence.
+// Package state provides VST3 plugin state management for parameter and custom
+// data persistence.
+//
+// A [Manager] serializes a [param.Registry] — and, optionally, a plugin-owned
+// custom payload — into the byte stream the host stores as a preset or as part
+// of a project file.
+//
+// # Wire format
+//
+// All multi-byte fields are little-endian. Version 2, written by [Manager.Save]:
+//
+//	offset  size  field
+//	0       6     magic, the ASCII bytes "VST3GO"
+//	6       4     uint32 format version (currently 2)
+//	10      4     int32  parameter count N
+//	14      N*12  N records of { uint32 id; float64 normalized value }
+//	...     4     uint32 custom-payload marker: 0 = absent, 1 = present
+//	...     8     uint64 custom payload length in bytes   (marker == 1 only)
+//	...     L     custom payload                          (marker == 1 only)
+//
+// Parameters are written in [param.Registry.All] order, which is registration
+// order. Values are stored normalized (0..1), never plain, so a later release
+// may change a parameter's Min/Max or formatting without invalidating presets.
+// A parameter present in the stream but absent from the registry is skipped;
+// one absent from the stream keeps its current value. That is what makes it
+// safe to add parameters to a plugin without breaking its old presets, and it
+// is why parameter IDs must be stable across releases — reusing an ID for a
+// different control silently loads the wrong value.
+//
+// # Version compatibility
+//
+// Version 1 stored the custom payload unframed, running to EOF, so a reader
+// with no custom loader could not skip it. Version 2 length-prefixes it.
+// [Manager.Load] reads both; Save always writes the current [FormatVersion].
+// A stream written by a newer release fails with [ErrUnsupportedVersion]
+// rather than being partially applied. Presets therefore move forward but not
+// backward: a v2 preset cannot be read by a build that predates the framing.
+//
+// # What a custom payload must guarantee
+//
+// The runtime frames the payload and bounds its size at 64 MiB; it does not
+// interpret it. Everything else is the plugin's responsibility:
+//
+//   - Version it internally. The outer format version tracks this package's
+//     framing, not the payload's schema, and it will not change when a plugin's
+//     own state does.
+//   - Read back what an older build of the same plugin wrote, or detect that it
+//     cannot and fail cleanly.
+//   - Consume exactly what it wrote. Under version 2 a short read leaves the
+//     rest of the frame skipped, but under version 1 the payload is the
+//     remainder of the stream.
+//   - Encode explicitly. A payload produced by, say, gob or JSON over an
+//     internal struct silently changes shape when that struct is refactored.
+//
+// A stream carrying a payload that no loader is registered for reports
+// [ErrNoCustomLoader], but the parameters in it are still applied: they
+// decoded cleanly and the payload was skipped, so refusing them outright would
+// lose more than it protects.
+//
+// # Threading
+//
+// Save and Load run on the host's control thread and allocate. Neither may be
+// called from the audio thread. Save takes a single snapshot of the registry so
+// a concurrent registration cannot produce a header that disagrees with the
+// body, and Load decodes the whole stream before applying any value, so a
+// corrupt preset leaves the plugin on its previous state rather than a mix.
 package state
 
 import (
