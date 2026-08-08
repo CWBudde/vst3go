@@ -56,6 +56,19 @@ just fmt-check
 just test
 ```
 
+Two heavier checks sit behind build tags. The first builds the runtime into a
+real loadable module and drives it from C; the second runs Steinberg's own
+conformance suite against it.
+
+```bash
+go test -tags smoke ./test/smoke/...
+VST3_VALIDATOR=/path/to/validator go test -tags validator ./test/smoke/...
+```
+
+[docs/validation.md](docs/validation.md) explains what each of these covers, and
+— more importantly — what a downstream repo such as `synthkit` still has to
+validate on its own.
+
 ## License
 
 This project's own source is licensed under the MIT License — see [LICENSE](LICENSE).

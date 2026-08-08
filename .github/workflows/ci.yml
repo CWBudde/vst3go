@@ -11,6 +11,9 @@ permissions:
 
 env:
   GO_VERSION: "1.24.3"
+  # Pinned so the conformance bar cannot move underneath a green build. Bump it
+  # deliberately; the cache key below follows it.
+  VST3_SDK_REF: "58f8da7936800732561402d7936584ca4505de07"
 
 jobs:
   build:
@@ -124,3 +127,66 @@ jobs:
       # without this the entire cgo wrapper surface is unproven.
       - name: build and exercise a minimal plugin
         run: go test -tags smoke -race ./test/smoke/...
+
+  validator:
+    name: Steinberg validator
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      # The submodule carries only the C API headers. The validator is a C++
+      # program in the full SDK, which is why it is fetched separately here
+      # rather than vendored.
+      - name: cache the validator
+        id: validator-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/vst3-validator
+          key: vst3-validator-${{ runner.os }}-${{ env.VST3_SDK_REF }}
+
+      - name: install SDK build dependencies
+        if: steps.validator-cache.outputs.cache-hit != 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libx11-dev libxext-dev libxi-dev libice-dev libsm-dev
+
+      - name: build the validator
+        if: steps.validator-cache.outputs.cache-hit != 'true'
+        run: |
+          set -eux
+          git init vst3sdk
+          cd vst3sdk
+          git remote add origin https://github.com/steinbergmedia/vst3sdk.git
+          git fetch --depth 1 origin "$VST3_SDK_REF"
+          git checkout FETCH_HEAD
+          git submodule update --init --recursive --depth 1
+
+          # editorhost and audiohost are GUI sample hosts that pull in gtkmm;
+          # dropping them keeps this job to the console validator we actually
+          # need. audiohost goes too because it compiles editorhost's sources.
+          rm -rf public.sdk/samples/vst-hosting/editorhost \
+                 public.sdk/samples/vst-hosting/audiohost
+
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DSMTG_ENABLE_VSTGUI_SUPPORT=OFF \
+            -DSMTG_CREATE_PLUGIN_LINK=OFF
+          cmake --build build --target validator -j "$(nproc)"
+
+          mkdir -p ~/vst3-validator
+          cp "$(find build -type f -name validator -perm -u+x | head -1)" ~/vst3-validator/
+
+      # Steinberg's own conformance suite: it grades the runtime against the
+      # specification rather than against our reading of it.
+      - name: run the validator against a minimal plugin
+        env:
+          VST3_VALIDATOR: /home/runner/vst3-validator/validator
+        run: go test -tags validator -count=1 -v ./test/smoke/...

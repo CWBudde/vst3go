@@ -251,9 +251,9 @@ func TestProcessSampleAccurateReslicesEvents(t *testing.T) {
 
 	// Block-absolute offsets, as the host delivers them.
 	c.blockEvents = []midi.Event{
-		midi.NoteOnEvent{BaseEvent: midi.BaseEvent{Offset: 10}, NoteNumber: 60, Velocity: 100},
-		midi.NoteOnEvent{BaseEvent: midi.BaseEvent{Offset: 300}, NoteNumber: 64, Velocity: 100},
-		midi.NoteOffEvent{BaseEvent: midi.BaseEvent{Offset: 500}, NoteNumber: 60},
+		midi.NewNoteOn(0, 60, 100, 10),
+		midi.NewNoteOn(0, 64, 100, 300),
+		midi.NewNoteOff(0, 60, 0, 500),
 	}
 
 	ctx.AddParameterChange(1, 0.5, 128)
@@ -281,20 +281,16 @@ func assertEvents(t *testing.T, name string, got []midi.Event, wantOffsets []int
 		t.Fatalf("%s: event count = %d, want %d (%v)", name, len(got), len(wantOffsets), got)
 	}
 	for i, event := range got {
-		if event.SampleOffset() != wantOffsets[i] {
-			t.Errorf("%s event %d: offset = %d, want %d", name, i, event.SampleOffset(), wantOffsets[i])
+		if event.Offset != wantOffsets[i] {
+			t.Errorf("%s event %d: offset = %d, want %d", name, i, event.Offset, wantOffsets[i])
 		}
 
-		var note uint8
-		switch e := event.(type) {
-		case midi.NoteOnEvent:
-			note = e.NoteNumber
-		case midi.NoteOffEvent:
-			note = e.NoteNumber
+		switch event.Type {
+		case midi.EventTypeNoteOn, midi.EventTypeNoteOff:
 		default:
-			t.Fatalf("%s event %d: unexpected type %T", name, i, event)
+			t.Fatalf("%s event %d: unexpected type %v", name, i, event.Type)
 		}
-		if note != wantNotes[i] {
+		if note := event.Note(); note != wantNotes[i] {
 			t.Errorf("%s event %d: note = %d, want %d", name, i, note, wantNotes[i])
 		}
 	}
@@ -308,8 +304,8 @@ func TestPublishInputEventsWholeBlock(t *testing.T) {
 	fillBlock(ctx, 1, numSamples)
 
 	c.blockEvents = []midi.Event{
-		midi.NoteOnEvent{BaseEvent: midi.BaseEvent{Offset: 0}, NoteNumber: 60},
-		midi.NoteOnEvent{BaseEvent: midi.BaseEvent{Offset: 255}, NoteNumber: 61},
+		midi.NewNoteOn(0, 60, 0, 0),
+		midi.NewNoteOn(0, 61, 0, 255),
 	}
 
 	c.publishInputEvents(ctx, 0, math.MaxInt32)
@@ -318,8 +314,8 @@ func TestPublishInputEventsWholeBlock(t *testing.T) {
 	if len(events) != 2 {
 		t.Fatalf("event count = %d, want 2", len(events))
 	}
-	if events[0].SampleOffset() != 0 || events[1].SampleOffset() != 255 {
-		t.Errorf("whole-block offsets were shifted: %d, %d", events[0].SampleOffset(), events[1].SampleOffset())
+	if events[0].Offset != 0 || events[1].Offset != 255 {
+		t.Errorf("whole-block offsets were shifted: %d, %d", events[0].Offset, events[1].Offset)
 	}
 }
 
@@ -331,7 +327,7 @@ func TestPublishInputEventsClearsPreviousChunk(t *testing.T) {
 	fillBlock(ctx, 1, numSamples)
 
 	c.blockEvents = []midi.Event{
-		midi.NoteOnEvent{BaseEvent: midi.BaseEvent{Offset: 10}, NoteNumber: 60},
+		midi.NewNoteOn(0, 60, 0, 10),
 	}
 
 	c.publishInputEvents(ctx, 0, 128)
@@ -363,6 +359,47 @@ func TestProcessChunkDoesNotAllocate(t *testing.T) {
 	})
 	if allocs != 0 {
 		t.Errorf("chunk loop allocated %.1f times per block, want 0", allocs)
+	}
+}
+
+// MIDI events used to box into the midi.Event interface, which allocated once
+// per event per block on the audio thread. Event is now a concrete struct, so a
+// block carrying MIDI must be exactly as allocation-free as a silent one.
+func TestProcessSampleAccurateWithEventsDoesNotAllocate(t *testing.T) {
+	const numSamples = 512
+
+	processor := &nullProcessor{recordingProcessor{params: param.NewRegistry()}}
+	c, ctx := newTestComponent(t, processor, numSamples)
+	fillBlock(ctx, 8, numSamples)
+
+	events := make([]midi.Event, 0, 64)
+	for i := range int32(32) {
+		events = append(events, midi.NewNoteOn(0, uint8(i), 100, i*16))
+	}
+
+	prime := func() {
+		c.blockEvents = append(c.blockEvents[:0], events...)
+		ctx.ResetParameterChanges()
+		ctx.AddParameterChange(1, 0.5, 128)
+		ctx.AddParameterChange(1, 0.5, 384)
+		ctx.SortParameterChanges()
+	}
+
+	prime()
+	c.processSampleAccurate(ctx)
+
+	// Guard against a vacuous measurement: the events must actually be reaching
+	// the context, otherwise this would pass on an empty code path.
+	if !ctx.HasInputEvents() {
+		t.Fatal("the final chunk saw no input events; the alloc measurement would be meaningless")
+	}
+
+	allocs := testing.AllocsPerRun(200, func() {
+		prime()
+		c.processSampleAccurate(ctx)
+	})
+	if allocs != 0 {
+		t.Errorf("a block with 32 MIDI events allocated %.1f times, want 0", allocs)
 	}
 }
 

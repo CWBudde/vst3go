@@ -1,7 +1,6 @@
 package midi
 
 import (
-	"fmt"
 	"sort"
 	"sync"
 )
@@ -60,10 +59,10 @@ func (q *EventQueue) AddMultiple(events []Event) {
 //
 // The caller must hold the write lock.
 func (q *EventQueue) insert(event Event) {
-	offset := event.SampleOffset()
+	offset := event.Offset
 
 	i := len(q.events)
-	for i > 0 && q.events[i-1].SampleOffset() > offset {
+	for i > 0 && q.events[i-1].Offset > offset {
 		i--
 	}
 
@@ -72,7 +71,7 @@ func (q *EventQueue) insert(event Event) {
 		return
 	}
 
-	q.events = append(q.events, nil)
+	q.events = append(q.events, Event{})
 	copy(q.events[i+1:], q.events[i:])
 	q.events[i] = event
 }
@@ -110,10 +109,10 @@ func (q *EventQueue) AppendEventsInRange(dst []Event, startSample, endSample int
 // The caller must hold at least the read lock.
 func (q *EventQueue) rangeBounds(startSample, endSample int32) (start, end int) {
 	start = sort.Search(len(q.events), func(i int) bool {
-		return q.events[i].SampleOffset() >= startSample
+		return q.events[i].Offset >= startSample
 	})
 	end = sort.Search(len(q.events), func(i int) bool {
-		return q.events[i].SampleOffset() >= endSample
+		return q.events[i].Offset >= endSample
 	})
 	if end < start {
 		end = start
@@ -146,10 +145,9 @@ func (q *EventQueue) Clear() {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
-	// Release the boxed event values so they can be collected.
-	for i := range q.events {
-		q.events[i] = nil
-	}
+	// Zero the retired entries so any SysEx payload they reference can be
+	// collected rather than pinned by the retained backing array.
+	clear(q.events)
 	q.events = q.events[:0]
 }
 
@@ -161,16 +159,14 @@ func (q *EventQueue) RemoveProcessedEvents(upToSample int32) {
 	defer q.mu.Unlock()
 
 	keepIdx := sort.Search(len(q.events), func(i int) bool {
-		return q.events[i].SampleOffset() >= upToSample
+		return q.events[i].Offset >= upToSample
 	})
 	if keepIdx == 0 {
 		return
 	}
 
 	n := copy(q.events, q.events[keepIdx:])
-	for i := n; i < len(q.events); i++ {
-		q.events[i] = nil
-	}
+	clear(q.events[n:])
 	q.events = q.events[:n]
 }
 
@@ -191,21 +187,13 @@ func (q *EventQueue) IsEmpty() bool {
 // OffsetEvents shifts every queued event in time by offset samples, which is how
 // a block-relative queue is rebased onto a sub-chunk boundary. Shifting all
 // events by the same amount preserves the ordering invariant.
-//
-// It returns an error if the queue holds an Event implementation from outside
-// this package that cannot be shifted, rather than silently leaving it in place.
-func (q *EventQueue) OffsetEvents(offset int32) error {
+func (q *EventQueue) OffsetEvents(offset int32) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 
 	for i := range q.events {
-		shifter, ok := q.events[i].(OffsetShifter)
-		if !ok {
-			return fmt.Errorf("%w: %T", ErrUnshiftableEvent, q.events[i])
-		}
-		q.events[i] = shifter.ShiftOffset(offset)
+		q.events[i].Offset += offset
 	}
-	return nil
 }
 
 // EventProcessor consumes MIDI events one at a time.
@@ -215,6 +203,10 @@ type EventProcessor interface {
 
 // ProcessEvents hands every event in the half-open range [startSample, endSample)
 // to processor in time order.
+//
+// It snapshots the range first so processor may mutate the queue, which costs an
+// allocation. On the audio thread prefer AppendEventsInRange into a retained
+// scratch slice; process.Context.ProcessEvents does exactly that.
 func (q *EventQueue) ProcessEvents(processor EventProcessor, startSample, endSample int32) {
 	events := q.GetEventsInRange(startSample, endSample)
 	for _, event := range events {

@@ -93,22 +93,31 @@ to 0, and `go vet ./...` is clean for the first time.
   - [x] Revisit fixed-size internal buffers where limits may be too rigid. The
         128-entry automation buffer now scales with the block size and
         coalesces on overflow instead of silently dropping changes.
-  - [ ] Remaining audio-thread allocation: `midi.Event` is an interface, so
-        every event boxes once per block. Fixing it means a concrete tagged
-        representation across `pkg/midi`, `pkg/framework/process` and
-        `pkg/plugin` — worth its own change with a single owner.
-- [ ] Keep validation expectations explicit.
+  - [x] `midi.Event` is now a concrete tagged struct rather than an interface,
+        so events no longer box once each per block. The audio path is
+        allocation-free end to end; `TestProcessSampleAccurateWithEventsDoesNotAllocate`
+        pins it with a block carrying 32 MIDI events.
+        `process.Context.ProcessEvents` also collects into a retained scratch
+        instead of allocating a snapshot.
+- [x] Keep validation expectations explicit.
   - [x] Define minimal validation expectations for the runtime layer itself.
         `test/smoke` builds a real `c-shared` module and drives it from C
         (`go test -tags smoke ./test/smoke/...`), covering the factory
         lifecycle, IID dispatch, refcount release/re-acquire and a multi-bus
         `process()` call. Run in CI.
-  - [ ] Add Steinberg's `validator` to CI on top of the smoke test.
-  - [ ] Document what downstream repos such as `synthkit` must validate on
-        their own.
+  - [x] Steinberg's `validator` runs in CI on top of the smoke test
+        (`go test -tags validator ./test/smoke/...`): 47 conformance tests, 0
+        failures. The validator is built from a pinned SDK commit and cached;
+        the test skips when no validator is available, so contributors without
+        the C++ SDK are not blocked.
+  - [x] `docs/validation.md` records what this repo validates and what
+        downstream repos such as `synthkit` must validate on their own:
+        the validator against their *own* bus/parameter topology, allocation
+        guards on their DSP, DSP correctness, custom preset-payload
+        compatibility, and real-host testing.
 - [x] Add CI (`.github/workflows/ci.yml`): build/vet/`-race` on Linux and
-      macOS, golangci-lint, gofmt, a `-Werror` C bridge compile, and the
-      smoke test.
+      macOS, golangci-lint, gofmt, a `-Werror` C bridge compile, the smoke
+      test, and the Steinberg validator.
 
 ## Phase 4: Documentation And Consumer Experience
 
@@ -128,6 +137,12 @@ to 0, and `go vet ./...` is clean for the first time.
       distributed binaries.
 - [ ] Document the preset format break: `state` now writes v2 (length-prefixed
       custom payload). v1 presets still load; v2 cannot be read by older builds.
+- [ ] Document the `midi.Event` break: the per-message types (`NoteOnEvent`,
+      `ControlChangeEvent`, …) and `BaseEvent` are gone, replaced by one
+      `midi.Event` struct with constructors (`NewNoteOn`, …) and type-guarded
+      accessors (`Note`, `Velocity`, `Controller`, …). `EventQueue.OffsetEvents`
+      no longer returns an error. Downstream code that type-switched on events
+      switches on `Event.Type` instead.
 - [ ] Keep build and validation instructions accurate for the retained runtime repo.
 
 ## Phase 5: Cross-Platform Windows Support

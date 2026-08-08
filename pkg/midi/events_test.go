@@ -6,25 +6,26 @@ import (
 )
 
 func TestNoteOnEvent(t *testing.T) {
-	event := NoteOnEvent{
-		BaseEvent: BaseEvent{
-			EventChannel: 0,
-			Offset:       100,
-		},
-		NoteNumber: 60, // Middle C
-		Velocity:   64,
+	event := NewNoteOn(0, 60, 64, 100) // Middle C
+
+	if event.Type != EventTypeNoteOn {
+		t.Errorf("Expected type %v, got %v", EventTypeNoteOn, event.Type)
 	}
 
-	if event.Type() != EventTypeNoteOn {
-		t.Errorf("Expected type %v, got %v", EventTypeNoteOn, event.Type())
+	if event.Channel != 0 {
+		t.Errorf("Expected channel 0, got %d", event.Channel)
 	}
 
-	if event.Channel() != 0 {
-		t.Errorf("Expected channel 0, got %d", event.Channel())
+	if event.Offset != 100 {
+		t.Errorf("Expected offset 100, got %d", event.Offset)
 	}
 
-	if event.SampleOffset() != 100 {
-		t.Errorf("Expected offset 100, got %d", event.SampleOffset())
+	if event.Note() != 60 {
+		t.Errorf("Expected note 60, got %d", event.Note())
+	}
+
+	if event.Velocity() != 64 {
+		t.Errorf("Expected velocity 64, got %d", event.Velocity())
 	}
 
 	expected := "NoteOn{ch:0, note:60, vel:64, offset:100}"
@@ -34,39 +35,33 @@ func TestNoteOnEvent(t *testing.T) {
 }
 
 func TestNoteOffEvent(t *testing.T) {
-	event := NoteOffEvent{
-		BaseEvent: BaseEvent{
-			EventChannel: 1,
-			Offset:       200,
-		},
-		NoteNumber: 72, // C5
-		Velocity:   0,
+	event := NewNoteOff(1, 72, 0, 200) // C5
+
+	if event.Type != EventTypeNoteOff {
+		t.Errorf("Expected type %v, got %v", EventTypeNoteOff, event.Type)
 	}
 
-	if event.Type() != EventTypeNoteOff {
-		t.Errorf("Expected type %v, got %v", EventTypeNoteOff, event.Type())
-	}
-
-	if event.Channel() != 1 {
-		t.Errorf("Expected channel 1, got %d", event.Channel())
+	if event.Channel != 1 {
+		t.Errorf("Expected channel 1, got %d", event.Channel)
 	}
 }
 
 func TestControlChangeEvent(t *testing.T) {
-	event := ControlChangeEvent{
-		BaseEvent: BaseEvent{
-			EventChannel: 0,
-			Offset:       50,
-		},
-		Controller: CCModWheel,
-		Value:      100,
+	event := NewControlChange(0, CCModWheel, 100, 50)
+
+	if event.Type != EventTypeControlChange {
+		t.Errorf("Expected type %v, got %v", EventTypeControlChange, event.Type)
 	}
 
-	if event.Type() != EventTypeControlChange {
-		t.Errorf("Expected type %v, got %v", EventTypeControlChange, event.Type())
+	if event.Controller() != CCModWheel {
+		t.Errorf("Expected controller %d, got %d", CCModWheel, event.Controller())
 	}
 
-	expected := "CC{ch:0, ctrl:1, val:100, offset:50}"
+	if event.Value() != 100 {
+		t.Errorf("Expected value 100, got %d", event.Value())
+	}
+
+	expected := "ControlChange{ch:0, ctrl:1, val:100, offset:50}"
 	if event.String() != expected {
 		t.Errorf("Expected string %s, got %s", expected, event.String())
 	}
@@ -85,18 +80,178 @@ func TestPitchBendEvent(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		event := PitchBendEvent{
-			BaseEvent: BaseEvent{
-				EventChannel: 0,
-				Offset:       0,
-			},
-			Value: tt.value,
-		}
+		event := NewPitchBend(0, tt.value, 0)
 
-		normalized := event.NormalizedValue()
-		if diff := normalized - tt.normalized; diff > 0.01 && diff < -0.01 {
+		normalized := event.NormalizedBend()
+		if diff := math.Abs(normalized - tt.normalized); diff > 0.01 {
 			t.Errorf("For value %d, expected normalized %f, got %f", tt.value, tt.normalized, normalized)
 		}
+	}
+}
+
+// TestEventAccessorsAreTypeGuarded pins the one hazard of a union payload: a
+// field only means what its name says for the matching Type. The accessors must
+// report zero rather than reinterpreting another message's bytes.
+func TestEventAccessorsAreTypeGuarded(t *testing.T) {
+	cc := NewControlChange(3, CCVolume, 90, 7)
+
+	if got := cc.Note(); got != 0 {
+		t.Errorf("Note() on a control change = %d, want 0", got)
+	}
+	if got := cc.Velocity(); got != 0 {
+		t.Errorf("Velocity() on a control change = %d, want 0", got)
+	}
+	if got := cc.Program(); got != 0 {
+		t.Errorf("Program() on a control change = %d, want 0", got)
+	}
+	if got := cc.Pressure(); got != 0 {
+		t.Errorf("Pressure() on a control change = %d, want 0", got)
+	}
+
+	noteOn := NewNoteOn(0, 64, 100, 0)
+	if got := noteOn.Controller(); got != 0 {
+		t.Errorf("Controller() on a note on = %d, want 0", got)
+	}
+	if got := noteOn.Value(); got != 0 {
+		t.Errorf("Value() on a note on = %d, want 0", got)
+	}
+}
+
+func TestEventConstructors(t *testing.T) {
+	tests := []struct {
+		name     string
+		event    Event
+		wantType EventType
+		wantStr  string
+		check    func(*testing.T, Event)
+	}{
+		{
+			name:     "poly pressure",
+			event:    NewPolyPressure(2, 60, 80, 16),
+			wantType: EventTypePolyPressure,
+			wantStr:  "PolyPressure{ch:2, note:60, pressure:80, offset:16}",
+			check: func(t *testing.T, e Event) {
+				if e.Note() != 60 || e.Pressure() != 80 {
+					t.Errorf("note/pressure = %d/%d, want 60/80", e.Note(), e.Pressure())
+				}
+			},
+		},
+		{
+			name:     "channel pressure",
+			event:    NewChannelPressure(1, 45, 32),
+			wantType: EventTypeChannelPressure,
+			wantStr:  "ChannelPressure{ch:1, pressure:45, offset:32}",
+			check: func(t *testing.T, e Event) {
+				if e.Pressure() != 45 {
+					t.Errorf("pressure = %d, want 45", e.Pressure())
+				}
+			},
+		},
+		{
+			name:     "program change",
+			event:    NewProgramChange(0, 12, 64),
+			wantType: EventTypeProgramChange,
+			wantStr:  "ProgramChange{ch:0, prog:12, offset:64}",
+			check: func(t *testing.T, e Event) {
+				if e.Program() != 12 {
+					t.Errorf("program = %d, want 12", e.Program())
+				}
+			},
+		},
+		{
+			name:     "sysex retains its payload",
+			event:    NewSysEx([]byte{0x7e, 0x00, 0x06}, 8),
+			wantType: EventTypeSystemExclusive,
+			wantStr:  "SysEx{bytes:3, offset:8}",
+			check: func(t *testing.T, e Event) {
+				if len(e.SysEx) != 3 || e.SysEx[0] != 0x7e {
+					t.Errorf("SysEx = %v, want [126 0 6]", e.SysEx)
+				}
+			},
+		},
+		{
+			name:     "clock carries no payload",
+			event:    NewSystemMessage(EventTypeClock, 4),
+			wantType: EventTypeClock,
+			wantStr:  "Clock{offset:4}",
+			check:    func(*testing.T, Event) {},
+		},
+		{
+			name:     "reset carries no payload",
+			event:    NewSystemMessage(EventTypeReset, 0),
+			wantType: EventTypeReset,
+			wantStr:  "Reset{offset:0}",
+			check:    func(*testing.T, Event) {},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.event.Type != tt.wantType {
+				t.Errorf("Type = %v, want %v", tt.event.Type, tt.wantType)
+			}
+			if got := tt.event.String(); got != tt.wantStr {
+				t.Errorf("String() = %q, want %q", got, tt.wantStr)
+			}
+			tt.check(t, tt.event)
+		})
+	}
+}
+
+func TestEventTypeString(t *testing.T) {
+	if got := EventTypeActiveSensing.String(); got != "ActiveSensing" {
+		t.Errorf("EventTypeActiveSensing.String() = %q, want %q", got, "ActiveSensing")
+	}
+	if got := EventType(200).String(); got != "EventType(200)" {
+		t.Errorf("EventType(200).String() = %q, want %q", got, "EventType(200)")
+	}
+}
+
+func TestShiftOffsetDoesNotMutateTheOriginal(t *testing.T) {
+	original := NewNoteOn(0, 60, 100, 128)
+
+	shifted := original.ShiftOffset(-128)
+
+	if original.Offset != 128 {
+		t.Errorf("original offset = %d, want 128 — ShiftOffset must copy", original.Offset)
+	}
+	if shifted.Offset != 0 {
+		t.Errorf("shifted offset = %d, want 0", shifted.Offset)
+	}
+	if shifted.Note() != 60 || shifted.Velocity() != 100 {
+		t.Error("ShiftOffset must preserve the payload")
+	}
+}
+
+// TestEventsDoNotAllocate is the reason Event is a struct and not an interface.
+// Events are built on the audio thread once per message per block; boxing them
+// would allocate on every one.
+func TestEventsDoNotAllocate(t *testing.T) {
+	var sink Event
+
+	allocs := testing.AllocsPerRun(100, func() {
+		sink = NewNoteOn(0, 60, 100, 0)
+		sink = sink.ShiftOffset(8)
+	})
+	if allocs != 0 {
+		t.Errorf("building and shifting an event allocated %v times, want 0", allocs)
+	}
+
+	queue := NewEventQueue()
+	scratch := make([]Event, 0, 64)
+
+	allocs = testing.AllocsPerRun(100, func() {
+		queue.Clear()
+		for i := range int32(32) {
+			queue.Add(NewNoteOn(0, uint8(i), 100, i*4))
+		}
+		scratch = queue.AppendEventsInRange(scratch[:0], 0, 128)
+	})
+	if allocs != 0 {
+		t.Errorf("filling and draining a queue allocated %v times, want 0", allocs)
+	}
+	if len(scratch) != 32 {
+		t.Errorf("drained %d events, want 32", len(scratch))
 	}
 }
 
@@ -140,27 +295,25 @@ func TestNoteNumberToName(t *testing.T) {
 	}
 }
 
-func TestEventInterface(t *testing.T) {
+func TestMixedEventsShareOneSliceElement(t *testing.T) {
 	events := []Event{
-		NoteOnEvent{BaseEvent: BaseEvent{EventChannel: 0, Offset: 0}, NoteNumber: 60, Velocity: 100},
-		NoteOffEvent{BaseEvent: BaseEvent{EventChannel: 0, Offset: 100}, NoteNumber: 60, Velocity: 0},
-		ControlChangeEvent{BaseEvent: BaseEvent{EventChannel: 0, Offset: 200}, Controller: CCSustain, Value: 127},
-		PitchBendEvent{BaseEvent: BaseEvent{EventChannel: 0, Offset: 300}, Value: 0},
+		NewNoteOn(0, 60, 100, 0),
+		NewNoteOff(0, 60, 0, 100),
+		NewControlChange(0, CCSustain, 127, 200),
+		NewPitchBend(0, 0, 300),
 	}
 
 	wantOffsets := []int32{0, 100, 200, 300}
 	for i, event := range events {
-		// Ensure all events implement the interface and report their own data
-		if event.SampleOffset() != wantOffsets[i] {
-			t.Errorf("event %d offset = %d, want %d", i, event.SampleOffset(), wantOffsets[i])
+		if event.Offset != wantOffsets[i] {
+			t.Errorf("event %d offset = %d, want %d", i, event.Offset, wantOffsets[i])
 		}
-		if event.Channel() != 0 {
-			t.Errorf("event %d channel = %d, want 0", i, event.Channel())
+		if event.Channel != 0 {
+			t.Errorf("event %d channel = %d, want 0", i, event.Channel)
 		}
 		if event.String() == "" {
 			t.Errorf("event %d has an empty String()", i)
 		}
-		_ = event.Type()
 	}
 }
 

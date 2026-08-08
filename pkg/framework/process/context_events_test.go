@@ -16,16 +16,8 @@ func TestContextEventProcessing(t *testing.T) {
 	ctx.Output = [][]float32{make([]float32, 512)}
 
 	// Test adding input events
-	noteOn := midi.NoteOnEvent{
-		BaseEvent:  midi.BaseEvent{EventChannel: 0, Offset: 100},
-		NoteNumber: 60,
-		Velocity:   100,
-	}
-	noteOff := midi.NoteOffEvent{
-		BaseEvent:  midi.BaseEvent{EventChannel: 0, Offset: 200},
-		NoteNumber: 60,
-		Velocity:   0,
-	}
+	noteOn := midi.NewNoteOn(0, 60, 100, 100)
+	noteOff := midi.NewNoteOff(0, 60, 0, 200)
 
 	ctx.AddInputEvent(noteOn)
 	ctx.AddInputEvent(noteOff)
@@ -64,15 +56,8 @@ func TestContextOutputEvents(t *testing.T) {
 	ctx := NewContext(512, registry)
 
 	// Add output events
-	cc := midi.ControlChangeEvent{
-		BaseEvent:  midi.BaseEvent{EventChannel: 0, Offset: 50},
-		Controller: midi.CCVolume,
-		Value:      100,
-	}
-	pitchBend := midi.PitchBendEvent{
-		BaseEvent: midi.BaseEvent{EventChannel: 0, Offset: 75},
-		Value:     1000,
-	}
+	cc := midi.NewControlChange(0, midi.CCVolume, 100, 50)
+	pitchBend := midi.NewPitchBend(0, 1000, 75)
 
 	ctx.AddOutputEvent(cc)
 	ctx.AddOutputEvent(pitchBend)
@@ -106,10 +91,10 @@ func TestContextProcessEvents(t *testing.T) {
 
 	// Add events at different offsets
 	events := []midi.Event{
-		midi.NoteOnEvent{BaseEvent: midi.BaseEvent{Offset: 50}, NoteNumber: 60, Velocity: 100},
-		midi.NoteOnEvent{BaseEvent: midi.BaseEvent{Offset: 150}, NoteNumber: 61, Velocity: 100},
-		midi.NoteOnEvent{BaseEvent: midi.BaseEvent{Offset: 250}, NoteNumber: 62, Velocity: 100},
-		midi.NoteOnEvent{BaseEvent: midi.BaseEvent{Offset: 350}, NoteNumber: 63, Velocity: 100},
+		midi.NewNoteOn(0, 60, 100, 50),
+		midi.NewNoteOn(0, 61, 100, 150),
+		midi.NewNoteOn(0, 62, 100, 250),
+		midi.NewNoteOn(0, 63, 100, 350),
 	}
 
 	for _, e := range events {
@@ -138,8 +123,8 @@ func TestContextClearAllEvents(t *testing.T) {
 	ctx := NewContext(512, registry)
 
 	// Add both input and output events
-	ctx.AddInputEvent(midi.NoteOnEvent{BaseEvent: midi.BaseEvent{Offset: 100}, NoteNumber: 60, Velocity: 100})
-	ctx.AddOutputEvent(midi.ControlChangeEvent{BaseEvent: midi.BaseEvent{Offset: 50}, Controller: midi.CCVolume, Value: 100})
+	ctx.AddInputEvent(midi.NewNoteOn(0, 60, 100, 100))
+	ctx.AddOutputEvent(midi.NewControlChange(0, midi.CCVolume, 100, 50))
 
 	// Clear all events
 	ctx.ClearAllEvents()
@@ -171,12 +156,8 @@ func TestHasInputEventsDoesNotAllocate(t *testing.T) {
 	ctx := NewContext(512, param.NewRegistry())
 	ctx.Input = [][]float32{make([]float32, 512)}
 
-	for i := 0; i < 16; i++ {
-		ctx.AddInputEvent(midi.NoteOnEvent{
-			BaseEvent:  midi.BaseEvent{Offset: int32(i * 8)},
-			NoteNumber: 60,
-			Velocity:   100,
-		})
+	for i := range int32(16) {
+		ctx.AddInputEvent(midi.NewNoteOn(0, 60, 100, i*8))
 	}
 
 	if !ctx.HasInputEvents() {

@@ -3,12 +3,12 @@
 package midi
 
 import (
-	"errors"
 	"fmt"
 	"math"
+	"strings"
 )
 
-// EventType identifies the kind of MIDI event carried by an Event.
+// EventType identifies the kind of MIDI message carried by an Event.
 type EventType uint8
 
 // The MIDI event kinds understood by this package.
@@ -47,112 +47,234 @@ const (
 	pitchBendScale = 8192.0
 )
 
-// ErrUnshiftableEvent is returned when an event cannot be moved in time because
-// its type does not implement OffsetShifter.
-var ErrUnshiftableEvent = errors.New("midi: event type cannot be time-shifted")
-
 // Event is a single MIDI message placed at a sample offset within the current
 // processing block.
-type Event interface {
-	Type() EventType
-	Channel() uint8
-	SampleOffset() int32
-	String() string
+//
+// Event is a concrete tagged struct rather than an interface on purpose. Events
+// are produced on the audio thread, once per message per block; storing them
+// behind an interface would heap-allocate every one of them, which is exactly
+// what a realtime callback must not do. The cost is that the payload fields are
+// a union discriminated by Type instead of separate types per message.
+//
+// Use the constructors (NewNoteOn, NewControlChange, …) to build events and the
+// accessors (Note, Velocity, Controller, …) to read them; both document which
+// field means what for a given Type.
+type Event struct {
+	// SysEx is the payload of an EventTypeSystemExclusive message, without the
+	// leading 0xF0 and trailing 0xF7 status bytes. It is not copied, so the
+	// producer must not reuse the buffer. It is nil for every other Type.
+	SysEx []byte
+
+	// Offset is the event position in samples from the start of the block.
+	Offset int32
+
+	// Bend is the raw pitch bend deflection for EventTypePitchBend, in the range
+	// -8192..8191 with 0 at center. It is 0 for every other Type.
+	Bend int16
+
+	// Type selects which of the payload fields below carry meaning.
+	Type EventType
+
+	// Channel is the zero-based MIDI channel. System messages (clock, start,
+	// stop, continue, reset, active sensing, sysex) have no channel and leave
+	// it at 0.
+	Channel uint8
+
+	// Data1 and Data2 are the two MIDI data bytes. Their meaning depends on Type:
+	//
+	//	NoteOff, NoteOn      Data1 = note number, Data2 = velocity
+	//	PolyPressure         Data1 = note number, Data2 = pressure
+	//	ControlChange        Data1 = controller,  Data2 = value
+	//	ChannelPressure      Data1 = pressure
+	//	ProgramChange        Data1 = program number
+	//	everything else      unused
+	Data1 uint8
+	Data2 uint8
 }
 
-// OffsetShifter is implemented by every event type in this package. It returns a
-// copy of the event moved by delta samples. EventQueue.OffsetEvents relies on it
-// so that adding an event type cannot silently skip the rebase.
-type OffsetShifter interface {
-	ShiftOffset(delta int32) Event
+// NewNoteOn builds a note-on event.
+func NewNoteOn(channel, note, velocity uint8, offset int32) Event {
+	return Event{Type: EventTypeNoteOn, Channel: channel, Data1: note, Data2: velocity, Offset: offset}
 }
 
-// BaseEvent carries the channel and sample offset shared by all event types.
-type BaseEvent struct {
-	EventChannel uint8
-	Offset       int32
+// NewNoteOff builds a note-off event.
+func NewNoteOff(channel, note, velocity uint8, offset int32) Event {
+	return Event{Type: EventTypeNoteOff, Channel: channel, Data1: note, Data2: velocity, Offset: offset}
 }
 
-// Channel returns the MIDI channel the event belongs to.
-func (e BaseEvent) Channel() uint8 {
-	return e.EventChannel
+// NewPolyPressure builds a per-note aftertouch event.
+func NewPolyPressure(channel, note, pressure uint8, offset int32) Event {
+	return Event{Type: EventTypePolyPressure, Channel: channel, Data1: note, Data2: pressure, Offset: offset}
 }
 
-// SampleOffset returns the event position in samples from the start of the block.
-func (e BaseEvent) SampleOffset() int32 {
-	return e.Offset
+// NewControlChange builds a continuous controller event.
+func NewControlChange(channel, controller, value uint8, offset int32) Event {
+	return Event{Type: EventTypeControlChange, Channel: channel, Data1: controller, Data2: value, Offset: offset}
 }
 
-// NoteOnEvent starts a note.
-type NoteOnEvent struct {
-	BaseEvent
-	NoteNumber uint8
-	Velocity   uint8
+// NewChannelPressure builds a channel-wide aftertouch event.
+func NewChannelPressure(channel, pressure uint8, offset int32) Event {
+	return Event{Type: EventTypeChannelPressure, Channel: channel, Data1: pressure, Offset: offset}
 }
 
-// Type returns EventTypeNoteOn.
-func (e NoteOnEvent) Type() EventType {
-	return EventTypeNoteOn
+// NewProgramChange builds a patch-select event.
+func NewProgramChange(channel, program uint8, offset int32) Event {
+	return Event{Type: EventTypeProgramChange, Channel: channel, Data1: program, Offset: offset}
+}
+
+// NewPitchBend builds a pitch bend event from a raw deflection in -8192..8191.
+func NewPitchBend(channel uint8, bend int16, offset int32) Event {
+	return Event{Type: EventTypePitchBend, Channel: channel, Bend: bend, Offset: offset}
+}
+
+// NewSysEx builds a system-exclusive event. data is retained, not copied.
+func NewSysEx(data []byte, offset int32) Event {
+	return Event{Type: EventTypeSystemExclusive, SysEx: data, Offset: offset}
+}
+
+// NewSystemMessage builds a payload-free system message such as
+// EventTypeClock or EventTypeStart.
+func NewSystemMessage(eventType EventType, offset int32) Event {
+	return Event{Type: eventType, Offset: offset}
+}
+
+// Note returns the note number of a note-on, note-off or poly-pressure event,
+// and 0 for any other Type.
+func (e Event) Note() uint8 {
+	switch e.Type {
+	case EventTypeNoteOn, EventTypeNoteOff, EventTypePolyPressure:
+		return e.Data1
+	default:
+		return 0
+	}
+}
+
+// Velocity returns the velocity of a note-on or note-off event, and 0 for any
+// other Type.
+func (e Event) Velocity() uint8 {
+	switch e.Type {
+	case EventTypeNoteOn, EventTypeNoteOff:
+		return e.Data2
+	default:
+		return 0
+	}
+}
+
+// Controller returns the controller number of a control-change event, and 0 for
+// any other Type.
+func (e Event) Controller() uint8 {
+	if e.Type == EventTypeControlChange {
+		return e.Data1
+	}
+	return 0
+}
+
+// Value returns the controller value of a control-change event, and 0 for any
+// other Type.
+func (e Event) Value() uint8 {
+	if e.Type == EventTypeControlChange {
+		return e.Data2
+	}
+	return 0
+}
+
+// Pressure returns the aftertouch amount of a poly-pressure or channel-pressure
+// event, and 0 for any other Type.
+func (e Event) Pressure() uint8 {
+	switch e.Type {
+	case EventTypePolyPressure:
+		return e.Data2
+	case EventTypeChannelPressure:
+		return e.Data1
+	default:
+		return 0
+	}
+}
+
+// Program returns the patch number of a program-change event, and 0 for any
+// other Type.
+func (e Event) Program() uint8 {
+	if e.Type == EventTypeProgramChange {
+		return e.Data1
+	}
+	return 0
+}
+
+// NormalizedBend maps the raw pitch bend deflection onto [-1, 1).
+func (e Event) NormalizedBend() float64 {
+	return float64(e.Bend) / pitchBendScale
 }
 
 // ShiftOffset returns a copy of the event moved by delta samples.
-func (e NoteOnEvent) ShiftOffset(delta int32) Event {
+func (e Event) ShiftOffset(delta int32) Event {
 	e.Offset += delta
 	return e
 }
 
 // String renders the event for logging.
-func (e NoteOnEvent) String() string {
-	return fmt.Sprintf("NoteOn{ch:%d, note:%d, vel:%d, offset:%d}",
-		e.EventChannel, e.NoteNumber, e.Velocity, e.Offset)
+func (e Event) String() string {
+	var b strings.Builder
+
+	b.WriteString(e.Type.String())
+	b.WriteByte('{')
+
+	switch e.Type {
+	case EventTypeNoteOn, EventTypeNoteOff:
+		fmt.Fprintf(&b, "ch:%d, note:%d, vel:%d, ", e.Channel, e.Data1, e.Data2)
+	case EventTypePolyPressure:
+		fmt.Fprintf(&b, "ch:%d, note:%d, pressure:%d, ", e.Channel, e.Data1, e.Data2)
+	case EventTypeControlChange:
+		fmt.Fprintf(&b, "ch:%d, ctrl:%d, val:%d, ", e.Channel, e.Data1, e.Data2)
+	case EventTypeChannelPressure:
+		fmt.Fprintf(&b, "ch:%d, pressure:%d, ", e.Channel, e.Data1)
+	case EventTypeProgramChange:
+		fmt.Fprintf(&b, "ch:%d, prog:%d, ", e.Channel, e.Data1)
+	case EventTypePitchBend:
+		fmt.Fprintf(&b, "ch:%d, val:%d, ", e.Channel, e.Bend)
+	case EventTypeSystemExclusive:
+		fmt.Fprintf(&b, "bytes:%d, ", len(e.SysEx))
+	default:
+		// Clock, Start, Stop, Continue, Reset and ActiveSensing carry no payload.
+	}
+
+	fmt.Fprintf(&b, "offset:%d}", e.Offset)
+	return b.String()
 }
 
-// NoteOffEvent releases a note.
-type NoteOffEvent struct {
-	BaseEvent
-	NoteNumber uint8
-	Velocity   uint8
-}
-
-// Type returns EventTypeNoteOff.
-func (e NoteOffEvent) Type() EventType {
-	return EventTypeNoteOff
-}
-
-// ShiftOffset returns a copy of the event moved by delta samples.
-func (e NoteOffEvent) ShiftOffset(delta int32) Event {
-	e.Offset += delta
-	return e
-}
-
-// String renders the event for logging.
-func (e NoteOffEvent) String() string {
-	return fmt.Sprintf("NoteOff{ch:%d, note:%d, vel:%d, offset:%d}",
-		e.EventChannel, e.NoteNumber, e.Velocity, e.Offset)
-}
-
-// ControlChangeEvent carries a continuous controller change.
-type ControlChangeEvent struct {
-	BaseEvent
-	Controller uint8
-	Value      uint8
-}
-
-// Type returns EventTypeControlChange.
-func (e ControlChangeEvent) Type() EventType {
-	return EventTypeControlChange
-}
-
-// ShiftOffset returns a copy of the event moved by delta samples.
-func (e ControlChangeEvent) ShiftOffset(delta int32) Event {
-	e.Offset += delta
-	return e
-}
-
-// String renders the event for logging.
-func (e ControlChangeEvent) String() string {
-	return fmt.Sprintf("CC{ch:%d, ctrl:%d, val:%d, offset:%d}",
-		e.EventChannel, e.Controller, e.Value, e.Offset)
+// String returns the event kind's name.
+func (t EventType) String() string {
+	switch t {
+	case EventTypeNoteOff:
+		return "NoteOff"
+	case EventTypeNoteOn:
+		return "NoteOn"
+	case EventTypePolyPressure:
+		return "PolyPressure"
+	case EventTypeControlChange:
+		return "ControlChange"
+	case EventTypeProgramChange:
+		return "ProgramChange"
+	case EventTypeChannelPressure:
+		return "ChannelPressure"
+	case EventTypePitchBend:
+		return "PitchBend"
+	case EventTypeSystemExclusive:
+		return "SysEx"
+	case EventTypeClock:
+		return "Clock"
+	case EventTypeStart:
+		return "Start"
+	case EventTypeStop:
+		return "Stop"
+	case EventTypeContinue:
+		return "Continue"
+	case EventTypeReset:
+		return "Reset"
+	case EventTypeActiveSensing:
+		return "ActiveSensing"
+	default:
+		return fmt.Sprintf("EventType(%d)", uint8(t))
+	}
 }
 
 // Standard MIDI continuous controller numbers.
@@ -176,254 +298,6 @@ const (
 	CCLocalControl   uint8 = 122
 	CCAllNotesOff    uint8 = 123
 )
-
-// PitchBendEvent carries a channel pitch bend.
-type PitchBendEvent struct {
-	BaseEvent
-	Value int16 // -8192 to 8191, 0 is center
-}
-
-// Type returns EventTypePitchBend.
-func (e PitchBendEvent) Type() EventType {
-	return EventTypePitchBend
-}
-
-// ShiftOffset returns a copy of the event moved by delta samples.
-func (e PitchBendEvent) ShiftOffset(delta int32) Event {
-	e.Offset += delta
-	return e
-}
-
-// String renders the event for logging.
-func (e PitchBendEvent) String() string {
-	return fmt.Sprintf("PitchBend{ch:%d, val:%d, offset:%d}",
-		e.EventChannel, e.Value, e.Offset)
-}
-
-// NormalizedValue maps the raw bend value onto [-1, 1).
-func (e PitchBendEvent) NormalizedValue() float64 {
-	return float64(e.Value) / pitchBendScale
-}
-
-// PolyPressureEvent carries per-note aftertouch.
-type PolyPressureEvent struct {
-	BaseEvent
-	NoteNumber uint8
-	Pressure   uint8
-}
-
-// Type returns EventTypePolyPressure.
-func (e PolyPressureEvent) Type() EventType {
-	return EventTypePolyPressure
-}
-
-// ShiftOffset returns a copy of the event moved by delta samples.
-func (e PolyPressureEvent) ShiftOffset(delta int32) Event {
-	e.Offset += delta
-	return e
-}
-
-// String renders the event for logging.
-func (e PolyPressureEvent) String() string {
-	return fmt.Sprintf("PolyPressure{ch:%d, note:%d, pressure:%d, offset:%d}",
-		e.EventChannel, e.NoteNumber, e.Pressure, e.Offset)
-}
-
-// ChannelPressureEvent carries channel-wide aftertouch.
-type ChannelPressureEvent struct {
-	BaseEvent
-	Pressure uint8
-}
-
-// Type returns EventTypeChannelPressure.
-func (e ChannelPressureEvent) Type() EventType {
-	return EventTypeChannelPressure
-}
-
-// ShiftOffset returns a copy of the event moved by delta samples.
-func (e ChannelPressureEvent) ShiftOffset(delta int32) Event {
-	e.Offset += delta
-	return e
-}
-
-// String renders the event for logging.
-func (e ChannelPressureEvent) String() string {
-	return fmt.Sprintf("ChannelPressure{ch:%d, pressure:%d, offset:%d}",
-		e.EventChannel, e.Pressure, e.Offset)
-}
-
-// ProgramChangeEvent selects a patch on a channel.
-type ProgramChangeEvent struct {
-	BaseEvent
-	Program uint8
-}
-
-// Type returns EventTypeProgramChange.
-func (e ProgramChangeEvent) Type() EventType {
-	return EventTypeProgramChange
-}
-
-// ShiftOffset returns a copy of the event moved by delta samples.
-func (e ProgramChangeEvent) ShiftOffset(delta int32) Event {
-	e.Offset += delta
-	return e
-}
-
-// String renders the event for logging.
-func (e ProgramChangeEvent) String() string {
-	return fmt.Sprintf("ProgramChange{ch:%d, prog:%d, offset:%d}",
-		e.EventChannel, e.Program, e.Offset)
-}
-
-// SystemExclusiveEvent carries a raw SysEx payload. Data is the message body
-// without the leading 0xF0 and trailing 0xF7 status bytes and is not copied, so
-// the producer must not reuse the buffer.
-type SystemExclusiveEvent struct {
-	BaseEvent
-	Data []byte
-}
-
-// Type returns EventTypeSystemExclusive.
-func (e SystemExclusiveEvent) Type() EventType {
-	return EventTypeSystemExclusive
-}
-
-// ShiftOffset returns a copy of the event moved by delta samples.
-func (e SystemExclusiveEvent) ShiftOffset(delta int32) Event {
-	e.Offset += delta
-	return e
-}
-
-// String renders the event for logging.
-func (e SystemExclusiveEvent) String() string {
-	return fmt.Sprintf("SysEx{bytes:%d, offset:%d}", len(e.Data), e.Offset)
-}
-
-// ClockEvent is a MIDI timing clock tick.
-type ClockEvent struct {
-	BaseEvent
-}
-
-// Type returns EventTypeClock.
-func (e ClockEvent) Type() EventType {
-	return EventTypeClock
-}
-
-// ShiftOffset returns a copy of the event moved by delta samples.
-func (e ClockEvent) ShiftOffset(delta int32) Event {
-	e.Offset += delta
-	return e
-}
-
-// String renders the event for logging.
-func (e ClockEvent) String() string {
-	return fmt.Sprintf("Clock{offset:%d}", e.Offset)
-}
-
-// StartEvent starts transport playback from the beginning.
-type StartEvent struct {
-	BaseEvent
-}
-
-// Type returns EventTypeStart.
-func (e StartEvent) Type() EventType {
-	return EventTypeStart
-}
-
-// ShiftOffset returns a copy of the event moved by delta samples.
-func (e StartEvent) ShiftOffset(delta int32) Event {
-	e.Offset += delta
-	return e
-}
-
-// String renders the event for logging.
-func (e StartEvent) String() string {
-	return fmt.Sprintf("Start{offset:%d}", e.Offset)
-}
-
-// StopEvent stops transport playback.
-type StopEvent struct {
-	BaseEvent
-}
-
-// Type returns EventTypeStop.
-func (e StopEvent) Type() EventType {
-	return EventTypeStop
-}
-
-// ShiftOffset returns a copy of the event moved by delta samples.
-func (e StopEvent) ShiftOffset(delta int32) Event {
-	e.Offset += delta
-	return e
-}
-
-// String renders the event for logging.
-func (e StopEvent) String() string {
-	return fmt.Sprintf("Stop{offset:%d}", e.Offset)
-}
-
-// ContinueEvent resumes transport playback from the current position.
-type ContinueEvent struct {
-	BaseEvent
-}
-
-// Type returns EventTypeContinue.
-func (e ContinueEvent) Type() EventType {
-	return EventTypeContinue
-}
-
-// ShiftOffset returns a copy of the event moved by delta samples.
-func (e ContinueEvent) ShiftOffset(delta int32) Event {
-	e.Offset += delta
-	return e
-}
-
-// String renders the event for logging.
-func (e ContinueEvent) String() string {
-	return fmt.Sprintf("Continue{offset:%d}", e.Offset)
-}
-
-// ResetEvent is the system reset message.
-type ResetEvent struct {
-	BaseEvent
-}
-
-// Type returns EventTypeReset.
-func (e ResetEvent) Type() EventType {
-	return EventTypeReset
-}
-
-// ShiftOffset returns a copy of the event moved by delta samples.
-func (e ResetEvent) ShiftOffset(delta int32) Event {
-	e.Offset += delta
-	return e
-}
-
-// String renders the event for logging.
-func (e ResetEvent) String() string {
-	return fmt.Sprintf("Reset{offset:%d}", e.Offset)
-}
-
-// ActiveSensingEvent is the active sensing keep-alive message.
-type ActiveSensingEvent struct {
-	BaseEvent
-}
-
-// Type returns EventTypeActiveSensing.
-func (e ActiveSensingEvent) Type() EventType {
-	return EventTypeActiveSensing
-}
-
-// ShiftOffset returns a copy of the event moved by delta samples.
-func (e ActiveSensingEvent) ShiftOffset(delta int32) Event {
-	e.Offset += delta
-	return e
-}
-
-// String renders the event for logging.
-func (e ActiveSensingEvent) String() string {
-	return fmt.Sprintf("ActiveSensing{offset:%d}", e.Offset)
-}
 
 // NoteToFrequency converts a MIDI note number to its frequency in Hz using equal
 // temperament. A tuningA4 of 0 selects the 440 Hz standard.

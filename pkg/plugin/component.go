@@ -443,30 +443,26 @@ func convertEvent(event *C.struct_Steinberg_Vst_Event) (midi.Event, bool) {
 	switch C.getEventType(event) {
 	case C.Steinberg_Vst_Event_EventTypes_kNoteOnEvent:
 		noteOn := C.getNoteOnEvent(event)
-		return midi.NoteOnEvent{
-			BaseEvent: midi.BaseEvent{
-				EventChannel: uint8(noteOn.channel),
-				Offset:       int32(event.sampleOffset),
-			},
-			NoteNumber: uint8(noteOn.pitch),
-			Velocity:   velocityToMIDI(float64(noteOn.velocity)),
-		}, true
+		return midi.NewNoteOn(
+			uint8(noteOn.channel),
+			uint8(noteOn.pitch),
+			velocityToMIDI(float64(noteOn.velocity)),
+			int32(event.sampleOffset),
+		), true
 
 	case C.Steinberg_Vst_Event_EventTypes_kNoteOffEvent:
 		noteOff := C.getNoteOffEvent(event)
-		return midi.NoteOffEvent{
-			BaseEvent: midi.BaseEvent{
-				EventChannel: uint8(noteOff.channel),
-				Offset:       int32(event.sampleOffset),
-			},
-			NoteNumber: uint8(noteOff.pitch),
-			Velocity:   velocityToMIDI(float64(noteOff.velocity)),
-		}, true
+		return midi.NewNoteOff(
+			uint8(noteOff.channel),
+			uint8(noteOff.pitch),
+			velocityToMIDI(float64(noteOff.velocity)),
+			int32(event.sampleOffset),
+		), true
 
 		// Add more event types as needed
 	}
 
-	return nil, false
+	return midi.Event{}, false
 }
 
 // velocityToMIDI maps VST3's normalized 0..1 velocity onto MIDI's 0..127.
@@ -490,34 +486,15 @@ func velocityToMIDI(velocity float64) uint8 {
 func (c *componentImpl) publishInputEvents(ctx *process.Context, start, end int32) {
 	ctx.ClearInputEvents()
 
+	// midi.EventQueue.OffsetEvents does the same rebase for a whole queue, but
+	// process.Context does not expose its queue, and shifting after insertion
+	// would also move events belonging to other chunks.
 	for _, event := range c.blockEvents {
-		offset := event.SampleOffset()
-		if offset < start || offset >= end {
+		if event.Offset < start || event.Offset >= end {
 			continue
 		}
-		ctx.AddInputEvent(shiftEvent(event, -start))
+		ctx.AddInputEvent(event.ShiftOffset(-start))
 	}
-}
-
-// shiftEvent rebases a single event's offset. midi.EventQueue.OffsetEvents does
-// the same job for a whole queue, but process.Context does not expose its
-// queue, and shifting after insertion would also move events from other chunks.
-// Only the types convertEvent produces need handling here.
-func shiftEvent(event midi.Event, delta int32) midi.Event {
-	if delta == 0 {
-		return event
-	}
-
-	switch e := event.(type) {
-	case midi.NoteOnEvent:
-		e.Offset += delta
-		return e
-	case midi.NoteOffEvent:
-		e.Offset += delta
-		return e
-	}
-
-	return event
 }
 
 // IEditController implementation

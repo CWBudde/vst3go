@@ -158,8 +158,15 @@ type Context struct {
 	Transport *TransportInfo
 
 	// MIDI event processing
-	eventBuffer  *midi.EventBuffer
-	eventScratch []midi.Event // Reused by HasInputEvents to avoid allocating
+	eventBuffer *midi.EventBuffer
+
+	// eventScratch and dispatchScratch let HasInputEvents and ProcessEvents
+	// collect events without allocating. They are separate buffers on purpose:
+	// ProcessEvents iterates its scratch while user code runs, and that code is
+	// free to call HasInputEvents, which would otherwise overwrite the events
+	// not yet dispatched.
+	eventScratch    []midi.Event
+	dispatchScratch []midi.Event
 }
 
 // NewContext creates a new process context with pre-allocated buffers.
@@ -185,7 +192,9 @@ func NewContext(maxBlockSize int, params *param.Registry) *Context {
 		changeCount:  0,
 		Transport:    &TransportInfo{}, // Initialize transport info
 		eventBuffer:  midi.NewEventBuffer(),
-		eventScratch: make([]midi.Event, 0, eventScratchCapacity),
+
+		eventScratch:    make([]midi.Event, 0, eventScratchCapacity),
+		dispatchScratch: make([]midi.Event, 0, eventScratchCapacity),
 	}
 }
 
@@ -438,10 +447,16 @@ func (c *Context) ClearAllEvents() {
 	c.eventBuffer.ClearAll()
 }
 
-// ProcessEvents processes events through an event processor for sample-accurate processing
+// ProcessEvents hands every input event in the half-open range
+// [startSample, endSample) to processor in time order.
+//
+// It collects into a retained scratch slice, so it allocates nothing on the
+// audio thread. The scratch is filled before the first callback runs, which
+// means processor may safely add or clear events without disturbing the
+// iteration.
 func (c *Context) ProcessEvents(processor midi.EventProcessor, startSample, endSample int32) {
-	events := c.GetInputEvents(startSample, endSample)
-	for _, event := range events {
+	c.dispatchScratch = c.eventBuffer.AppendInputEvents(c.dispatchScratch[:0], startSample, endSample)
+	for _, event := range c.dispatchScratch {
 		processor.ProcessEvent(event)
 	}
 }
