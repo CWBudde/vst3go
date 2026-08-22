@@ -121,7 +121,7 @@ to 0, and `go vet ./...` is clean for the first time.
         the C++ SDK are not blocked.
   - [x] `docs/validation.md` records what this repo validates and what
         downstream repos such as `synthkit` must validate on their own:
-        the validator against their *own* bus/parameter topology, allocation
+        the validator against their _own_ bus/parameter topology, allocation
         guards on their DSP, DSP correctness, custom preset-payload
         compatibility, and real-host testing.
 - [x] Add CI (`.github/workflows/ci.yml`): build/vet/`-race` on Linux and
@@ -147,7 +147,7 @@ to 0, and `go vet ./...` is clean for the first time.
         `pkg/framework/process`, `pkg/framework/bus`, `pkg/midi` and `pkg/vst3`
         each have a Threading section splitting their surface into
         audio-thread-safe, control-thread-only, and both. Notable correction
-        captured while writing it: `param.Registry` *is* mutex-guarded, so it is
+        captured while writing it: `param.Registry` _is_ mutex-guarded, so it is
         memory-safe but still wrong for the audio thread (a lookup can block on
         the control thread, and `All` allocates) — resolve `*Parameter` pointers
         during setup and hold them.
@@ -161,7 +161,7 @@ to 0, and `go vet ./...` is clean for the first time.
   - [x] Clarify the new module path.
   - [x] Document how downstream repos should consume this fork once versions are
         tagged — `docs/migration.md`, plus a README section.
-  - [ ] **Open problem found while writing that:** a tagged release is not
+  - [x] **Open problem found while writing that:** a tagged release is not
         `go get`-able. `include/vst3` is a git submodule, submodule content is
         absent from what the module proxy serves, and every cgo package then
         fails on a missing `vst3_c_api.h` (verified against `git archive HEAD`).
@@ -171,6 +171,21 @@ to 0, and `go vet ./...` is clean for the first time.
         the real fix — vendor the header and accept the licensing implication,
         generate a shim header at build time, or accept checkout-only
         consumption — belongs to Phase 6 release scope.
+
+        Decided: vendor it. The header is now three regular files in
+        `include/vst3`, and the same `git archive` check that found the problem
+        confirms the fix — a source-only tree compiles every cgo package. The
+        licensing implication is accepted explicitly rather than in passing:
+        redistribution is permitted only by Steinberg's GPLv3 alternative, since
+        the proprietary license forbids distributing the SDK in parts without a
+        signed agreement, so the copy this repository hands out is GPLv3.
+        `LICENSE`'s third-party notice says so, and says what it does not change
+        — a plug-in built against these headers was always a combined work, on
+        exactly these terms. The shim-header option was not taken: hand-writing
+        the declarations avoids redistribution but makes an ABI mistake a silent
+        memory-layout bug instead of a compile error, which is a poor trade for
+        a runtime whose whole job is matching a host's vtable layout.
+
 - [x] Add a `LICENSE` file and state the Steinberg dual-license implication for
       distributed binaries.
 - [x] Write the breaking-change notes for downstream consumers. All three are

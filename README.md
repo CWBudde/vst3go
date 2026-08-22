@@ -72,26 +72,24 @@ constraints, `MAX_PATH` — to warrant its own page:
 
 ## Consuming this repo
 
-The module path is `github.com/cwbudde/vst3go`. Note that `go get` alone is not
-enough to build against it: the VST 3 C API header is a git submodule rather
-than a redistributed file, and submodule content is not part of what the Go
-module proxy serves, so a proxy-downloaded copy fails to compile. Depend on a
-checkout instead:
+The module path is `github.com/cwbudde/vst3go`, and `go get` is enough:
 
 ```bash
-git clone --recurse-submodules git@github.com:CWBudde/vst3go.git
+go get github.com/cwbudde/vst3go
 ```
 
-```
-// go.mod in the consuming repo
-require github.com/cwbudde/vst3go v0.0.0
-replace github.com/cwbudde/vst3go => ../vst3go
-```
+The VST 3 C API header is vendored in `include/vst3`, so a copy downloaded from
+the module proxy compiles. It did not until recently, and a `replace` directive
+pointing at a checkout was the documented workaround; if you are carrying one,
+[docs/migration.md](docs/migration.md) has the removal. That file also covers
+the versioning scheme, the accumulated breaking changes (preset format v2, the
+`midi.Event` rework, the bypass-flag rule), and the deprecated parameter
+accessors.
 
-No versions are tagged yet. [docs/migration.md](docs/migration.md) covers this
-in full, along with the intended versioning scheme, the accumulated breaking
-changes (preset format v2, the `midi.Event` rework, the bypass-flag rule), and
-the deprecated parameter accessors.
+Vendoring the header means this repository redistributes it, which only
+Steinberg's GPLv3 alternative permits. See [License](#license) below --- it
+changes nothing about the terms for a plug-in you build, which were always the
+same, but it is worth reading once.
 
 ## Development
 
@@ -125,9 +123,14 @@ validate on its own.
 
 This project's own source is licensed under the MIT License — see [LICENSE](LICENSE).
 
-The VST 3 C API headers are **not** redistributed here; they are a git submodule
-(`include/vst3`) under Steinberg's dual license (the VST 3 License Agreement _or_
-GPLv3). A compiled plug-in is a combined work with those headers, so the terms
-under which you may distribute a binary come from whichever Steinberg license you
-have accepted — without a signed agreement, that is the GPLv3. See the third-party
-notice in [LICENSE](LICENSE) for details.
+The VST 3 C API headers **are** redistributed here, in `include/vst3`, under
+Steinberg's dual license (the VST 3 License Agreement _or_ GPLv3). Only the
+GPLv3 alternative permits that redistribution — the proprietary license forbids
+distributing the SDK in parts without a signed agreement — so the copy you get
+from this repository comes to you under the GPLv3.
+
+That does not change the terms for a plug-in you build. A compiled plug-in is a
+combined work with those headers either way, so the terms under which you may
+distribute a binary come from whichever Steinberg license you have accepted —
+without a signed agreement, that is the GPLv3. See the third-party notice in
+[LICENSE](LICENSE) for details.
