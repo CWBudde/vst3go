@@ -24,15 +24,33 @@ SOFTWARE.
 
 Third-party notice: VST 3 headers
 
-This repository does not redistribute the VST 3 C API headers. They are pulled
-in as a git submodule at include/vst3 from
-https://github.com/steinbergmedia/vst3_c_api and remain under Steinberg Media
+This repository redistributes the VST 3 C API headers, under GPLv3. They are
+the contents of include/vst3, taken verbatim from
+https://github.com/steinbergmedia/vst3_c_api at commit 453015e (tagged
+v3.7.13_build_42 and v3.7.14_build_55), and they remain under Steinberg Media
 Technologies GmbH's dual license: the proprietary VST 3 License Agreement, or
-the GNU General Public License v3.
+the GNU General Public License v3. include/vst3/LICENSE.txt is Steinberg's own
+notice of that dual license, carried with them; it states the terms and links to
+the GPLv3 rather than reproducing it.
 
-The MIT license above covers this project's own source only. Because a compiled
-VST 3 plug-in is a combined work with those headers, the terms under which you
-may distribute a binary are determined by whichever Steinberg license you have
-accepted. Without a signed VST 3 License Agreement, that is the GPLv3, and your
-distributed plug-in must comply with it. "VST" is a trademark of Steinberg
-Media Technologies GmbH.
+Of the two, only the GPLv3 permits this. The proprietary license forbids
+distributing the SDK "in parts or its entirety" without a signed agreement, so
+this redistribution is made under the GPLv3 alternative, and the copy of the
+headers you receive from this repository comes to you under the GPLv3.
+
+The full text of the GPLv3 is therefore in COPYING, alongside this file. GPLv3
+section 4 requires anyone conveying the work to give recipients a copy of the
+License, and a URL is not a copy, so shipping it is part of what the GPLv3 route
+costs. COPYING is the license the headers come under; LICENSE is this project's
+own MIT license; include/vst3/LICENSE.txt is Steinberg's notice. All three
+apply, to different things.
+
+The MIT license above covers this project's own source only. MIT is
+GPL-compatible, so a combined work remains distributable, but a compiled VST 3
+plug-in is such a combined work, and the terms under which you may distribute a
+binary are determined by whichever Steinberg license you have accepted. Without
+a signed VST 3 License Agreement, that is the GPLv3, and your distributed
+plug-in must comply with it. That was already true before the headers were
+vendored -- a plug-in built against them was always a combined work. What
+changed is that this repository now hands you the headers rather than pointing
+a submodule at them. "VST" is a trademark of Steinberg Media Technologies GmbH.

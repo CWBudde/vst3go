@@ -19,40 +19,40 @@ go get github.com/cwbudde/vst3go
 grep -rl justyntemme/vst3go --include='*.go' . | xargs sed -i 's|justyntemme/vst3go|cwbudde/vst3go|g'
 ```
 
-### The submodule constraint
+### The submodule constraint, and its removal
 
-**`go get` alone is not enough to build against this module today.** The VST 3 C
-API header is a git submodule (`include/vst3`) rather than a redistributed file,
-for the licensing reason described in [LICENSE](../LICENSE). Git submodule
-content is not part of the repository tree that the Go module proxy serves, so a
-module downloaded from the proxy has an empty `include/vst3` and every cgo
-package in it fails to compile:
+**This is resolved. `go get` is now enough.** If you are carrying the `replace`
+workaround below, this section is how to drop it.
+
+The VST 3 C API header used to be a git submodule (`include/vst3`) rather than a
+redistributed file. Git submodule content is not part of the repository tree that
+the Go module proxy serves, so a module downloaded from the proxy had an empty
+`include/vst3` and every cgo package in it failed to compile:
 
 ```
 bridge.h:4:10: fatal error: ../include/vst3/vst3_c_api.h: No such file or directory
 ```
 
-`CGO_CFLAGS` does not rescue this: the header is included by relative path from
-several different directory depths, so no single `-I` satisfies all of them.
+`CGO_CFLAGS` could not rescue this: the header is included by relative path from
+several different directory depths, so no single `-I` satisfies all of them. The
+only fix that survives a proxy download is for the header to be inside the module,
+so it is vendored now, under Steinberg's GPLv3 alternative — the proprietary
+license does not permit redistribution. [LICENSE](../LICENSE) has the reasoning
+and what it does and does not change for you.
 
-Until that is resolved, depend on a checkout rather than on the proxy:
+To migrate, delete the workaround:
 
 ```bash
-git clone --recurse-submodules git@github.com:CWBudde/vst3go.git
-# or, in an existing clone:
-git submodule update --init --recursive
+go mod edit -dropreplace github.com/cwbudde/vst3go
+go get github.com/cwbudde/vst3go@latest
+go mod tidy
 ```
 
-and point the consuming module at it:
-
-```
-// go.mod
-require github.com/cwbudde/vst3go v0.0.0
-replace github.com/cwbudde/vst3go => ../vst3go
-```
-
-CI in a downstream repo needs the same treatment — check out the fork with
-submodules as a sibling directory, or add the header fetch as a build step.
+A downstream repository's CI can drop the same scaffolding: no sibling checkout,
+no `submodules: recursive`, no header fetch step. If your plug-in sources are
+behind a build tag that exists only to keep the rest of the repository buildable
+while this module was not consumable, that tag has no reason to survive the
+migration either.
 
 ### Versioning
 
@@ -64,9 +64,8 @@ No versions are tagged yet. When they are, the intent is:
   `pkg/midi` is stable enough that a downstream repo can upgrade without
   reading a changelog first.
 
-Pin an exact version rather than tracking a branch. Because of the submodule
-constraint above, a tag is a git reference to check out, not something to
-`go get`.
+Pin an exact version rather than tracking a branch. A tag is now something to
+`go get`, not just a git reference to check out.
 
 ## Breaking changes
 
@@ -97,12 +96,12 @@ once per block.
 
 Migration:
 
-| Before | After |
-| --- | --- |
-| `midi.NoteOnEvent{...}` | `midi.NewNoteOn(channel, note, velocity, offset)` |
+| Before                         | After                                                       |
+| ------------------------------ | ----------------------------------------------------------- |
+| `midi.NoteOnEvent{...}`        | `midi.NewNoteOn(channel, note, velocity, offset)`           |
 | `midi.ControlChangeEvent{...}` | `midi.NewControlChange(channel, controller, value, offset)` |
-| `switch e := ev.(type)` | `switch ev.Type` |
-| `e.(midi.NoteOnEvent).Note` | `ev.Note()` |
+| `switch e := ev.(type)`        | `switch ev.Type`                                            |
+| `e.(midi.NoteOnEvent).Note`    | `ev.Note()`                                                 |
 
 The accessors (`Note`, `Velocity`, `Controller`, `Value`, `Pressure`,
 `Program`) are type-guarded: they return zero for an event of the wrong
@@ -136,12 +135,12 @@ their replacements, but they are marked deprecated and the runtime no longer
 calls them. The Value spelling never said which of the two value domains it
 meant.
 
-| Deprecated | Use |
-| --- | --- |
-| `Parameter.GetValue` | `Parameter.GetNormalized` |
-| `Parameter.SetValue` | `Parameter.SetNormalized` |
-| `Parameter.GetPlainValue` | `Parameter.GetPlain` |
-| `Parameter.SetPlainValue` | `Parameter.SetPlain` |
+| Deprecated                | Use                       |
+| ------------------------- | ------------------------- |
+| `Parameter.GetValue`      | `Parameter.GetNormalized` |
+| `Parameter.SetValue`      | `Parameter.SetNormalized` |
+| `Parameter.GetPlainValue` | `Parameter.GetPlain`      |
+| `Parameter.SetPlainValue` | `Parameter.SetPlain`      |
 
 The result-code aliases `vst3.ResultOk` and `vst3.ResultTrue` are likewise
 compatibility-only; `vst3.ResultOK` is canonical.

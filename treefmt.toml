@@ -9,6 +9,9 @@ excludes = [
   "**/*.txt",
   "LICENSE",
   "build/**",
+  # The vendored VST 3 C API headers are redistributed verbatim. Reformatting
+  # them would modify a third-party file we hand on under someone else's terms.
+  "include/**",
 ]
 
 [formatter.gofumpt]

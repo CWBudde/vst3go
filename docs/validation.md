@@ -60,8 +60,8 @@ contract, sample-accurate automation and the required class metadata. This is
 the one check that grades the runtime against the specification instead of
 against our reading of it.
 
-The validator is not vendored — the `include/vst3` submodule carries only the C
-API headers, not the C++ SDK. Build one, then point the test at it:
+The validator is not vendored — `include/vst3` carries only the C API headers,
+not the C++ SDK. Build one, then point the test at it:
 
 ```bash
 VST3_VALIDATOR=/path/to/validator go test -tags validator ./test/smoke/...
@@ -75,8 +75,8 @@ commit and caches it.
 
 The smoke and validator tests here run against a deliberately minimal plugin:
 one class, one parameter, one stereo bus pair, and a pass-through
-`ProcessAudio`. That is the right shape for proving the *runtime* works, and the
-wrong shape for proving *your plugin* works. Everything below is outside what
+`ProcessAudio`. That is the right shape for proving the _runtime_ works, and the
+wrong shape for proving _your plugin_ works. Everything below is outside what
 this repo can see.
 
 ### 1. Run the validator against your own plugin
@@ -127,7 +127,7 @@ re-activated plugin does not emit a tail from its previous life.
 ### 4. Preset compatibility
 
 The runtime serializes registered parameters and hands you a callback for
-anything else. It cannot know whether *your* custom blob survives a version
+anything else. It cannot know whether _your_ custom blob survives a version
 change.
 
 Two specifics:
@@ -135,7 +135,7 @@ Two specifics:
 - The preset format is at **version 2** (length-prefixed custom payload). v1
   presets still load; presets written now cannot be read by an older build.
 - If you register a custom state loader, test the round-trip and test what
-  happens when an *older* plugin build meets a *newer* preset, and vice versa.
+  happens when an _older_ plugin build meets a _newer_ preset, and vice versa.
   The runtime skips a custom payload it has no loader for, but it cannot
   interpret one it does not understand.
 
