@@ -181,7 +181,10 @@ to 0, and `go vet ./...` is clean for the first time.
         signed agreement, so the copy this repository hands out is GPLv3.
         `LICENSE`'s third-party notice says so, and says what it does not change
         — a plug-in built against these headers was always a combined work, on
-        exactly these terms. The shim-header option was not taken: hand-writing
+        exactly these terms. Taking the GPLv3 route also means shipping the
+        GPLv3: section 4 requires whoever conveys the work to give recipients a
+        copy of the License, and a URL is not a copy, so the full text is in
+        `COPYING`. The shim-header option was not taken: hand-writing
         the declarations avoids redistribution but makes an ABI mistake a silent
         memory-layout bug instead of a compile error, which is a poor trade for
         a runtime whose whole job is matching a host's vtable layout.

@@ -127,7 +127,11 @@ The VST 3 C API headers **are** redistributed here, in `include/vst3`, under
 Steinberg's dual license (the VST 3 License Agreement _or_ GPLv3). Only the
 GPLv3 alternative permits that redistribution — the proprietary license forbids
 distributing the SDK in parts without a signed agreement — so the copy you get
-from this repository comes to you under the GPLv3.
+from this repository comes to you under the GPLv3, whose full text is in
+[COPYING](COPYING). Three license files, for three different things: `COPYING`
+is the GPLv3 the headers come under, [LICENSE](LICENSE) is this project's own
+MIT license, and `include/vst3/LICENSE.txt` is Steinberg's dual-license notice,
+carried verbatim with the headers.
 
 That does not change the terms for a plug-in you build. A compiled plug-in is a
 combined work with those headers either way, so the terms under which you may

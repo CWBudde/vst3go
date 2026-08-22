@@ -29,13 +29,21 @@ the contents of include/vst3, taken verbatim from
 https://github.com/steinbergmedia/vst3_c_api at commit 453015e (tagged
 v3.7.13_build_42 and v3.7.14_build_55), and they remain under Steinberg Media
 Technologies GmbH's dual license: the proprietary VST 3 License Agreement, or
-the GNU General Public License v3. include/vst3/LICENSE.txt is that license,
-carried with them.
+the GNU General Public License v3. include/vst3/LICENSE.txt is Steinberg's own
+notice of that dual license, carried with them; it states the terms and links to
+the GPLv3 rather than reproducing it.
 
 Of the two, only the GPLv3 permits this. The proprietary license forbids
 distributing the SDK "in parts or its entirety" without a signed agreement, so
 this redistribution is made under the GPLv3 alternative, and the copy of the
 headers you receive from this repository comes to you under the GPLv3.
+
+The full text of the GPLv3 is therefore in COPYING, alongside this file. GPLv3
+section 4 requires anyone conveying the work to give recipients a copy of the
+License, and a URL is not a copy, so shipping it is part of what the GPLv3 route
+costs. COPYING is the license the headers come under; LICENSE is this project's
+own MIT license; include/vst3/LICENSE.txt is Steinberg's notice. All three
+apply, to different things.
 
 The MIT license above covers this project's own source only. MIT is
 GPL-compatible, so a combined work remains distributable, but a compiled VST 3
