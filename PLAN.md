@@ -623,6 +623,12 @@ parameters, programs, original editor references and audio comparisons in
 #### Bass
 
 - [ ] [Bass Baron](../vst3go-plugins/plugins/bass/bass-baron/README.md)
+  - [x] Match 132 captures from the published x64 release, covering float32,
+        float64, live algorithm and response changes, lowcut and program recall.
+        Reopen independently edited programs in REAPER. The port uses the
+        pinned DAV soft-knee gain from [algo-dsp PR #48](https://github.com/CWBudde/algo-dsp/pull/48).
+  - [ ] Resolve the published x86 callback fault and verify the native editor
+        and other host platforms.
 - [ ] [Bass Extender](../vst3go-plugins/plugins/bass/bass-extender/README.md)
 - [ ] [SubBoost](../vst3go-plugins/plugins/bass/subboost/README.md)
 
