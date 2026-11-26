@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"io"
+	"time"
 
 	"github.com/cwbudde/vst3go/pkg/vst3"
 )
@@ -37,6 +38,8 @@ type EditorKey struct {
 type EditorContext struct {
 	Parameters EditorParameters
 	resize     func(EditorSize) error
+	startTimer func(time.Duration, func()) (func(), error)
+	markDirty  func() error
 }
 
 // RequestResize asks the host to resize the view. The host may call Resize
@@ -48,6 +51,28 @@ func (c EditorContext) RequestResize(size EditorSize) error {
 		return vst3.ErrNotImplemented
 	}
 	return c.resize(size)
+}
+
+// StartTimer schedules a periodic callback on the host UI thread via the
+// attached frame's Linux IRunLoop. Start it during or after Attach. The
+// returned stop function can be called repeatedly, including by the callback
+// itself. Removing or destroying the view stops all its timers. Hosts that
+// do not offer a run loop return ErrNotImplemented.
+func (c EditorContext) StartTimer(interval time.Duration, tick func()) (stop func(), err error) {
+	if c.startTimer == nil {
+		return nil, vst3.ErrNotImplemented
+	}
+	return c.startTimer(interval, tick)
+}
+
+// MarkDirty asks the host to mark the session as modified after an editor
+// action changes persisted state outside a parameter gesture. A host without
+// IComponentHandler2 returns ErrNotImplemented.
+func (c EditorContext) MarkDirty() error {
+	if c.markDirty == nil {
+		return vst3.ErrNotImplemented
+	}
+	return c.markDirty()
 }
 
 // EditorProvider is an optional Processor extension. CreateEditor returns a

@@ -7,11 +7,59 @@
 extern struct Steinberg_IPluginFactory* GetPluginFactory(void);
 
 typedef struct {
+    Steinberg_Linux_IRunLoop iface;
+    Steinberg_Linux_ITimerHandler* timer;
+    unsigned references;
+} HostLoop;
+
+static Steinberg_uint32 SMTG_STDMETHODCALLTYPE loop_add_ref(void* self) {
+    return ++((HostLoop*)self)->references;
+}
+
+static Steinberg_uint32 SMTG_STDMETHODCALLTYPE loop_release(void* self) {
+    return --((HostLoop*)self)->references;
+}
+
+static Steinberg_tresult SMTG_STDMETHODCALLTYPE loop_register(
+    void* self, Steinberg_Linux_ITimerHandler* timer, Steinberg_Linux_TimerInterval interval) {
+    HostLoop* loop = self;
+    assert(loop->timer == NULL && interval == 30);
+    timer->lpVtbl->addRef(timer);
+    loop->timer = timer;
+    return Steinberg_kResultOk;
+}
+
+static Steinberg_tresult SMTG_STDMETHODCALLTYPE loop_unregister(void* self, Steinberg_Linux_ITimerHandler* timer) {
+    HostLoop* loop = self;
+    assert(loop->timer == timer);
+    loop->timer = NULL;
+    timer->lpVtbl->release(timer);
+    return Steinberg_kResultOk;
+}
+
+static Steinberg_Linux_IRunLoopVtbl loop_vtable = {
+    .addRef = loop_add_ref, .release = loop_release,
+    .registerTimer = loop_register, .unregisterTimer = loop_unregister,
+};
+
+typedef struct {
     Steinberg_IPlugFrame iface;
     unsigned references;
     unsigned resizes;
     struct Steinberg_ViewRect beforeResize;
+    HostLoop* loop;
 } HostFrame;
+
+static Steinberg_tresult SMTG_STDMETHODCALLTYPE frame_query(void* self, const Steinberg_TUID iid, void** obj) {
+    HostLoop* loop = ((HostFrame*)self)->loop;
+    if (loop && memcmp(iid, Steinberg_Linux_IRunLoop_iid, sizeof(Steinberg_TUID)) == 0) {
+        *obj = &loop->iface;
+        loop_add_ref(loop);
+        return Steinberg_kResultOk;
+    }
+    *obj = NULL;
+    return Steinberg_kNoInterface;
+}
 
 static Steinberg_uint32 SMTG_STDMETHODCALLTYPE frame_add_ref(void* self) {
     return ++((HostFrame*)self)->references;
@@ -30,19 +78,29 @@ static Steinberg_tresult SMTG_STDMETHODCALLTYPE frame_resize(
 }
 
 static Steinberg_IPlugFrameVtbl frame_vtable = {
+    .queryInterface = frame_query,
     .addRef = frame_add_ref,
     .release = frame_release,
     .resizeView = frame_resize,
 };
 
+typedef struct HostHandler HostHandler;
+
 typedef struct {
+    Steinberg_Vst_IComponentHandler2 iface;
+    HostHandler* owner;
+} HostHandlerExtension;
+
+struct HostHandler {
     Steinberg_Vst_IComponentHandler iface;
+    HostHandlerExtension extension;
     unsigned references;
     unsigned steps;
     unsigned restarts;
+    unsigned dirty;
     Steinberg_Vst_IAudioProcessor* audio;
     Steinberg_uint32 latency;
-} HostHandler;
+};
 
 static Steinberg_uint32 SMTG_STDMETHODCALLTYPE handler_add_ref(void* self) {
     return ++((HostHandler*)self)->references;
@@ -51,6 +109,33 @@ static Steinberg_uint32 SMTG_STDMETHODCALLTYPE handler_add_ref(void* self) {
 static Steinberg_uint32 SMTG_STDMETHODCALLTYPE handler_release(void* self) {
     return --((HostHandler*)self)->references;
 }
+
+static Steinberg_tresult SMTG_STDMETHODCALLTYPE handler_query(void* self, const Steinberg_TUID iid, void** obj) {
+    HostHandler* handler = self;
+    if (memcmp(iid, Steinberg_Vst_IComponentHandler2_iid, sizeof(Steinberg_TUID)) == 0) {
+        *obj = &handler->extension.iface;
+        handler_add_ref(handler);
+        return Steinberg_kResultOk;
+    }
+    *obj = NULL;
+    return Steinberg_kNoInterface;
+}
+
+static Steinberg_uint32 SMTG_STDMETHODCALLTYPE handler2_release(void* self) {
+    return handler_release(((HostHandlerExtension*)self)->owner);
+}
+
+static Steinberg_tresult SMTG_STDMETHODCALLTYPE handler2_dirty(void* self, Steinberg_TBool state) {
+    HostHandler* handler = ((HostHandlerExtension*)self)->owner;
+    assert(state && handler->references == 4);
+    handler->dirty++;
+    return Steinberg_kResultOk;
+}
+
+static Steinberg_Vst_IComponentHandler2Vtbl handler2_vtable = {
+    .release = handler2_release,
+    .setDirty = handler2_dirty,
+};
 
 static Steinberg_tresult SMTG_STDMETHODCALLTYPE handler_begin(void* self, Steinberg_Vst_ParamID id) {
     HostHandler* handler = self;
@@ -84,6 +169,7 @@ static Steinberg_tresult SMTG_STDMETHODCALLTYPE handler_restart(void* self, Stei
 }
 
 static Steinberg_Vst_IComponentHandlerVtbl handler_vtable = {
+    .queryInterface = handler_query,
     .addRef = handler_add_ref,
     .release = handler_release,
     .beginEdit = handler_begin,
@@ -183,7 +269,8 @@ int main(void) {
     // A small X11 Window ID is a numeric handle, never a Go pointer.
     void* parent = (void*)(uintptr_t)123;
     assert(view->lpVtbl->attached(view, parent, Steinberg_kPlatformTypeX11EmbedWindowID) == Steinberg_kResultFalse);
-    HostFrame frame = {{&frame_vtable}, 1, 0, {0}};
+    HostLoop loop = {.iface = {&loop_vtable}, .references = 1};
+    HostFrame frame = {.iface = {&frame_vtable}, .references = 1, .loop = &loop};
     assert(view->lpVtbl->setFrame(view, &frame.iface) == Steinberg_kResultOk);
     assert(view->lpVtbl->setFrame(view, &frame.iface) == Steinberg_kResultOk);
     assert(frame.references == 2);
@@ -193,6 +280,10 @@ int main(void) {
     assert(view->lpVtbl->attached(view, parent, Steinberg_kPlatformTypeHWND) == Steinberg_kResultFalse);
     assert(view->lpVtbl->attached(view, NULL, Steinberg_kPlatformTypeX11EmbedWindowID) != Steinberg_kResultOk);
     assert(view->lpVtbl->attached(view, parent, Steinberg_kPlatformTypeX11EmbedWindowID) == Steinberg_kResultOk);
+    assert(loop.timer && loop.references == 2);
+    assert(view->lpVtbl->onKeyDown(view, 'K', 0, 0) == Steinberg_kResultFalse);
+    loop.timer->lpVtbl->onTimer(loop.timer);
+    assert(view->lpVtbl->onKeyDown(view, 'K', 0, 0) == Steinberg_kResultOk);
     assert(frame.resizes == 1 && frame.beforeResize.right == 300);
     assert(view->lpVtbl->attached(view, parent, Steinberg_kPlatformTypeX11EmbedWindowID) != Steinberg_kResultOk);
     check_size(view, 320, 240);
@@ -217,7 +308,8 @@ int main(void) {
 
     Steinberg_Vst_IEditController* other = create_controller(factory, 0);
     Steinberg_IPlugView* otherView = other->lpVtbl->createView(other, Steinberg_Vst_ViewType_kEditor);
-    HostFrame otherFrame = {{&frame_vtable}, 1, 0, {0}};
+    HostLoop otherLoop = {.iface = {&loop_vtable}, .references = 1};
+    HostFrame otherFrame = {.iface = {&frame_vtable}, .references = 1, .loop = &otherLoop};
     assert(otherView->lpVtbl->setFrame(otherView, &otherFrame.iface) == Steinberg_kResultOk);
     assert(otherView->lpVtbl->attached(otherView, parent, Steinberg_kPlatformTypeX11EmbedWindowID) == Steinberg_kResultOk);
 
@@ -231,6 +323,7 @@ int main(void) {
     assert(component->lpVtbl->setActive(component, 1) == Steinberg_kResultOk);
     assert(audio->lpVtbl->setProcessing(audio, 1) == Steinberg_kResultOk);
     HostHandler handler = {.iface = {&handler_vtable}, .references = 1, .audio = audio};
+    handler.extension = (HostHandlerExtension){{&handler2_vtable}, &handler};
     assert(controller->lpVtbl->setComponentHandler(controller, &handler.iface) == Steinberg_kResultOk);
     assert(handler.references == 2);
     StateStream saved = {.stream = {&state_vtbl}};
@@ -245,13 +338,12 @@ int main(void) {
     assert(handler.steps == 4 && handler.restarts == 2 && handler.latency == 96);
     assert(view->lpVtbl->onKeyDown(view, 'A', 7, 2) == Steinberg_kResultOk);
     assert(view->lpVtbl->onKeyUp(view, 'A', 7, 2) == Steinberg_kResultOk);
-    assert(controller->lpVtbl->setComponentHandler(controller, NULL) == Steinberg_kResultOk);
-    assert(handler.references == 1);
 
     // Apply the controller's saved UI state to a different instance. Its
     // processor value is untouched, and an attached view sees the UI change.
     StateStream editorSaved = {.stream = {&state_vtbl}};
     assert(view->lpVtbl->onKeyDown(view, 'T', 0, 0) == Steinberg_kResultOk);
+    assert(handler.dirty == 1 && handler.references == 2);
     assert(controller->lpVtbl->getState(controller, &editorSaved.stream) == Steinberg_kResultOk);
     assert(editorSaved.size == 1 && editorSaved.data[0] == 1);
     assert(otherView->lpVtbl->onKeyDown(otherView, 'C', 0, 0) == Steinberg_kResultFalse);
@@ -259,8 +351,11 @@ int main(void) {
     assert(other->lpVtbl->setState(other, &editorSaved.stream) == Steinberg_kResultOk);
     assert(otherView->lpVtbl->onKeyDown(otherView, 'C', 0, 0) == Steinberg_kResultOk);
     assert(other->lpVtbl->getParamNormalized(other, 0) == 1.0);
+    assert(controller->lpVtbl->setComponentHandler(controller, NULL) == Steinberg_kResultOk);
+    assert(handler.references == 1);
 
     assert(otherView->lpVtbl->removed(otherView) == Steinberg_kResultOk);
+    assert(otherLoop.timer == NULL && otherLoop.references == 1);
     assert(otherView->lpVtbl->release(otherView) == 0 && otherFrame.references == 1);
     assert(other->lpVtbl->release(other) == 0);
 
@@ -268,6 +363,7 @@ int main(void) {
     assert(reopened && reopened != view);
     check_size(reopened, 300, 200);
     assert(view->lpVtbl->removed(view) == Steinberg_kResultOk);
+    assert(loop.timer == NULL && loop.references == 1);
     assert(view->lpVtbl->onKeyDown(view, 'A', 7, 2) == Steinberg_kResultFalse);
 
     float leftIn = 0.25f, rightIn = 0.5f, leftOut = 0, rightOut = 0;
@@ -297,6 +393,7 @@ int main(void) {
     assert(view->lpVtbl->release(view) == 1);
     assert(frame.references == 2);
     assert(scale->lpVtbl->release(scale) == 0);
+    assert(loop.timer == NULL && loop.references == 1);
     assert(frame.references == 1);
 
     Steinberg_Vst_IEditController* generic = create_controller(factory, 1);

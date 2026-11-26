@@ -12,5 +12,5 @@ package cbridge
 // #include "../../../bridge/bridge.c"
 // #include "../../../bridge/component.c"
 // #include "../../../bridge/program.c"
-// #include "../../../bridge/view.c"
+// #include "../../../bridge/view.c" /* IPlugView and its host timer callbacks. */
 import "C"

@@ -208,3 +208,89 @@ Steinberg_tresult requestPlugViewResize(void* self, struct Steinberg_ViewRect* s
     view_release(view);
     return result;
 }
+
+typedef struct {
+    Steinberg_Linux_ITimerHandler iface;
+    Steinberg_Linux_IRunLoop* loop;
+    _Atomic Steinberg_uint32 references;
+    uintptr_t id;  // Accessed on the host UI thread.
+} PlugViewTimer;
+
+static Steinberg_uint32 SMTG_STDMETHODCALLTYPE timer_add_ref(void* self) {
+    PlugViewTimer* timer = self;
+    return atomic_fetch_add(&timer->references, 1) + 1;
+}
+
+static Steinberg_uint32 SMTG_STDMETHODCALLTYPE timer_release(void* self) {
+    PlugViewTimer* timer = self;
+    Steinberg_uint32 references = atomic_fetch_sub(&timer->references, 1) - 1;
+    if (references == 0) {
+        free(timer);
+    }
+    return references;
+}
+
+static Steinberg_tresult SMTG_STDMETHODCALLTYPE timer_query(void* self, const Steinberg_TUID iid, void** obj) {
+    if (!obj || !iid) {
+        return Steinberg_kInvalidArgument;
+    }
+    *obj = NULL;
+    if (memcmp(iid, Steinberg_FUnknown_iid, sizeof(Steinberg_TUID)) != 0 &&
+        memcmp(iid, Steinberg_Linux_ITimerHandler_iid, sizeof(Steinberg_TUID)) != 0) {
+        return Steinberg_kNoInterface;
+    }
+    *obj = self;
+    timer_add_ref(self);
+    return Steinberg_kResultOk;
+}
+
+static void SMTG_STDMETHODCALLTYPE timer_tick(void* self) {
+    PlugViewTimer* timer = self;
+    if (timer->id) {
+        // A callback can stop its own timer or cause the host to close the view.
+        timer_add_ref(timer);
+        GoPlugViewTimerTick(timer->id);
+        timer_release(timer);
+    }
+}
+
+static Steinberg_Linux_ITimerHandlerVtbl timer_vtable = {
+    .queryInterface = timer_query,
+    .addRef = timer_add_ref,
+    .release = timer_release,
+    .onTimer = timer_tick,
+};
+
+void* startPlugViewTimer(void* self, uintptr_t id, Steinberg_Linux_TimerInterval interval) {
+    PlugView* view = self;
+    Steinberg_IPlugFrame* frame = view->frame;
+    Steinberg_Linux_IRunLoop* loop = NULL;
+    if (!frame || !frame->lpVtbl->queryInterface ||
+        frame->lpVtbl->queryInterface(frame, Steinberg_Linux_IRunLoop_iid, (void**)&loop) != Steinberg_kResultOk || !loop) {
+        return NULL;
+    }
+
+    PlugViewTimer* timer = calloc(1, sizeof(*timer));
+    if (timer) {
+        timer->iface.lpVtbl = &timer_vtable;
+        timer->loop = loop;
+        timer->id = id;
+        atomic_init(&timer->references, 1);
+        if (loop->lpVtbl->registerTimer(loop, &timer->iface, interval) == Steinberg_kResultOk) {
+            return timer;
+        }
+        timer->id = 0;
+        timer_release(timer);
+    }
+    loop->lpVtbl->release(loop);
+    return NULL;
+}
+
+void stopPlugViewTimer(void* self) {
+    PlugViewTimer* timer = self;
+    Steinberg_Linux_IRunLoop* loop = timer->loop;
+    timer->id = 0;
+    loop->lpVtbl->unregisterTimer(loop, &timer->iface);
+    loop->lpVtbl->release(loop);
+    timer_release(timer);
+}

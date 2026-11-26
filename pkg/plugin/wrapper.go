@@ -35,6 +35,17 @@ package plugin
 //     }
 // }
 //
+// static inline Steinberg_tresult componentHandler_setDirty(struct Steinberg_Vst_IComponentHandler* handler) {
+//     struct Steinberg_Vst_IComponentHandler2* extended = NULL;
+//     if (!handler->lpVtbl->queryInterface ||
+//         handler->lpVtbl->queryInterface(handler, Steinberg_Vst_IComponentHandler2_iid, (void**)&extended) != Steinberg_kResultOk || !extended) {
+//         return Steinberg_kNotImplemented;
+//     }
+//     Steinberg_tresult result = extended->lpVtbl->setDirty(extended, 1);
+//     extended->lpVtbl->release(extended);
+//     return result;
+// }
+//
 // // Every COM-style interface begins with the FUnknown vtable, so retain/release
 // // can be reached through an opaque pointer without knowing the concrete type.
 // static inline void funknown_addRef(void* obj) {
@@ -351,6 +362,18 @@ func (w *componentWrapper) notifyLatencyChanged() {
 	}
 	defer C.funknown_release(handler)
 	C.componentHandler_latencyChanged((*C.Steinberg_Vst_IComponentHandler)(handler))
+}
+
+func (w *componentWrapper) markEditorDirty() error {
+	handler := w.retainComponentHandler()
+	if handler == nil {
+		return vst3.ErrNotImplemented
+	}
+	defer C.funknown_release(handler)
+	if C.componentHandler_setDirty((*C.Steinberg_Vst_IComponentHandler)(handler)) != C.Steinberg_tresult(vst3.ResultOK) {
+		return vst3.ErrNotImplemented
+	}
+	return nil
 }
 
 //export GoGetFactoryInfo

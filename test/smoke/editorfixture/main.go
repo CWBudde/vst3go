@@ -4,6 +4,7 @@ package main
 import (
 	"errors"
 	"io"
+	"time"
 
 	"github.com/cwbudde/vst3go/pkg/framework/bus"
 	"github.com/cwbudde/vst3go/pkg/framework/param"
@@ -114,6 +115,7 @@ type view struct {
 	focused   bool
 	wheel     float32
 	keyDown   bool
+	ticked    bool
 }
 
 func (v *view) SupportsPlatform(platform plugin.EditorPlatform) bool {
@@ -124,11 +126,17 @@ func (v *view) Attach(platform plugin.EditorPlatform, parent uintptr) error {
 	if platform != plugin.EditorX11EmbedWindowID || parent != 123 {
 		return errors.New("unexpected native parent")
 	}
-	return v.context.RequestResize(plugin.EditorSize{Width: 320, Height: 240})
+	if err := v.context.RequestResize(plugin.EditorSize{Width: 320, Height: 240}); err != nil {
+		return err
+	}
+	const tickInterval = 30 * time.Millisecond
+	_, err := v.context.StartTimer(tickInterval, func() { v.ticked = true })
+	return err
 }
 
 func (v *view) Remove() {
 	v.focused, v.wheel, v.keyDown = false, 0, false
+	v.ticked = false
 }
 
 func (v *view) InitialSize() plugin.EditorSize {
@@ -149,9 +157,12 @@ func (v *view) OnWheel(distance float32) bool {
 }
 
 func (v *view) OnKey(key plugin.EditorKey, down bool) bool {
+	if key.Character == 'K' && down {
+		return v.ticked
+	}
 	if key.Character == 'T' && down {
 		v.processor.compact = !v.processor.compact
-		return true
+		return v.context.MarkDirty() == nil
 	}
 	if key.Character == 'C' && down {
 		return v.processor.compact

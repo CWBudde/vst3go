@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"math"
 	"runtime/cgo"
+	"time"
 	"unsafe"
 
 	"github.com/cwbudde/vst3go/pkg/vst3"
@@ -35,6 +36,7 @@ type editorViewBridge struct {
 	native     unsafe.Pointer
 	rect       C.struct_Steinberg_ViewRect
 	attachment editorAttachment
+	timers     map[unsafe.Pointer]cgo.Handle
 }
 
 func editorFromHandle(id C.uintptr_t) *editorViewBridge {
@@ -62,6 +64,8 @@ func GoEditControllerCreateView(componentID C.uintptr_t, native unsafe.Pointer, 
 	view.view = provider.CreateEditor(EditorContext{
 		Parameters: EditorParameters{wrapper: wrapper},
 		resize:     view.requestResize,
+		startTimer: view.startTimer,
+		markDirty:  wrapper.markEditorDirty,
 	})
 	if view.view == nil {
 		return 0
@@ -108,6 +112,7 @@ func (v *editorViewBridge) attach(platform EditorPlatform, parent uintptr) bool 
 	v.attachment = editorAttaching
 	defer func() {
 		if v.attachment == editorAttaching {
+			v.stopTimers()
 			v.attachment = editorDetached
 		}
 	}()
@@ -130,6 +135,7 @@ func (v *editorViewBridge) remove() bool {
 	}
 	v.attachment = editorRemoving
 	defer func() { v.attachment = editorDetached }()
+	v.stopTimers()
 	v.view.Remove()
 	return true
 }
@@ -197,6 +203,51 @@ func (v *editorViewBridge) requestResize(size EditorSize) error {
 		return fmt.Errorf("host resizeView returned %d", result)
 	}
 	return nil
+}
+
+func (v *editorViewBridge) startTimer(interval time.Duration, tick func()) (func(), error) {
+	if tick == nil || interval <= 0 {
+		return nil, vst3.ErrInvalidArgument
+	}
+	if v.native == nil || (v.attachment != editorAttached && v.attachment != editorAttaching) {
+		return nil, vst3.ErrNotImplemented
+	}
+	milliseconds := interval.Milliseconds()
+	if interval%time.Millisecond != 0 {
+		milliseconds++
+	}
+	handle := cgo.NewHandle(tick)
+	timer := C.startPlugViewTimer(v.native, C.uintptr_t(handle), C.Steinberg_Linux_TimerInterval(milliseconds))
+	if timer == nil {
+		handle.Delete()
+		return nil, vst3.ErrNotImplemented
+	}
+	if v.timers == nil {
+		v.timers = make(map[unsafe.Pointer]cgo.Handle)
+	}
+	v.timers[timer] = handle
+	return func() { v.stopTimer(timer, handle) }, nil
+}
+
+func (v *editorViewBridge) stopTimer(timer unsafe.Pointer, handle cgo.Handle) {
+	if v.timers[timer] != handle {
+		return
+	}
+	delete(v.timers, timer)
+	C.stopPlugViewTimer(timer)
+	handle.Delete()
+}
+
+func (v *editorViewBridge) stopTimers() {
+	for timer, handle := range v.timers {
+		v.stopTimer(timer, handle)
+	}
+}
+
+//export GoPlugViewTimerTick
+func GoPlugViewTimerTick(id C.uintptr_t) {
+	defer recoverPanic("GoPlugViewTimerTick")
+	cgo.Handle(id).Value().(func())()
 }
 
 func editorSize(rect *C.struct_Steinberg_ViewRect) (EditorSize, bool) {
