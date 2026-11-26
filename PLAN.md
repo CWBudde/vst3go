@@ -964,6 +964,15 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify the x64 original that left its buffers untouched in Wine,
         the original editor and graphics permissions, and native hosts.
 - [ ] [Flanger](../vst3go-plugins/plugins/modulation/flanger/README.md)
+  - [x] Compare 774 renders across the 2010, later editor and headless
+        classes. Verify the fixed oscillator clock, variable delay, Mix
+        behavior, and edition-specific activation using
+        [algo-dsp PR #59](https://github.com/CWBudde/algo-dsp/pull/59).
+  - [x] Verify nine phase-aligned reopened REAPER renders, SDK validation,
+        and the Windows x64 cross-build.
+  - [ ] Verify the original editor and artwork permissions, early
+        headless x64 no-write builds, the i386 Mac release, VST3 double
+        audio, and physical Windows and macOS hosts.
 - [ ] [ITA Phaser](../vst3go-plugins/plugins/modulation/ita-phaser/README.md)
   - [x] Match all 126 published Win32 renders exactly. Verify the notch
         sweep, stereo traces, startup Mix history, six reopened REAPER
