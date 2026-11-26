@@ -896,6 +896,13 @@ parameters, programs, original editor references and audio comparisons in
         or load failures in another host. Compare original editors and
         physical Windows and macOS hosts.
 - [ ] [Hysteresis](../vst3go-plugins/plugins/distortion/hysteresis/README.md)
+  - [x] Match 468 renders across all six Win32 and Win64 originals bit for
+        bit with the Preisach processor from [algo-dsp PR #56](https://github.com/CWBudde/algo-dsp/pull/56).
+        Verify independent loops, saturation, nearest-even thresholds,
+        rate and activation transitions and updates at the displayed 0 dB.
+  - [x] Verify the host parameter view, all six reopened REAPER renders,
+        SDK validation, and the Windows x64 cross-build.
+  - [ ] Verify physical Windows and macOS VST3 hosts.
 - [ ] [OpAmp](../vst3go-plugins/plugins/distortion/opamp/README.md)
 - [ ] [Oversampled Tanh](../vst3go-plugins/plugins/distortion/oversampled-tanh/README.md)
 - [ ] [Scary](../vst3go-plugins/plugins/distortion/scary/README.md)
