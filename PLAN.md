@@ -1194,9 +1194,10 @@ parameters, programs, original editor references and audio comparisons in
 
 ### 7.4 Spatial processing, instruments and MIDI
 
-- [ ] Check channel order, matrix coefficients, HRTF selection and IRs.
+- [x] Check channel order, matrix coefficients, HRTF selection and IRs.
       Reproduce instrument note handling, velocity, voice allocation, sample
-      loading, tuning and envelopes. Check MIDI-generating effects at block edges.
+      loading, tuning and envelopes. Check MIDI behavior at block edges.
+      Edition-specific source, editor and host limits are recorded below.
 
 #### Spatial processing
 
@@ -1309,6 +1310,13 @@ parameters, programs, original editor references and audio comparisons in
         hosts. Both Win32 callbacks raise a range exception at the second
         output, including on the first silent block under Wine.
 - [ ] [Simple Sampler](../vst3go-plugins/plugins/synth/simple-sampler/README.md)
+  - [x] Match 18 published Win32 and 12 VST3 ABI renders bit-for-bit.
+        Reopen the sine and loaded WAV sessions in Linux REAPER after
+        moving the source WAV. Verify the file picker, persisted sample,
+        47 SDK checks and Windows x64 cross-build.
+  - [ ] Verify the retained Win64 callback and native hosts, original
+        keyboard and full format support. AIFF is silent in the original
+        Wine capture and AU selection stalled.
 - [ ] [Simple Sine Synth](../vst3go-plugins/plugins/synth/simple-sine-synth/README.md)
   - [x] Measure both 2009 binary releases. Port the audible oscillator from
         the retained Delphi source and verify MIDI, keyboard and state on Linux.
@@ -1316,6 +1324,12 @@ parameters, programs, original editor references and audio comparisons in
         session. Confirm that CC123 leaves held notes active.
   - [ ] Verify native Windows and macOS editors.
 - [ ] [Vocoder](../vst3go-plugins/plugins/synth/vocoder/README.md)
+  - [x] Recover the published 32-band filter bank and MIDI carrier.
+        Match 54 captures within 1.193e-7 and verify the dry and wet
+        Linux REAPER reopens, CC126, 47 SDK checks and Windows x64.
+  - [ ] Verify the original editor and native Windows and macOS hosts.
+        The later Win32 and Win64 builds raise Delphi exceptions
+        before providing a descriptor under Wine.
 
 ### 7.5 Analysis, utilities, educational, hosting and other plugins
 
