@@ -1099,6 +1099,15 @@ parameters, programs, original editor references and audio comparisons in
         a matching engine for the retained x64 binary. Verify the original
         editor and host platforms beyond Linux amd64.
 - [ ] [Split Harmonizer](../vst3go-plugins/plugins/pitch/split-harmonizer/README.md)
+  - [x] Identify and port separate nine-control 2009 and fifteen-control
+        2010 classes for Linux amd64. Out of 288 release captures,
+        match 216 settled windows within 2.608e-7. Verify both reported
+        delays and edited programs in four sample-exact dry REAPER
+        reopens, 94 SDK checks, and bounded external engine settings.
+  - [ ] Resolve the 2010 mid/side and manual short-window differences,
+        live transitions, original double audio and in-place behavior,
+        and the full ±12,000-cent range. Verify the retained no-space
+        builds, original editors and other physical host platforms.
 - [ ] [StkPitchShift](../vst3go-plugins/plugins/pitch/stkpitchshift/README.md)
   - [x] Match 194 stereo captures from the published and retained Win32
         builds within 1.193e-7. Verify the unreported 512-sample unity delay,
