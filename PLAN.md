@@ -720,6 +720,11 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify the native editor and additional hosts. The port evaluates
         finite underflow where the released x87 exponent wraps.
 - [ ] [Lightweight Soft Knee Limiter](../vst3go-plugins/plugins/dynamics/lightweight-soft-knee-limiter/README.md)
+  - [x] Match 576 renders from four distributions, retaining the 2010 and
+        2009 clipping curves in two classes. Verify sample-offset edits,
+        eleven editable slots and five reopened REAPER projects.
+  - [ ] Verify the native editor, retained Win64 provenance, additional hosts
+        and redistribution permission for original assets.
 - [ ] [Lightweight Upward Compressor](../vst3go-plugins/plugins/dynamics/lightweight-upward-compressor/README.md)
 - [ ] [Limiter](../vst3go-plugins/plugins/dynamics/limiter/README.md)
 - [ ] [Lookahead Limiter](../vst3go-plugins/plugins/dynamics/lookahead-limiter/README.md)
