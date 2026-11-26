@@ -281,8 +281,12 @@ func TestChoiceStepCount(t *testing.T) {
 		{"two", []ChoiceOption{{Value: 0, Name: "A"}, {Value: 1, Name: "B"}}},
 		{"three", []ChoiceOption{{Value: 0, Name: "A"}, {Value: 1, Name: "B"}, {Value: 2, Name: "C"}}},
 		{"six", []ChoiceOption{
-			{Value: 0, Name: "Bell"}, {Value: 1, Name: "Low Shelf"}, {Value: 2, Name: "High Shelf"},
-			{Value: 3, Name: "Low Pass"}, {Value: 4, Name: "High Pass"}, {Value: 5, Name: "Notch"},
+			{Value: 0, Name: "Bell"},
+			{Value: 1, Name: "Low Shelf"},
+			{Value: 2, Name: "High Shelf"},
+			{Value: 3, Name: "Low Pass"},
+			{Value: 4, Name: "High Pass"},
+			{Value: 5, Name: "Notch"},
 		}},
 	}
 
