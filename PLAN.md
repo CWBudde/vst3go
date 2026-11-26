@@ -268,8 +268,8 @@ linked and loaded, and every host would have rejected it as invalid.
         elsewhere.
   - Not covered: Steinberg's `validator` on Windows (it has run on Linux in CI,
     and against all ports on Linux and macOS arm64 in the 2026-11-26 stress
-    test), any real DAW
-    on Windows, and `windows/arm64`, which has a bundle layout but no CI build.
+    test), any real DAW on Windows, and `windows/arm64`, which has a bundle
+    layout but no CI build.
     `windows/386` is refused outright — the SDK's `PLUGIN_API` is `__stdcall`
     there and cgo emits `cdecl` for `//export`.
 - [x] Capture Windows-specific risks. All in `docs/windows.md`.
