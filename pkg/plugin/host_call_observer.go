@@ -32,8 +32,8 @@ func hostFlag(value bool) int64 {
 	return 0
 }
 
-func (w *componentWrapper) traceHostCall(method string, a, b, d int64, value float64) {
+func (w *componentWrapper) traceHostCall(method string, argument int64) {
 	if component, ok := w.component.(*componentImpl); ok {
-		component.traceHostCall(method, a, b, d, value)
+		component.traceHostCall(method, argument, 0, 0, 0)
 	}
 }

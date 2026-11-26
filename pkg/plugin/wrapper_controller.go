@@ -17,7 +17,7 @@ import (
 func GoEditControllerSetComponentState(componentID C.uintptr_t, state unsafe.Pointer) (result C.Steinberg_tresult) {
 	defer recoverPanicResult("GoEditControllerSetComponentState", &result)
 	if wrapper := getComponent(uintptr(componentID)); wrapper != nil {
-		wrapper.traceHostCall("IEditController.setComponentState", 0, 0, 0, 0)
+		wrapper.traceHostCall("IEditController.setComponentState", 0)
 	}
 
 	// Component state received from processor - apply to edit controller
@@ -28,7 +28,7 @@ func GoEditControllerSetComponentState(componentID C.uintptr_t, state unsafe.Poi
 func GoEditControllerSetState(componentID C.uintptr_t, state unsafe.Pointer) (result C.Steinberg_tresult) {
 	defer recoverPanicResult("GoEditControllerSetState", &result)
 	if wrapper := getComponent(uintptr(componentID)); wrapper != nil {
-		wrapper.traceHostCall("IEditController.setState", 0, 0, 0, 0)
+		wrapper.traceHostCall("IEditController.setState", 0)
 	}
 
 	if provider, ok := getEditorStateProvider(uintptr(componentID)); ok {
@@ -45,7 +45,7 @@ func GoEditControllerSetState(componentID C.uintptr_t, state unsafe.Pointer) (re
 func GoEditControllerGetState(componentID C.uintptr_t, state unsafe.Pointer) (result C.Steinberg_tresult) {
 	defer recoverPanicResult("GoEditControllerGetState", &result)
 	if wrapper := getComponent(uintptr(componentID)); wrapper != nil {
-		wrapper.traceHostCall("IEditController.getState", 0, 0, 0, 0)
+		wrapper.traceHostCall("IEditController.getState", 0)
 	}
 
 	if provider, ok := getEditorStateProvider(uintptr(componentID)); ok {
@@ -219,7 +219,7 @@ func GoEditControllerSetComponentHandler(componentID C.uintptr_t, handler unsafe
 	}
 
 	// Store the component handler for parameter change notifications
-	wrapper.traceHostCall("IEditController.setComponentHandler", hostFlag(handler != nil), 0, 0, 0)
+	wrapper.traceHostCall("IEditController.setComponentHandler", hostFlag(handler != nil))
 	wrapper.setComponentHandler(handler)
 
 	return C.Steinberg_tresult(vst3.ResultOK)
