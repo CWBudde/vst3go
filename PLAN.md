@@ -703,6 +703,10 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify the original editor, additional native hosts and permission
         to redistribute original assets.
 - [ ] [Lightweight Multiband Compressor](../vst3go-plugins/plugins/dynamics/lightweight-multiband-compressor/README.md)
+  - [x] Port the archive/installer, Series and ZIP variants. Match 288 finite
+        captures and verify finite output in 24 zero-ratio runs. Reopen six
+        REAPER projects with independently edited splits and band controls.
+  - [ ] Verify the native editor, meters and additional host platforms.
 - [ ] [Lightweight Soft Knee Compressor](../vst3go-plugins/plugins/dynamics/lightweight-soft-knee-compressor/README.md)
 - [ ] [Lightweight Soft Knee Gate](../vst3go-plugins/plugins/dynamics/lightweight-soft-knee-gate/README.md)
 - [ ] [Lightweight Soft Knee Limiter](../vst3go-plugins/plugins/dynamics/lightweight-soft-knee-limiter/README.md)
