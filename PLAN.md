@@ -1293,6 +1293,13 @@ parameters, programs, original editor references and audio comparisons in
 #### Instruments and vocoders
 
 - [ ] [2-Oszillator Synth](../vst3go-plugins/plugins/synth/2-oszillator-synth/README.md)
+  - [x] Verify the byte-identical 2009 installer and archive. Match
+        240 deterministic original renders and 36 direct VST3 ABI
+        renders within 6.706e-8, with separate RMS comparisons for noise.
+        Reopen four Linux REAPER projects and verify timestamped MIDI,
+        inactive factory slot edits, 47 SDK checks and Windows x64.
+  - [ ] Verify the original 498 × 189 editor and native Windows and macOS
+        hosts. The original double callbacks leave the buffers untouched.
 - [ ] [FunKEYS](../vst3go-plugins/plugins/synth/funkeys/README.md)
   - [x] Identify the byte-identical website and retained archive. Port
         the retained Wurley voice with local checksum-verified wavetables,
