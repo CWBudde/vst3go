@@ -637,6 +637,11 @@ parameters, programs, original editor references and audio comparisons in
         test the original editor and additional native hosts. Reconcile the
         original zero tail report with the measured sustained shaped output.
 - [ ] [SubBoost](../vst3go-plugins/plugins/bass/subboost/README.md)
+  - [x] Match 102 published Win32 renders and compare 102 retained Win32
+        renders. Verify sample-offset edits, effective Tune and Order zero
+        state and four reopened REAPER projects.
+  - [ ] Verify the native editor, retained Win64 audio and additional native
+        hosts. The VST3 keeps the dry mix where legacy Key Osc overflows.
 
 #### Dynamics
 
