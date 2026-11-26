@@ -334,6 +334,8 @@ there and reusable DSP in the sibling `algo-*` libraries.
   - [x] Let processors react to direct controller and editor parameter
         writes on the UI thread. Verify same-value writes and keep
         sample-offset automation on its existing path.
+  - [x] Verify 238 direct controller latency restarts with Linear Phase
+        Butterworth and live REAPER compensation for both filter classes.
   - [x] Verify sample-exact delay compensation after reopening a delay probe
         at 48 and 96 kHz in REAPER 7.86.
   - [x] Verify the Lookahead Limiter delay and tail. Reopen and render
@@ -484,8 +486,11 @@ parameters, programs, original editor references and audio comparisons in
         and Pad behavior. Reopen all seven controls and the editable Init slot.
   - [ ] Verify the original editor and additional native hosts.
 - [ ] [Valuable EQ](../vst3go-plugins/plugins/eq/valuable-eq/README.md)
-  - [ ] Valueable
-  - [ ] Valueable Stereo
+  - [x] Compare Valueable and Valueable Stereo against five released
+        DLLs. Match all 772 renders on the channels written by the originals.
+  - [x] Verify explicit Mono selection and fresh REAPER reopen for both classes.
+  - [ ] Verify original editors and remaining hosts. The port uses
+        separately supplied, hash-checked response tables.
 
 #### Filters and crossovers
 
@@ -536,10 +541,16 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify the original editor, repeated same-value setter behavior
         and remaining native hosts.
 - [ ] [Linear Phase Butterworth](../vst3go-plugins/plugins/filter/linear-phase-butterworth/README.md)
-  - [ ] Linear Phase Butterworth HP
-  - [ ] Linear Phase Butterworth LP
+  - [x] Match HP and LP audio and adaptive latency across 252 release renders.
+        Verify manual edits and restore compensation in fresh REAPER renders.
+  - [ ] Verify audio-queue latency transitions, live FIR history, the
+        original editors and additional native hosts.
 - [ ] [Linear Phase Frequency Crossover](../vst3go-plugins/plugins/filter/linear-phase-frequency-crossover/README.md)
 - [ ] [MoogVST](../vst3go-plugins/plugins/filter/moogvst/README.md)
+  - [x] Match 120 normal release renders and the six high-resonance cases
+        with explicit controls. Reopen Init and driven settings in REAPER.
+  - [ ] Verify other native hosts and the separate retained checkout build.
+        The VST3 uses the displayed zero resonance at startup.
 - [ ] [Phase Rotator](../vst3go-plugins/plugins/filter/phase-rotator/README.md)
 - [ ] [QR-Filter](../vst3go-plugins/plugins/filter/qr-filter/README.md)
 - [ ] [Rubberfilter](../vst3go-plugins/plugins/filter/rubberfilter/README.md)
