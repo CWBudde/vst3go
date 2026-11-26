@@ -880,6 +880,12 @@ parameters, programs, original editor references and audio comparisons in
         confirm graphics redistribution and support the measured original
         float64 input path. REAPER's variable silent pre-roll affects hold phase.
 - [ ] [Dynamite](../vst3go-plugins/plugins/distortion/dynamite/README.md)
+  - [x] Compare 108 archived Win32 renders for the four-step, 12-tap stereo
+        classic profile within 1.20e−7. Verify synthetic profile import,
+        both edited program slots after REAPER reopen and SDK validation.
+  - [ ] Verify the loose Win32 build, which failed during the ordinary render,
+        additional profile formats, native editor and hosts. The installer
+        remains encrypted and the retained notice restricts distribution.
 - [ ] [Exciter](../vst3go-plugins/plugins/distortion/exciter/README.md)
 - [ ] [Hysteresis](../vst3go-plugins/plugins/distortion/hysteresis/README.md)
 - [ ] [OpAmp](../vst3go-plugins/plugins/distortion/opamp/README.md)
