@@ -1347,6 +1347,12 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify retained DLLs that timed out in Wine, native Windows
         and macOS hosts, and the original textured editor and fonts.
 - [ ] [BetaMeta](../vst3go-plugins/plugins/analysis/betameta/README.md)
+  - [x] Identify the 2005 Win32 release and archived copies. Match 72
+        stereo passthrough cases, 63 calibrated positions on each meter,
+        and 16 RMS steps. Exercise the 454 × 187 X11 view and reopen
+        Peak and RMS projects in Linux REAPER with exact audio, 47 SDK
+        checks and a Windows x64 cross-build.
+  - [ ] Verify original skins and native Windows and macOS meter views.
 - [ ] [StereoMeterVST](../vst3go-plugins/plugins/analysis/stereometervst/README.md)
 - [ ] [Third-Octave Analyser (VST-Plugin)](../vst3go-plugins/plugins/analysis/third-octave-analyser-vst-plugin/README.md)
 - [ ] [TunaBUG](../vst3go-plugins/plugins/analysis/tunabug/README.md)
