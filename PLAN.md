@@ -743,11 +743,22 @@ parameters, programs, original editor references and audio comparisons in
         and compensation in REAPER on Linux.
   - [ ] Reproduce the original editor and verify live delay changes and other host platforms.
 - [ ] [Multiband Compressor](../vst3go-plugins/plugins/dynamics/multiband-compressor/README.md)
+  - [x] Match 132 original x86 captures for the linked three-band paths,
+        startup aliases, crossover and dynamics edits. Reopen six REAPER
+        projects, including the untouched and edited high crossover settings.
+  - [ ] Verify the original editor, retained Win64 callback and additional
+        native hosts. The retained x64 DLL failed to load under Wine.
 - [ ] [Sidechain Compressor](../vst3go-plugins/plugins/dynamics/sidechain-compressor/README.md)
   - [x] Compare all 13 released programs and the loaded detector path.
         Validate the Linux class and restore the nested state in REAPER.
   - [ ] Finish native detector selection, editor behavior and other host platforms.
 - [ ] [Simple Compressor](../vst3go-plugins/plugins/dynamics/simple-compressor/README.md)
+  - [x] Match 72 stable January 2010 Win32 renders, including the measured
+        RMS window, queued edits and four reopened REAPER projects.
+  - [ ] Confirm the 2008 ZIP and published x64 audio in other native hosts,
+        and verify the original editor. The ZIP returned nonfinite samples,
+        and the published x64 build returned silence. The VST3 resumes finite
+        compression after silence.
 - [ ] [Simple Feedback Compressor](../vst3go-plugins/plugins/dynamics/simple-feedback-compressor/README.md)
   - [x] Compare the audible 2010 edition across three sample rates and two
         block sizes. Verify zero latency, tail and saved settings on Linux.
