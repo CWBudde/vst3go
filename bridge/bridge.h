@@ -27,8 +27,8 @@ int vst3goModuleExit(void);
 // Factory callbacks
 extern void GoGetFactoryInfo(char* vendor, char* url, char* email, int32_t* flags);
 extern int32_t GoCountClasses();
-extern void GoGetClassInfo(int32_t index, char* cid, int32_t* cardinality, char* category, char* name);
-extern void* GoCreateInstance(char* cid, char* iid);
+extern Steinberg_tresult GoGetClassInfo(int32_t index, char* cid, int32_t* cardinality, char* category, char* name);
+extern void* GoCreateInstance(char* cid);
 
 // Parameter automation helper functions
 int32_t getParameterChangeCount(void* inputParameterChanges);

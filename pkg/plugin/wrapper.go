@@ -86,8 +86,14 @@ var (
 	nextID       uintptr = 1
 )
 
-// Global plugin instance
-var globalPlugin Plugin
+type factoryClass struct {
+	plugin Plugin
+	cid    [16]byte
+	name   string
+}
+
+// Publish each registration as an immutable snapshot for host callbacks.
+var factoryClasses atomic.Pointer[[]factoryClass]
 
 // Factory info
 type FactoryInfo struct {
@@ -102,9 +108,45 @@ var globalFactoryInfo = FactoryInfo{
 	Email:  "info@vst3go.dev",
 }
 
-// Register sets the global plugin instance
+// Register sets the sole class in a bundle. Call it from init with the final
+// metadata before the host can enumerate classes. Passing nil clears it.
 func Register(p Plugin) {
-	globalPlugin = p
+	if p == nil {
+		factoryClasses.Store(nil)
+		return
+	}
+	info := p.GetInfo()
+	classes := []factoryClass{{plugin: p, cid: info.UID(), name: info.Name}}
+	factoryClasses.Store(&classes)
+}
+
+// RegisterClasses registers all classes in a bundle in the supplied order.
+// Call it once from init before the host can enumerate classes. Each plugin
+// must have a nonempty, unique ID and return a fresh processor per instance.
+// Invalid input leaves the previous registration intact.
+func RegisterClasses(plugins ...Plugin) error {
+	if len(plugins) == 0 {
+		return fmt.Errorf("register classes: at least one plugin is required")
+	}
+	classes := make([]factoryClass, 0, len(plugins))
+	seen := make(map[[16]byte]struct{}, len(plugins))
+	for index, p := range plugins {
+		if p == nil {
+			return fmt.Errorf("register class %d: plugin is nil", index)
+		}
+		info := p.GetInfo()
+		if err := info.ValidateUID(); err != nil {
+			return fmt.Errorf("register class %d: %w", index, err)
+		}
+		cid := info.UID()
+		if _, exists := seen[cid]; exists {
+			return fmt.Errorf("register class %d: duplicate class ID for %q", index, info.ID)
+		}
+		seen[cid] = struct{}{}
+		classes = append(classes, factoryClass{plugin: p, cid: cid, name: info.Name})
+	}
+	factoryClasses.Store(&classes)
+	return nil
 }
 
 // SetFactoryInfo sets the factory information
@@ -304,54 +346,53 @@ func GoGetFactoryInfo(vendor, url, email *C.char, flags *C.int32_t) {
 func GoCountClasses() C.int32_t {
 	defer recoverPanic("GoCountClasses")
 
-	if globalPlugin == nil {
+	classes := factoryClasses.Load()
+	if classes == nil {
 		return 0
 	}
-	return 1
+	return C.int32_t(len(*classes))
 }
 
 //export GoGetClassInfo
-func GoGetClassInfo(index C.int32_t, cid *C.char, cardinality *C.int32_t, category, name *C.char) {
-	defer recoverPanic("GoGetClassInfo")
+func GoGetClassInfo(index C.int32_t, cid *C.char, cardinality *C.int32_t, category, name *C.char) (result C.Steinberg_tresult) {
+	defer recoverPanicResult("GoGetClassInfo", &result)
 
-	if globalPlugin == nil || index != 0 {
-		return
+	classes := factoryClasses.Load()
+	if classes == nil || index < 0 || int(index) >= len(*classes) {
+		return C.Steinberg_tresult(vst3.ResultFalse)
 	}
+	class := (*classes)[index]
 
-	info := globalPlugin.GetInfo()
-
-	// Copy UID
-	uid := info.UID()
-	C.memcpy(unsafe.Pointer(cid), unsafe.Pointer(&uid[0]), 16)
+	*(*[16]byte)(unsafe.Pointer(cid)) = class.cid
 
 	// Set cardinality
 	*cardinality = C.Steinberg_PClassInfo_ClassCardinality_kManyInstances
 
 	// Buffer sizes come from Steinberg_PClassInfo in vst3_c_api.h.
 	copyStringToChar8(category, 32, "Audio Module Class")
-	copyStringToChar8(name, 64, info.Name)
+	copyStringToChar8(name, 64, class.name)
+	return C.Steinberg_tresult(vst3.ResultOK)
 }
 
 //export GoCreateInstance
-func GoCreateInstance(cid *C.char, iid *C.char) unsafe.Pointer {
+func GoCreateInstance(cid *C.char) unsafe.Pointer {
 	defer recoverPanic("GoCreateInstance")
 
-	if globalPlugin == nil {
+	classes := factoryClasses.Load()
+	if cid == nil || classes == nil {
 		return nil
 	}
 
-	// Check if the class ID matches our plugin
 	var requestedCID [16]byte
 	C.memcpy(unsafe.Pointer(&requestedCID[0]), unsafe.Pointer(cid), 16)
 
-	pluginInfo := globalPlugin.GetInfo()
-	pluginUID := pluginInfo.UID()
-	if requestedCID != pluginUID {
-		return nil
+	var processor Processor
+	for _, class := range *classes {
+		if requestedCID == class.cid {
+			processor = class.plugin.CreateProcessor()
+			break
+		}
 	}
-
-	// Create processor instance
-	processor := globalPlugin.CreateProcessor()
 	if processor == nil {
 		return nil
 	}

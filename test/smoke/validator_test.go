@@ -59,7 +59,7 @@ func findValidator(t *testing.T) string {
 // is the only form the SDK's module loader accepts. The layout itself comes
 // from pkg/bundle, so this test and any downstream build script agree on it by
 // construction rather than by two copies of the same table.
-func buildBundle(t *testing.T, root, dir string) string {
+func buildBundle(t *testing.T, root, dir string, multiClass bool) string {
 	t.Helper()
 
 	layout, err := bundle.For(bundleName, runtime.GOOS, runtime.GOARCH)
@@ -72,12 +72,15 @@ func buildBundle(t *testing.T, root, dir string) string {
 		t.Fatalf("create bundle: %v", err)
 	}
 
-	run(t, root, nil, "go", "build",
+	args := []string{"build",
 		"-buildvcs=false",
 		"-buildmode=c-shared",
 		"-o", binary,
-		"./test/smoke/plugin",
-	)
+	}
+	if multiClass {
+		args = append(args, "-ldflags=-X main.multiClass=1")
+	}
+	run(t, root, nil, "go", append(args, "./test/smoke/plugin")...)
 
 	return layout.Path(dir)
 }
@@ -87,9 +90,17 @@ func buildBundle(t *testing.T, root, dir string) string {
 // specification rather than against our reading of it.
 func TestValidatorAcceptsThePlugin(t *testing.T) {
 	validator := findValidator(t)
-
 	root := repoRoot(t)
-	bundle := buildBundle(t, root, t.TempDir())
+	t.Run("single class", func(t *testing.T) {
+		checkBundleWithValidator(t, validator, buildBundle(t, root, t.TempDir(), false))
+	})
+	t.Run("multiple classes", func(t *testing.T) {
+		checkBundleWithValidator(t, validator, buildBundle(t, root, t.TempDir(), true))
+	})
+}
+
+func checkBundleWithValidator(t *testing.T, validator, bundle string) {
+	t.Helper()
 
 	cmd := exec.Command(validator, bundle)
 	out, err := cmd.CombinedOutput()

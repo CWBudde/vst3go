@@ -131,25 +131,27 @@ static Steinberg_int32 SMTG_STDMETHODCALLTYPE factory_countClasses(void* thisInt
 }
 
 static Steinberg_tresult SMTG_STDMETHODCALLTYPE factory_getClassInfo(void* thisInterface, Steinberg_int32 index, struct Steinberg_PClassInfo* info) {
-    if (index >= GoCountClasses()) {
-        return ((Steinberg_tresult)1);
+    if (!info) {
+        return Steinberg_kInvalidArgument;
     }
     // Zero first: the host's struct is uninitialized stack memory, and Go only
     // writes up to each field's terminator.
     memset(info, 0, sizeof(*info));
-    GoGetClassInfo(index, (char*)info->cid, &info->cardinality, info->category, info->name);
-    return ((Steinberg_tresult)0);
+    return GoGetClassInfo(index, (char*)info->cid, &info->cardinality, info->category, info->name);
 }
 
 static Steinberg_tresult SMTG_STDMETHODCALLTYPE factory_createInstance(void* thisInterface, Steinberg_FIDString cid, Steinberg_FIDString iid, void** obj) {
     DBG_LOG("factory_createInstance called");
-    // Create instance through Go
-    char* mutableCID = (char*)cid;
-    char* mutableIID = (char*)iid;
-    void* instance = GoCreateInstance(mutableCID, mutableIID);
+    if (!obj) {
+        return Steinberg_kInvalidArgument;
+    }
+    *obj = NULL;
+    if (!cid || !iid) {
+        return Steinberg_kInvalidArgument;
+    }
+    void* instance = GoCreateInstance((char*)cid);
     if (!instance) {
         DBG_LOG("factory_createInstance: GoCreateInstance returned NULL");
-        *obj = NULL;
         return Steinberg_kNoInterface;
     }
 

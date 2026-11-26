@@ -27,6 +27,12 @@ import (
 // getControllerClassId claiming a controller class that does not exist, and
 // process() panicking as soon as a host presented more than one input bus.
 func TestPluginLoadsAndAnswersHost(t *testing.T) {
+	t.Run("single class", func(t *testing.T) { testPluginLoadsAndAnswersHost(t, false) })
+	t.Run("multiple classes", func(t *testing.T) { testPluginLoadsAndAnswersHost(t, true) })
+}
+
+func testPluginLoadsAndAnswersHost(t *testing.T, multiClass bool) {
+	t.Helper()
 	switch runtime.GOOS {
 	case "linux", "darwin", "windows":
 	default:
@@ -50,12 +56,16 @@ func TestPluginLoadsAndAnswersHost(t *testing.T) {
 	lib := filepath.Join(tmp, libName)
 
 	// -buildvcs=false: the module may be built from a dirty or detached tree.
-	run(t, root, nil, "go", "build",
+	buildArgs := []string{
+		"build",
 		"-buildvcs=false",
 		"-buildmode=c-shared",
 		"-o", lib,
-		"./test/smoke/plugin",
-	)
+	}
+	if multiClass {
+		buildArgs = append(buildArgs, "-ldflags=-X main.multiClass=1")
+	}
+	run(t, root, nil, "go", append(buildArgs, "./test/smoke/plugin")...)
 
 	driver := filepath.Join(tmp, driverName)
 	args := []string{
@@ -63,6 +73,9 @@ func TestPluginLoadsAndAnswersHost(t *testing.T) {
 		filepath.Join(root, "test", "smoke", "testdata", "driver.c"),
 		lib,
 		"-I" + filepath.Join(root, "include"),
+	}
+	if multiClass {
+		args = append(args, "-DMULTI_CLASS")
 	}
 	if runtime.GOOS != "windows" {
 		// PE has no rpath; Windows resolves the DLL from the executable's own

@@ -293,7 +293,7 @@ there and reusable DSP in the sibling `algo-*` libraries.
 
 ### 6.0 Multiple classes per bundle
 
-- [ ] Extend the single-plugin factory in `pkg/plugin/wrapper.go` to enumerate
+- [x] Extend the single-plugin factory in `pkg/plugin/wrapper.go` to enumerate
       classes in a stable order and construct the processor for the requested CID.
       Preserve single-class registration. Test unknown IDs, multiple live instances,
       isolation of state and parameters, and discovery of every class in a bundle.

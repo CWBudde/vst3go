@@ -6,6 +6,89 @@ extern struct Steinberg_IPluginFactory* GetPluginFactory(void);
 
 #define CHECK(cond, msg) do { if (!(cond)) { printf("FAIL: %s\n", msg); fails++; } else { printf("ok:   %s\n", msg); } } while(0)
 
+#ifdef MULTI_CLASS
+enum { class_count = 2 };
+
+typedef struct {
+    struct Steinberg_IBStream stream;
+    unsigned char data[128];
+    Steinberg_int32 size;
+} StateStream;
+
+static Steinberg_tresult SMTG_STDMETHODCALLTYPE state_read(
+    void* self, void* buffer, Steinberg_int32 count, Steinberg_int32* read) {
+    StateStream* s = self;
+    *read = count < s->size ? count : s->size;
+    memcpy(buffer, s->data, *read);
+    return Steinberg_kResultOk;
+}
+
+static Steinberg_tresult SMTG_STDMETHODCALLTYPE state_write(
+    void* self, void* buffer, Steinberg_int32 count, Steinberg_int32* written) {
+    StateStream* s = self;
+    if (count < 0 || count > (Steinberg_int32)sizeof(s->data)) return Steinberg_kResultFalse;
+    memcpy(s->data, buffer, count);
+    *written = s->size = count;
+    return Steinberg_kResultOk;
+}
+
+static Steinberg_tresult SMTG_STDMETHODCALLTYPE state_tell(void* self, Steinberg_int64* pos) {
+    return Steinberg_kNotImplemented;  // one-shot non-seekable parameter state
+}
+
+static struct Steinberg_IBStreamVtbl state_vtbl = {
+    .read = state_read, .write = state_write, .tell = state_tell,
+};
+
+static int check_multiple_classes(struct Steinberg_IPluginFactory* f) {
+    int fails = 0;
+    struct Steinberg_PClassInfo infos[2] = {0};
+    const char* expected_names[] = {"VST3Go Smoke Test", "VST3Go Smoke Test Auxiliary"};
+    for (int i = 0; i < 2; i++) {
+        CHECK(f->lpVtbl->getClassInfo(f, i, &infos[i]) == Steinberg_kResultOk,
+              "class is discoverable");
+        CHECK(strcmp(infos[i].name, expected_names[i]) == 0, "class in registration order");
+    }
+    CHECK(memcmp(infos[0].cid, infos[1].cid, sizeof(Steinberg_TUID)) != 0, "distinct CIDs");
+    struct Steinberg_PClassInfo invalid;
+    CHECK(f->lpVtbl->getClassInfo(f, -1, &invalid) != Steinberg_kResultOk, "negative class index rejected");
+    CHECK(f->lpVtbl->getClassInfo(f, 2, &invalid) != Steinberg_kResultOk, "upper class index rejected");
+
+    struct Steinberg_Vst_IEditController* editors[3] = {0};
+    double defaults[] = {1.0, 1.0, 0.25};
+    for (int i = 0; i < 3; i++) {
+        Steinberg_tresult r = f->lpVtbl->createInstance(f, infos[i == 2].cid,
+            Steinberg_Vst_IEditController_iid, (void**)&editors[i]);
+        CHECK(r == Steinberg_kResultOk && editors[i] != NULL, "CID creates live instance");
+        if (editors[i]) {
+            CHECK(editors[i]->lpVtbl->getParamNormalized(editors[i], 0) == defaults[i],
+                  "instance receives requested processor's default");
+        }
+    }
+
+    if (editors[0] && editors[1] && editors[2]) {
+        StateStream saved = {.stream = {&state_vtbl}};
+        struct Steinberg_Vst_IEditController* e = editors[0];
+        CHECK(e->lpVtbl->setParamNormalized(e, 0, 0.5) == Steinberg_kResultOk, "edit first instance");
+        CHECK(e->lpVtbl->getState(e, &saved.stream) == Steinberg_kResultOk && saved.size > 0,
+              "serialize first instance state");
+        e->lpVtbl->setParamNormalized(e, 0, 0.75);
+        CHECK(e->lpVtbl->setState(e, &saved.stream) == Steinberg_kResultOk, "restore first instance state");
+        CHECK(e->lpVtbl->getParamNormalized(e, 0) == 0.5, "first instance value restored");
+        for (int i = 1; i < 3; i++) {
+            e = editors[i];
+            CHECK(e->lpVtbl->getParamNormalized(e, 0) == defaults[i], "other instance retains its own state");
+        }
+    }
+    for (int i = 0; i < 3; i++) {
+        if (editors[i]) editors[i]->lpVtbl->release(editors[i]);
+    }
+    return fails;
+}
+#else
+enum { class_count = 1 };
+#endif
+
 int main(void) {
     int fails = 0;
     struct Steinberg_IPluginFactory* f = GetPluginFactory();
@@ -18,7 +101,10 @@ int main(void) {
     CHECK(strlen(fi.vendor) < 64, "vendor stays within char[64]");
 
     Steinberg_int32 n = f->lpVtbl->countClasses(f);
-    CHECK(n == 1, "countClasses == 1");
+    CHECK(n == class_count, "countClasses matches registration");
+#ifdef MULTI_CLASS
+    fails += check_multiple_classes(f);
+#endif
 
     struct Steinberg_PClassInfo ci;
     memset(&ci, 0xAA, sizeof(ci));
@@ -77,7 +163,7 @@ int main(void) {
     struct Steinberg_IPluginFactory* f2 = GetPluginFactory();
     CHECK(f2 != NULL, "GetPluginFactory after full release returns non-NULL");
     Steinberg_int32 n2 = f2->lpVtbl->countClasses(f2);
-    CHECK(n2 == 1, "reborn factory is usable (no use-after-free)");
+    CHECK(n2 == class_count, "reborn factory is usable (no use-after-free)");
 
     // finding 1.1: two input buses (e.g. main + sidechain) must not panic
     {
