@@ -435,6 +435,10 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Split and oversampled edition
     - [x] Capture seven programs and the two EQ parameter groups in both
           distinct split release binaries.
+    - [x] Compare the nine SNEQ 1100 modes at three rates and two block sizes.
+          Verify the seven editable slots and reopen a 2× Spin session in REAPER.
+    - [ ] Finish the earlier SNo2 LFO and Spin variants, higher oversampling
+          factors, live modulation automation, native editor and other hosts.
 - [ ] [Parametri-Q (lite)](../vst3go-plugins/plugins/eq/parametri-q-lite/README.md)
 - [ ] [ParametricEQ](../vst3go-plugins/plugins/eq/parametriceq/README.md)
 - [ ] [Posihfopit](../vst3go-plugins/plugins/eq/posihfopit/README.md)
@@ -607,6 +611,9 @@ parameters, programs, original editor references and audio comparisons in
         Reopen the three editable Init slots and render exact taps in REAPER.
   - [ ] Verify the original editor and other host platforms.
 - [ ] [StkEcho](../vst3go-plugins/plugins/delay/stkecho/README.md)
+  - [x] Match 60 stereo renders, including sample-offset edits. Verify all
+        five editable programs and exact saved-session taps in Linux REAPER.
+  - [ ] Verify the native editor and additional host platforms.
 - [ ] [VariableDelay](../vst3go-plugins/plugins/delay/variabledelay/README.md)
 
 #### Pitch
