@@ -1144,6 +1144,13 @@ parameters, programs, original editor references and audio comparisons in
 - [ ] [Freeverb](../vst3go-plugins/plugins/reverb/freeverb/README.md)
 - [ ] [Plate Reverb](../vst3go-plugins/plugins/reverb/plate-reverb/README.md)
 - [ ] [StkReverb](../vst3go-plugins/plugins/reverb/stkreverb/README.md)
+  - [x] Match all five algorithms on 420 installer, retained, in-place
+        and pre-open captures within 1.193e-7. Confirm stereo tap timing and
+        tails, valid setup ordering, and active and inactive program edits
+        in a reopened Linux REAPER project. Pass SDK checks and Windows
+        x64 cross-build.
+  - [ ] Verify the original editors, high-rate pre-open failure, original
+        double processing, and physical Windows and macOS hosts.
 
 #### Spectral processing
 
