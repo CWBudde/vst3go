@@ -3,6 +3,7 @@ package param
 import (
 	"errors"
 	"fmt"
+	"math"
 )
 
 // Builder provides a fluent API for creating parameters.
@@ -39,6 +40,19 @@ func (b *Builder) ShortName(name string) *Builder {
 func (b *Builder) Range(minVal, maxVal float64) *Builder {
 	b.param.Min = minVal
 	b.param.Max = maxVal
+	return b
+}
+
+// Logarithmic sets a continuous parameter's normalization to
+// log1p(factor * unit) / log1p(factor), with unit the plain value scaled to
+// 0–1. The factor and plain range span must be positive and finite.
+func (b *Builder) Logarithmic(factor float64) *Builder {
+	if !isFinite(factor) || factor <= 0 {
+		b.errs = append(b.errs, fmt.Errorf("factor %v: %w", factor, ErrInvalidCurveFactor))
+		return b
+	}
+	b.param.logarithmicFactor = factor
+	b.param.logarithmicScale = math.Log1p(factor)
 	return b
 }
 
@@ -143,6 +157,16 @@ func (b *Builder) validate() error {
 	if p.StepCount > 0 && p.Max-p.Min != float64(p.StepCount) {
 		errs = append(errs, fmt.Errorf("%q: range %v..%v does not span %d steps: %w",
 			p.Name, p.Min, p.Max, p.StepCount, ErrInvalidStepCount))
+	}
+	if p.logarithmicFactor > 0 {
+		if p.StepCount > 0 {
+			errs = append(errs, fmt.Errorf("%q: logarithmic normalization requires a continuous parameter: %w",
+				p.Name, ErrInvalidStepCount))
+		}
+		if !isFinite(p.Max - p.Min) {
+			errs = append(errs, fmt.Errorf("%q: logarithmic normalization requires a finite range span: %w",
+				p.Name, ErrInvalidRange))
+		}
 	}
 
 	return errors.Join(errs...)

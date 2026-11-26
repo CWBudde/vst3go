@@ -101,7 +101,8 @@ func MixParameter(id uint32, name string) *Builder {
 		Formatter(PercentFormatter, PercentParser)
 }
 
-// FrequencyParameter creates a standard frequency parameter with logarithmic scaling
+// FrequencyParameter creates a frequency parameter with Hz/kHz formatting.
+// Use [Builder.Logarithmic] to set a logarithmic normalization curve.
 func FrequencyParameter(id uint32, name string, min, max, defaultVal float64) *Builder {
 	return New(id, name).
 		Range(min, max).

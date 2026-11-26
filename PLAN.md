@@ -334,6 +334,8 @@ there and reusable DSP in the sibling `algo-*` libraries.
         caller advances each smoother once per sample frame.
 - [ ] Test the Sidechain Compressor with a loaded detector plugin in the
       original nested processing path, including reconfiguration and saved state.
+  - [x] Forward host processing start and stop independently of activation so
+        a nested detector can receive both lifecycle transitions.
 
 ### 6.3 Programs, state and host validation
 
@@ -342,8 +344,11 @@ there and reusable DSP in the sibling `algo-*` libraries.
       defaults. Round-trip processor and editor state in a saved host session.
   - [x] Verify root-unit program lists, selection, sample offsets and separate
         processor and editor state through the runtime and C host fixture.
-  - [ ] Save and reopen factory programs and editor-specific state in a real
-        host session with a port.
+  - [x] Support the original DAV logarithmic normalization for continuous
+        controls such as Electri-Q frequency and bandwidth.
+  - [x] Save and reopen EeeekU factory programs and edited parameters in
+        REAPER 7.86.
+  - [ ] Save and reopen editor-specific state in a real host session.
 - [ ] Validate the affected runtime interfaces using the C host smoke tests
       and Steinberg validator. Repeat in a real host with a family bundle,
       an instrument, a sidechain and a native editor before declaring coverage.
@@ -368,12 +373,14 @@ parameters, programs, original editor references and audio comparisons in
 #### Equalizers
 
 - [ ] [EeeekU](../vst3go-plugins/plugins/eq/eeeeku/README.md)
-  - [x] Implement stereo RBJ and factory programs. The companion pins the
-        tested allpass resampler from
-        [algo-dsp PR #43](https://github.com/CWBudde/algo-dsp/pull/43).
-  - [ ] Reconcile the mono RBJ output with the installer release.
-  - [ ] Compare renders from the three original release binaries and verify
-        the editor, including its channel-zero Orfanidis mode.
+  - [x] Implement stereo and mono RBJ and factory programs. Compare 180
+        impulse renders across the three released binaries and verify
+        parameter state after reopening a REAPER project.
+  - [x] Implement the source-defined Orfanidis mode on channel zero. The
+        companion pins the tested revisions from [algo-dsp PR #43](https://github.com/CWBudde/algo-dsp/pull/43)
+        and [PR #44](https://github.com/CWBudde/algo-dsp/pull/44).
+  - [ ] Verify complex response and harmonic behavior, and finish the editor
+        and supported host checks.
 - [ ] [Electri-Q](../vst3go-plugins/plugins/eq/electri-q/README.md)
   - [ ] Commercial edition
   - [ ] Posihfopit edition

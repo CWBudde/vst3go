@@ -132,6 +132,15 @@ type Processor interface {
 	GetTailSamples() int32
 }
 
+// ProcessingStateProcessor receives the host's processing start and stop
+// separately from component activation. A processor hosting a nested plugin
+// can forward these transitions to it. The host may call SetProcessing on
+// its audio thread. Avoid allocation and blocking on this path.
+type ProcessingStateProcessor interface {
+	Processor
+	SetProcessing(processing bool) error
+}
+
 // LatencyChangeProcessor is an optional extension for processors that can
 // change their latency while a plug-in is in use. The runtime supplies one
 // notifier per instance before initialization. Call it on the host UI thread

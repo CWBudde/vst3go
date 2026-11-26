@@ -20,11 +20,13 @@ var (
 
 	// ErrMissingName indicates a parameter was built without a name.
 	ErrMissingName = errors.New("parameter name must not be empty")
-	// ErrInvalidRange indicates Max is not greater than Min.
+	// ErrInvalidRange indicates Max is not greater than Min or a logarithmic
+	// parameter's range has a non-finite span.
 	ErrInvalidRange = errors.New("parameter max must be greater than min")
-	// ErrInvalidStepCount indicates the step count is negative or inconsistent
-	// with the plain range. VST3 counts intervals, so a stepped parameter must
-	// satisfy Max-Min == StepCount.
+	// ErrInvalidCurveFactor indicates a logarithmic factor is not positive and finite.
+	ErrInvalidCurveFactor = errors.New("invalid logarithmic curve factor")
+	// ErrInvalidStepCount indicates a step count is negative, conflicts with a
+	// normalization curve, or differs from Max-Min for a stepped parameter.
 	ErrInvalidStepCount = errors.New("invalid step count")
 	// ErrNoOptions indicates a choice parameter was created without options.
 	ErrNoOptions = errors.New("choice parameter requires at least one option")

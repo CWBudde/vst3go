@@ -332,6 +332,11 @@ func busBufferViews(buses *bus.Configuration, direction bus.Direction) ([]proces
 }
 
 func (c *componentImpl) SetProcessing(state bool) error {
+	if processor, ok := c.processor.(ProcessingStateProcessor); ok {
+		if err := processor.SetProcessing(state); err != nil {
+			return err
+		}
+	}
 	if state && c.programs != nil {
 		c.programs.selection.Or(programsRunning)
 	}

@@ -81,6 +81,10 @@ type Parameter struct {
 	// Optional smoother. Nil (the zero value) means no smoothing and no cost.
 	smoother atomic.Pointer[Smoother]
 
+	// Optional normalization curve and its cached log1p(factor).
+	logarithmicFactor float64
+	logarithmicScale  float64
+
 	// Value formatting
 	formatFunc func(float64) string
 	parseFunc  func(string) (float64, error)
@@ -244,6 +248,10 @@ func (p *Parameter) ParseValue(str string) (float64, error) {
 	return p.Normalize(plain), nil
 }
 
+// At these factors the curve is linear to float64 precision. Using the
+// linear limit also avoids underflow when a subnormal factor is scaled.
+const logarithmicLinearLimit = 0x1p-52
+
 // Normalize converts a plain value to normalized (0-1) form.
 //
 // For stepped parameters (StepCount > 0) the VST3 mapping is
@@ -261,7 +269,11 @@ func (p *Parameter) Normalize(plain float64) float64 {
 	if p.Max <= p.Min {
 		return 0
 	}
-	return clamp01((plain - p.Min) / (p.Max - p.Min))
+	unit := clamp01((plain - p.Min) / (p.Max - p.Min))
+	if p.logarithmicFactor > logarithmicLinearLimit && unit > 0 && unit < 1 {
+		return math.Log1p(p.logarithmicFactor*unit) / p.logarithmicScale
+	}
+	return unit
 }
 
 // Denormalize converts normalized (0-1) to a plain value.
@@ -277,6 +289,18 @@ func (p *Parameter) Denormalize(normalized float64) float64 {
 
 	if p.StepCount > 0 {
 		return p.Min + math.Round(normalized*float64(p.StepCount))
+	}
+	if p.logarithmicFactor > 0 {
+		if normalized == 0 {
+			return p.Min
+		}
+		if normalized == 1 {
+			return p.Max
+		}
+		if p.logarithmicFactor > logarithmicLinearLimit {
+			normalized = clamp01(math.Expm1(normalized*p.logarithmicScale) / p.logarithmicFactor)
+		}
+		return min(p.Max, p.Min+normalized*(p.Max-p.Min))
 	}
 	return p.Min + normalized*(p.Max-p.Min)
 }
