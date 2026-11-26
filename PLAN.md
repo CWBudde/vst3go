@@ -1031,6 +1031,10 @@ parameters, programs, original editor references and audio comparisons in
 #### Delay
 
 - [ ] [DegradingDelay](../vst3go-plugins/plugins/delay/degradingdelay/README.md)
+  - [x] Match 234 stereo renders exactly, including crossed routing,
+        the held feedback tap, rate-order effects and live delay resize.
+        Verify saved feedback clocks in REAPER and validate the VST3.
+  - [ ] Compare the original editor and native Windows and macOS hosts.
 - [ ] [FeedBUG](../vst3go-plugins/plugins/delay/feedbug/README.md)
 - [ ] [ModDelay](../vst3go-plugins/plugins/delay/moddelay/README.md)
 - [ ] [Party-Delay](../vst3go-plugins/plugins/delay/party-delay/README.md)
