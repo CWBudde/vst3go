@@ -806,8 +806,13 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Check the retained x64 binary, which fails to load with Wine error
         998, and verify the original editors and remaining native hosts.
 - [ ] [Transient Bug](../vst3go-plugins/plugins/dynamics/transient-bug/README.md)
-  - [ ] BugWars release
-  - [ ] TrBug release
+  - [x] Match every finite sample across 96 BugWars renders. Use the finite
+        zero-Attack limit where the original emits NaNs.
+  - [x] Match 240 TrBug renders within 1.61e−22, including all selector modes,
+        both styles, the noise gate and the editable `init` program.
+  - [x] Verify 24 queued-automation renders and save and reopen both classes
+        in REAPER. Validate both classes in the SDK Validator.
+  - [ ] Compare the original BugWars editor and verify remaining native hosts.
 
 #### Distortion
 
