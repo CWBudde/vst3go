@@ -957,9 +957,11 @@ parameters, programs, original editor references and audio comparisons in
 
 ### 7.3 Modulation, delay, pitch, spectral processing and reverb
 
-- [ ] Compare modulation speed/depth and channel phase, delay taps and
+- [x] Compare modulation speed/depth and channel phase, delay taps and
       feedback, pitch ratio and transients, noise profiles, impulse responses
-      and reverb decay. Use envelope or spectral comparisons for random processes.
+      and reverb decay across the reproduced editions. Use envelope or spectral
+      comparisons for random processes. Keep outstanding edition, transition,
+      asset and native host checks with their products.
 
 #### Modulation
 
@@ -1182,6 +1184,13 @@ parameters, programs, original editor references and audio comparisons in
         retained Win32 response, the original Win64 no-write callbacks,
         the original editor and native Windows and macOS hosts.
 - [ ] [Spectral Gate](../vst3go-plugins/plugins/spectral/spectral-gate/README.md)
+  - [x] Match 114 original captures at recorded tolerances. Verify all
+        22 windows, seven controls, fixed latency, stereo isolation, Linux
+        REAPER state, the SDK class, and Windows x64 cross-build. Use
+        the measured gain and detector timing from algo-dsp PRs #62 and #63.
+  - [ ] Resolve live FFT-order transitions and the quantified fast-control
+        and mixed DC/tone differences. Verify the original custom editor
+        and physical Windows and macOS hosts.
 
 ### 7.4 Spatial processing, instruments and MIDI
 
@@ -1200,7 +1209,19 @@ parameters, programs, original editor references and audio comparisons in
         and physical Windows and macOS host behavior. Original float32
         replacing and double callbacks leave the probed buffers untouched.
 - [ ] [DualWideBug](../vst3go-plugins/plugins/spatial/dualwidebug/README.md)
+  - [x] Port the published and retained FIRs with respective 27- and
+        22-sample dry delays. Match 216 original captures within 2.981e-8.
+        Verify three editable programs, five Linux REAPER reopens, both
+        SDK classes, and Windows x64 cross-build.
+  - [ ] Verify the retained Win32 host-setter discrepancy on native hosts,
+        original editor and artwork, and physical Windows and macOS hosts.
 - [ ] [Headphone Mix](../vst3go-plugins/plugins/spatial/headphone-mix/README.md)
+  - [x] Verify stereo crossfeed in the installer and right-input duplication
+        in the retained Win32 and Win64 editions. Match 288 captures within
+        5.961e-8. Verify three models and polarity in four Linux REAPER
+        reopens, both SDK classes, and Windows x64 cross-build.
+  - [ ] Resolve the older retained Win32 host-setter behavior and verify
+        physical Windows and macOS hosts.
 - [ ] [HRTF 3D](../vst3go-plugins/plugins/spatial/hrtf-3d/README.md)
 - [ ] [PhaseBug](../vst3go-plugins/plugins/spatial/phasebug/README.md)
   - [ ] PhaseBug
