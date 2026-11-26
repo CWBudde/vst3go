@@ -560,7 +560,9 @@ parameters, programs, original editor references and audio comparisons in
 - [ ] [Phase Rotator](../vst3go-plugins/plugins/filter/phase-rotator/README.md)
   - [x] Match 240 audible captures and verify unity magnitude, group delay
         and six timed controls. Reopen the edited stereo setting in REAPER.
-  - [ ] Verify the original editor, MIDI CC controls and other native hosts.
+  - [x] Match 12 additional captures of MIDI CC70–72 across channels and
+        verify the same controls in a reopened REAPER MIDI session.
+  - [ ] Verify the original editor and other native hosts.
         The published headless x64 replacing callback leaves buffers unchanged.
 - [ ] [QR-Filter](../vst3go-plugins/plugins/filter/qr-filter/README.md)
   - [x] Match 117 released stereo renders, including running Q and R edits.
@@ -778,7 +780,9 @@ parameters, programs, original editor references and audio comparisons in
 - [ ] [Simple Sine Synth](../vst3go-plugins/plugins/synth/simple-sine-synth/README.md)
   - [x] Measure both 2009 binary releases. Port the audible oscillator from
         the retained Delphi source and verify MIDI, keyboard and state on Linux.
-  - [ ] Verify CC126 input mapping and native Windows and macOS editors.
+  - [x] Verify CC126 at its sample offset in the ABI and a reopened REAPER
+        session. Confirm that CC123 leaves held notes active.
+  - [ ] Verify native Windows and macOS editors.
 - [ ] [Vocoder](../vst3go-plugins/plugins/synth/vocoder/README.md)
 
 ### 7.5 Analysis, utilities, educational, hosting and other plugins
