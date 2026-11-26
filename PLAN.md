@@ -1382,6 +1382,14 @@ parameters, programs, original editor references and audio comparisons in
 - [ ] [Dither & Noiseshaper](../vst3go-plugins/plugins/utility/dither-noiseshaper/README.md)
 - [ ] [PhaseAdjustment](../vst3go-plugins/plugins/utility/phaseadjustment/README.md)
 - [ ] [VST Host Opcode Logger](../vst3go-plugins/plugins/utility/vst-host-opcode-logger/README.md)
+  - [x] Identify the released DVOL and retained DVOl editions. Check
+        108 original float32 buffers and three double callback probes,
+        dated local logs, and ordered VST3 lifecycle and parameter calls.
+        Reopen both Linux REAPER projects, exercise the 374 × 277 X11
+        slider and readout, pass 94 SDK checks and cross-build Windows x64.
+  - [ ] Verify native Windows and macOS views and the retained Win32
+        audio capture failure. Published and retained Win64 VST2
+        buffers remain untouched. VST3 provides silent output.
 - [ ] [VST Pascal Script](../vst3go-plugins/plugins/utility/vst-pascal-script/README.md)
 
 #### Hosting
