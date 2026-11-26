@@ -764,6 +764,14 @@ parameters, programs, original editor references and audio comparisons in
         block sizes. Verify zero latency, tail and saved settings on Linux.
   - [ ] Verify the custom editor and remaining host platforms.
 - [ ] [Simple Gate](../vst3go-plugins/plugins/dynamics/simple-gate/README.md)
+  - [x] Port both audible releases. Compare 270 bit-exact renders against
+        five original binaries at 44.1, 48 and 96 kHz, including live changes
+        and the ZIP's displayed 0 dB and effective −40 dB startup threshold.
+        Verify explicit same-value edits and six independently reopened REAPER
+        projects, SDK validation for both classes and Windows x64 cross-build.
+  - [ ] Verify the 54 untouched-buffer renders from the published headless
+        x64 binary in another host, and compare the original editor and
+        physical Windows and macOS host behavior.
 - [ ] [Simple Limiter](../vst3go-plugins/plugins/dynamics/simple-limiter/README.md)
 - [ ] [Smooth Multiband Compressor](../vst3go-plugins/plugins/dynamics/smooth-multiband-compressor/README.md)
 - [ ] [Soft Knee Feedback Compressor](../vst3go-plugins/plugins/dynamics/soft-knee-feedback-compressor/README.md)
