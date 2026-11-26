@@ -911,6 +911,13 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify the original editor, graphics redistribution permissions and
         physical Windows and macOS hosts.
 - [ ] [Oversampled Tanh](../vst3go-plugins/plugins/distortion/oversampled-tanh/README.md)
+  - [x] Compare 540 Win32 and Win64 traces across the published and retained
+        classes. Verify 16 and zero samples of latency, transition resets on
+        same-value writes and saved overrides in REAPER, and SDK validation.
+        Use the allocation-free coefficient updates from
+        [algo-dsp PR #58](https://github.com/CWBudde/algo-dsp/pull/58).
+  - [ ] Verify the native editor, redistribution permissions, and physical
+        Windows and macOS hosts.
 - [ ] [Scary](../vst3go-plugins/plugins/distortion/scary/README.md)
 - [ ] [TanhWaveshaper](../vst3go-plugins/plugins/distortion/tanhwaveshaper/README.md)
 - [ ] [Toadstunnel](../vst3go-plugins/plugins/distortion/toadstunnel/README.md)
