@@ -1091,6 +1091,13 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify the original editor, double-processing capability and native
         Windows and macOS hosts.
 - [ ] [SoundTouch based Pitch Shifter](../vst3go-plugins/plugins/pitch/soundtouch-based-pitch-shifter/README.md)
+  - [x] Match 264 renders from the 2010 stereo edition within 2.39e-7,
+        including unison, both octave endpoints and automation. Use an
+        opt-in, version-checked external SoundTouch 1.4.1 engine. Verify
+        SDK validation, REAPER state reopen and 40 native allocation probes.
+  - [ ] Resolve the 2009 mono unity and transition differences and obtain
+        a matching engine for the retained x64 binary. Verify the original
+        editor and host platforms beyond Linux amd64.
 - [ ] [Split Harmonizer](../vst3go-plugins/plugins/pitch/split-harmonizer/README.md)
 - [ ] [StkPitchShift](../vst3go-plugins/plugins/pitch/stkpitchshift/README.md)
   - [x] Match 194 stereo captures from the published and retained Win32
@@ -1104,6 +1111,15 @@ parameters, programs, original editor references and audio comparisons in
 #### Reverb
 
 - [ ] [ConvoFX](../vst3go-plugins/plugins/reverb/convofx/README.md)
+  - [x] Verify all 40 stereo IRs against the website binaries and match 64
+        audible cases within 1.863e-9. Reopen four sessions in Linux REAPER
+        and verify 64, 2,048 and 65,536 samples of delay compensation.
+        Validate the SDK class, cross-build Windows x64 and keep all 32
+        ConvoFXLite regression renders sample-exact.
+  - [ ] Verify original live IR and damping transitions and live latency
+        changes, retained editions that fail under Wine, the original
+        editor and native Windows and macOS hosts. Keep IR redistribution
+        provenance open. The port reads the original IRs from a local path.
 - [ ] [ConvoFXLite](../vst3go-plugins/plugins/reverb/convofxlite/README.md)
   - [x] Compare the ten local release IR pairs, finite settings and tails.
         Reopen settings and verify three latency orders in REAPER on Linux.
