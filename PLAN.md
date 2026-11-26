@@ -846,7 +846,21 @@ parameters, programs, original editor references and audio comparisons in
         Check the headless x64 archive in another host. Its float32 and
         float64 callbacks left the output untouched in Wine.
 - [ ] [Analogue Mojo](../vst3go-plugins/plugins/distortion/analogue-mojo/README.md)
+  - [x] Compare 660 finite renders across five verified profiles, including
+        120 fresh-process retained x86 renders. Verify sample error within
+        9.54e−7 and harmonic amplitude error within 2.56e−8, SDK validation
+        and all five class states after reopening a REAPER project.
+  - [ ] Verify retained x86 repeat-instance gain, the January x64 no-write
+        callback, the older x86 build's nonfinite output and the i386 Mac
+        build. Compare original editors and native hosts.
 - [ ] [Chebyshev Waveshaper](../vst3go-plugins/plugins/distortion/chebyshev-waveshaper/README.md)
+  - [x] Port the 2010 and 2008 editions with 24 signed harmonics and an
+        unclamped evaluator from [algo-dsp PR #55](https://github.com/CWBudde/algo-dsp/pull/55).
+        Compare 732 original renders and eight reopened REAPER projects.
+        Validate both classes and cross-build them for Windows x64.
+  - [ ] Verify the no-editor builds, which faulted before metadata, and the
+        x64 originals with untouched buffers or load errors under Wine.
+        Compare original editors and physical Windows and macOS hosts.
 - [ ] [Christortion](../vst3go-plugins/plugins/distortion/christortion/README.md)
 - [ ] [Decimator](../vst3go-plugins/plugins/distortion/decimator/README.md)
 - [ ] [Dynamite](../vst3go-plugins/plugins/distortion/dynamite/README.md)
