@@ -887,6 +887,14 @@ parameters, programs, original editor references and audio comparisons in
         additional profile formats, native editor and hosts. The installer
         remains encrypted and the retained notice restricts distribution.
 - [ ] [Exciter](../vst3go-plugins/plugins/distortion/exciter/README.md)
+  - [x] Match 342 renders across the 2008, 2010 and 2011 editions. Verify
+        the 2011 reset on resume and the older editions' retained history,
+        both editable slots, and twelve reopened REAPER projects within
+        5.39e−7. Recheck all 522 2-Band Distortion traces after sharing the
+        legacy filter. Validate all classes and cross-build for Windows x64.
+  - [ ] Verify the retained Win32 pre-metadata failure and the x64 no-write
+        or load failures in another host. Compare original editors and
+        physical Windows and macOS hosts.
 - [ ] [Hysteresis](../vst3go-plugins/plugins/distortion/hysteresis/README.md)
 - [ ] [OpAmp](../vst3go-plugins/plugins/distortion/opamp/README.md)
 - [ ] [Oversampled Tanh](../vst3go-plugins/plugins/distortion/oversampled-tanh/README.md)
