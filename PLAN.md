@@ -1000,6 +1000,13 @@ parameters, programs, original editor references and audio comparisons in
         Verify quad routing, program state and independent controls in REAPER.
   - [ ] Verify the native editors, the x64 release discrepancy and other hosts.
 - [ ] [Simple Chorus](../vst3go-plugins/plugins/modulation/simple-chorus/README.md)
+  - [x] Compare 114 scenarios per class across the 2009, later editor
+        and retained host-editor builds. Verify settled dry taps, stereo
+        drift statistics, and repeated renders from the saved seed in
+        twelve reopened REAPER projects. Validate and cross-build.
+  - [ ] Resolve the x64 no-write and load outcomes and the retained Win32
+        callback fault. Verify original editors, VST3 double audio and
+        physical Windows and macOS hosts.
 - [ ] [Spin Bug Lite](../vst3go-plugins/plugins/modulation/spin-bug-lite/README.md)
 - [ ] [StkChorus](../vst3go-plugins/plugins/modulation/stkchorus/README.md)
   - [x] Compare 192 renders across the released and retained Win32
