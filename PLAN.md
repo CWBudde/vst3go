@@ -1598,20 +1598,41 @@ Re-run with `vst3go-plugins/scripts/stress.sh`.
         the project from default builds explicitly.
   - [ ] Add data fixtures to the stress run and repeat the validator and
         pluginval runs for all ten.
-- [ ] Fix NaN, Inf and subnormal output under parameter automation. All nine
+- [x] Fix NaN, Inf and subnormal output under parameter automation. All nine
       plugins contain Butterworth or Linkwitz-Riley sections. Exciter,
       2-Band Distortion, Simple Linkwitz-Riley Crossover, Bass Extender, Dual
       Linkwitz-Riley Filters, Multiband Compressor, SubBoost, Butterworth Filters
       and Rubberfilter (the last only seen on macOS, seed `0x3058512`).
-  - [ ] Reproduce each with its logged pluginval seed. Add a Go test per plugin
+      Fixed in vst3go-plugins#1 and algo-dsp#65.
+  - [x] Reproduce each with its logged pluginval seed. Add a Go test per plugin
         that sweeps random parameter values at 44.1, 48 and 96 kHz and fails on
-        non-finite or subnormal output.
-  - [ ] Fix the shared causes in `internal/linkwitzriley`,
+        non-finite or subnormal output. Every logged seed fails on the old
+        bundle and passes on the fixed one. The exception is Rubberfilter's
+        Linux seed, which passed before as well; its macOS seed `0x3058512`
+        discriminates. `internal/automationsweep` and a
+        `TestAutomationSweepStaysFinite` per plugin failed for all nine before
+        the fix.
+  - [x] Fix the shared causes in `internal/linkwitzriley`,
         `internal/davbutterworth` and, upstream, `algo-dsp/dsp/filter/design`:
         cutoffs at or above Nyquist, high orders and coefficient changes that
         leave stale state. Clamp where the original clamped, and keep
-        faithful behaviour inside the original ranges.
-  - [ ] Re-run the Automation test for the nine with fresh seeds.
+        faithful behaviour inside the original ranges. The cutoff stays
+        unclamped, as in the original; no parameter range reaches Nyquist. The
+        three filters now behave alike. Each section carries its share of the
+        gain, so retained state stays at signal level. An order change clears
+        the state, output above +80 dBFS restarts the filter, and output below
+        about -600 dBFS is flushed. Static responses are unchanged, and every golden and impulse test still
+        passes.
+  - [x] Re-run the Automation test for the nine with fresh seeds. With
+        `scripts/stress.sh`, the validator and pluginval (strictness 10) pass
+        all nine on Linux, with editor tests under Xvfb, and on macOS arm64.
+- [ ] Look at a section topology that stays bounded under fast coefficient
+      changes, such as a coupled-form or state-variable cascade. The
+      +80 dBFS restart prevents non-finite output, but periodic cutoff jumps
+      between the range extremes every 32 samples still pump an order-8 or
+      higher direct-form cascade until it restarts, which is audible as a
+      burst. The original has the same weakness. Keep it only if the golden
+      tests stay within their tolerances.
 - [ ] Flush subnormals in plain processing. Linear Phase Butterworth and
       Simple Linear Phase Linkwitz-Riley Filter fail only at 48 kHz, and
       Variable Delay only at block size 64 (48 and 96 kHz), on both platforms.
