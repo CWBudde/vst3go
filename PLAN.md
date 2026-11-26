@@ -827,6 +827,16 @@ parameters, programs, original editor references and audio comparisons in
         and four other x64 artifacts failed to load in Wine.
 - [ ] [Advanced Clipper](../vst3go-plugins/plugins/distortion/advanced-clipper/README.md)
 - [ ] [Amp Sim](../vst3go-plugins/plugins/distortion/amp-sim/README.md)
+  - [x] Compare 378 renders from the audible Win32 archive and both installer
+        builds. Verify all seven cabinets, stereo and summed routing, both
+        presets, live controls and noise RMS within 1.05%. Confirm the cold
+        44.1 kHz D.I. behavior and the trim changes tied to parameter writes.
+  - [x] Reopen four REAPER projects with both editable slots. Compare D.I.
+        from frame zero and Mesa-Boogie after the 2048-frame bias settling
+        window. Validate the class and cross-build it for Windows x64.
+  - [ ] Verify the original editor and physical Windows and macOS hosts.
+        Check the headless x64 archive in another host. Its float32 and
+        float64 callbacks left the output untouched in Wine.
 - [ ] [Analogue Mojo](../vst3go-plugins/plugins/distortion/analogue-mojo/README.md)
 - [ ] [Chebyshev Waveshaper](../vst3go-plugins/plugins/distortion/chebyshev-waveshaper/README.md)
 - [ ] [Christortion](../vst3go-plugins/plugins/distortion/christortion/README.md)
