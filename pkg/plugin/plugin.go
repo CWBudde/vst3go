@@ -132,6 +132,20 @@ type Processor interface {
 	GetTailSamples() int32
 }
 
+// LatencyChangeProcessor is an optional extension for processors that can
+// change their latency while a plug-in is in use. The runtime supplies one
+// notifier per instance before initialization. Call it on the host UI thread
+// after changing a setting that affects delay compensation. The host can
+// synchronously deactivate and reactivate the processor, so release any
+// processor locks first. Never call it from ProcessAudio.
+//
+// The runtime also detects latency changes for these processors during state
+// restoration. A host-driven processing setup lets the host query latency.
+type LatencyChangeProcessor interface {
+	Processor
+	SetLatencyChangeNotifier(notify func())
+}
+
 // StatefulProcessor extends Processor with custom state save/load hooks.
 //
 // Implement this only when parameter state is insufficient to restore runtime

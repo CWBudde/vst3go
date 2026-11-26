@@ -11,4 +11,6 @@ package cbridge
 // #cgo CFLAGS: -I../../../include
 // #include "../../../bridge/bridge.c"
 // #include "../../../bridge/component.c"
+// #include "../../../bridge/program.c"
+// #include "../../../bridge/view.c"
 import "C"

@@ -46,11 +46,11 @@ driver the way a host would. Nothing else in the repository links `pkg/plugin`
 into a loadable library, so without this the entire cgo wrapper surface is only
 ever checked by the compiler.
 
-It covers the factory lifecycle, COM refcounting (including releasing the
-factory and re-acquiring it, which used to return freed memory), `queryInterface`
-dispatch by IID, and a `process()` call with more than one input bus — the case
-that used to panic inside a recovered callback and emit garbage rather than
-crash.
+The fixtures cover ordered class discovery and independent instances, COM
+reference counts, `queryInterface` dispatch, and isolated main and sidechain
+signals through disconnect and reconnect. Additional fixtures exercise native
+editor callbacks, host gestures, distinct processor and editor state, factory
+program discovery and selection, and MIDI and automation offsets across blocks.
 
 ### Steinberg validator (`-tags validator`)
 
@@ -73,11 +73,9 @@ commit and caches it.
 
 ## What downstream repos must validate themselves
 
-The smoke and validator tests here run against a deliberately minimal plugin:
-one class, one parameter, one stereo bus pair, and a pass-through
-`ProcessAudio`. That is the right shape for proving the _runtime_ works, and the
-wrong shape for proving _your plugin_ works. Everything below is outside what
-this repo can see.
+The validator runs on one-class and two-class test bundles. The C host tests
+also use separate fixtures for editors, programs, and MIDI. Run the same
+checks on product bundles to verify their parameters, routing, DSP, and state.
 
 ### 1. Run the validator against your own plugin
 

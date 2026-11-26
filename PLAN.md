@@ -304,7 +304,13 @@ there and reusable DSP in the sibling `algo-*` libraries.
       for supported native host windows. Exercise attach, remove, reopen, resize,
       focus, keyboard input and display scaling in real hosts. Keep the generic
       host editor available for originals without a custom view.
-- [ ] Wire editor gestures through the retained component handler
+  - [x] Implement the optional editor bridge and cover lifecycle, input,
+        scaling and generic-editor fallback in the C host fixture.
+  - [x] Exercise native X11 attach, remove, reopen, resize and 2× scaling in
+        REAPER 7.86.
+  - [ ] Exercise focus and keyboard in a real host and run the native Windows
+        and macOS editor checks.
+- [x] Wire editor gestures through the retained component handler
       (begin, perform, end). Send host automation and preset changes back to the
       editor. Deliver meters and plots without locking or allocating on the audio
       thread. Exercise two open instances and close a view during playback.
@@ -319,7 +325,10 @@ there and reusable DSP in the sibling `algo-*` libraries.
 - [ ] Verify latency and tail reporting for lookahead, FIR, convolution and
       feedback. Support host notification when latency changes, and check delay
       compensation across reconfiguration and preset restore.
-- [ ] Check sample-offset MIDI and automation across block boundaries, bypass
+  - [x] Exercise retained-handler latency notifications from the editor and
+        on processor-state restore in the C host fixture.
+  - [ ] Measure reported latency, tails and host compensation with the ports.
+- [x] Check sample-offset MIDI and automation across block boundaries, bypass
       and transport reset.
   - [x] Resolve the smoothing contract before a port relies on it. The DSP
         caller advances each smoother once per sample frame.
@@ -331,9 +340,17 @@ there and reusable DSP in the sibling `algo-*` libraries.
 - [ ] Support factory program enumeration and selection where the Delphi
       product supplies programs. Preserve parameter IDs, units, display curves and
       defaults. Round-trip processor and editor state in a saved host session.
+  - [x] Verify root-unit program lists, selection, sample offsets and separate
+        processor and editor state through the runtime and C host fixture.
+  - [ ] Save and reopen factory programs and editor-specific state in a real
+        host session with a port.
 - [ ] Validate the affected runtime interfaces using the C host smoke tests
       and Steinberg validator. Repeat in a real host with a family bundle,
       an instrument, a sidechain and a native editor before declaring coverage.
+  - [x] Run the C host suite and Steinberg Validator 3.7.2 on Linux. In REAPER
+        7.86, load a three-class test bundle with a sidechain, instrument and
+        X11 editor, reopen its session, and compare the sidechain impulse render.
+  - [ ] Repeat with the published port fixtures on supported host platforms.
 
 ## Phase 7: Faithful pcjv.de VST3 ports
 
@@ -351,6 +368,12 @@ parameters, programs, original editor references and audio comparisons in
 #### Equalizers
 
 - [ ] [EeeekU](../vst3go-plugins/plugins/eq/eeeeku/README.md)
+  - [x] Implement stereo RBJ and factory programs. The companion pins the
+        tested allpass resampler from
+        [algo-dsp PR #43](https://github.com/CWBudde/algo-dsp/pull/43).
+  - [ ] Reconcile the mono RBJ output with the installer release.
+  - [ ] Compare renders from the three original release binaries and verify
+        the editor, including its channel-zero Orfanidis mode.
 - [ ] [Electri-Q](../vst3go-plugins/plugins/eq/electri-q/README.md)
   - [ ] Commercial edition
   - [ ] Posihfopit edition

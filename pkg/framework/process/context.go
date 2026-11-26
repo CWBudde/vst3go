@@ -89,7 +89,7 @@ type TransportInfo struct {
 	CycleStartMusic float64 // Cycle start in quarter notes
 	CycleEndMusic   float64 // Cycle end in quarter notes
 
-	// Sample position
+	// Sample position at the start of the current ProcessAudio call.
 	ProjectTimeSamples    int64 // Project time in samples
 	ContinuousTimeSamples int64 // Continuous time in samples (doesn't reset on loop)
 
@@ -97,11 +97,12 @@ type TransportInfo struct {
 	SamplesToNextClock int32 // Samples until next clock/beat
 
 	// Validity flags
-	HasTempo         bool // Tempo field is valid
-	HasTimeSignature bool // Time signature fields are valid
-	HasMusicalTime   bool // Musical time fields are valid
-	HasBarPosition   bool // Bar position is valid
-	HasCycle         bool // Cycle points are valid
+	HasTempo          bool // Tempo field is valid
+	HasTimeSignature  bool // Time signature fields are valid
+	HasMusicalTime    bool // Musical time fields are valid
+	HasBarPosition    bool // Bar position is valid
+	HasCycle          bool // Cycle points are valid
+	HasContinuousTime bool // ContinuousTimeSamples is valid
 }
 
 // GetBarsBeats returns the current position in bars and beats
@@ -168,6 +169,9 @@ type Context struct {
 	// Buses provides channel views by host bus index. Inactive or omitted buses
 	// have no channels. It is populated by the plugin runtime during processing.
 	Buses *MultiBusContext
+
+	numSamples    int
+	hasNumSamples bool
 
 	// Pre-allocated work buffers
 	workBuffer []float32
@@ -252,8 +256,19 @@ func (c *Context) ParamPlain(id uint32) float64 {
 	return value
 }
 
-// NumSamples returns the number of samples to process
+// SetNumSamples sets the frame count supplied by the host, including for
+// event-only blocks. The plugin runtime calls this before processing.
+func (c *Context) SetNumSamples(numSamples int) {
+	c.numSamples = max(0, numSamples)
+	c.hasNumSamples = true
+}
+
+// NumSamples returns the current block or chunk's frame count. A context built
+// without a host frame count derives it from the input or output buffers.
 func (c *Context) NumSamples() int {
+	if c.hasNumSamples {
+		return c.numSamples
+	}
 	if len(c.Input) > 0 && len(c.Input[0]) > 0 {
 		return len(c.Input[0])
 	}

@@ -42,7 +42,6 @@ extern double GoEditControllerPlainParamToNormalized(uintptr_t component, uint32
 extern double GoEditControllerGetParamNormalized(uintptr_t component, uint32_t id);
 extern Steinberg_tresult GoEditControllerSetParamNormalized(uintptr_t component, uint32_t id, double value);
 extern Steinberg_tresult GoEditControllerSetComponentHandler(uintptr_t component, void* handler);
-extern void* GoEditControllerCreateView(uintptr_t component, char* name);
 
 // Go component lifecycle
 extern void GoReleaseComponent(uintptr_t component);

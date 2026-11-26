@@ -1,4 +1,6 @@
 #include "component.h"
+#include "program.h"
+#include "view.h"
 #include <stdatomic.h>
 #include <string.h>
 #include <stdlib.h>
@@ -34,6 +36,7 @@ struct Component {
     AudioProcessorInterface audioProcessor;
     // Edit controller interface
     EditControllerInterface editController;
+    ProgramInfoInterface programs;
     // Reference count. Atomic: hosts call addRef/release concurrently from the
     // audio thread, the UI thread and background scanner threads.
     _Atomic int refCount;
@@ -165,6 +168,7 @@ void* createComponent(uintptr_t goComponent) {
     component->audioProcessor.component = component;
     component->editController.lpVtbl = &editControllerVtbl;
     component->editController.component = component;
+    initProgramInfo(&component->programs, (Steinberg_FUnknown*)component, goComponent);
     component->refCount = 1;
     component->goComponent = goComponent;
     
@@ -200,6 +204,13 @@ static Steinberg_tresult SMTG_STDMETHODCALLTYPE component_queryInterface(void* t
         return ((Steinberg_tresult)0);
     }
     
+    if (memcmp(iid, Steinberg_Vst_IUnitInfo_iid, sizeof(Steinberg_TUID)) == 0 &&
+        GoFactoryProgramListCount(component->goComponent) != 0) {
+        *obj = &component->programs.iface;
+        component_addRef(thisInterface);
+        return Steinberg_kResultOk;
+    }
+
     DBG_LOG("component_queryInterface: Interface not found");
     *obj = NULL;
     return ((Steinberg_tresult)-1);
@@ -434,5 +445,8 @@ static Steinberg_tresult SMTG_STDMETHODCALLTYPE controller_setComponentHandler(v
 
 static struct Steinberg_IPlugView* SMTG_STDMETHODCALLTYPE controller_createView(void* thisInterface, Steinberg_FIDString name) {
     EditControllerInterface* controller = (EditControllerInterface*)thisInterface;
-    return GoEditControllerCreateView(controller->component->goComponent, (char*)name);
+    if (!name || strcmp(name, Steinberg_Vst_ViewType_kEditor) != 0) {
+        return NULL;
+    }
+    return createPlugView(thisInterface, controller->component->goComponent);
 }

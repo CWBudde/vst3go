@@ -5,6 +5,7 @@ package plugin
 import "C"
 
 import (
+	"bytes"
 	"unsafe"
 
 	"github.com/cwbudde/vst3go/pkg/vst3"
@@ -24,7 +25,13 @@ func GoEditControllerSetComponentState(componentID C.uintptr_t, state unsafe.Poi
 func GoEditControllerSetState(componentID C.uintptr_t, state unsafe.Pointer) (result C.Steinberg_tresult) {
 	defer recoverPanicResult("GoEditControllerSetState", &result)
 
-	// Edit controller state is typically the same as component state
+	if provider, ok := getEditorStateProvider(uintptr(componentID)); ok {
+		data, err := vst3.NewStreamWrapper(state).ReadAll()
+		if err != nil || provider.LoadEditorState(bytes.NewReader(data)) != nil {
+			return C.Steinberg_tresult(vst3.ResultFalse)
+		}
+		return C.Steinberg_tresult(vst3.ResultOK)
+	}
 	return GoComponentSetState(componentID, state)
 }
 
@@ -32,8 +39,28 @@ func GoEditControllerSetState(componentID C.uintptr_t, state unsafe.Pointer) (re
 func GoEditControllerGetState(componentID C.uintptr_t, state unsafe.Pointer) (result C.Steinberg_tresult) {
 	defer recoverPanicResult("GoEditControllerGetState", &result)
 
-	// Edit controller state is typically the same as component state
+	if provider, ok := getEditorStateProvider(uintptr(componentID)); ok {
+		var data bytes.Buffer
+		if err := provider.SaveEditorState(&data); err != nil {
+			return C.Steinberg_tresult(vst3.ResultFalse)
+		}
+		if _, err := vst3.NewStreamWrapper(state).Write(data.Bytes()); err != nil {
+			return C.Steinberg_tresult(vst3.ResultFalse)
+		}
+		return C.Steinberg_tresult(vst3.ResultOK)
+	}
 	return GoComponentGetState(componentID, state)
+}
+
+func getEditorStateProvider(componentID uintptr) (EditorStateProvider, bool) {
+	wrapper := getComponent(componentID)
+	if wrapper != nil {
+		if component, ok := wrapper.component.(*componentImpl); ok {
+			state, supported := component.processor.(EditorStateProvider)
+			return state, supported
+		}
+	}
+	return nil, false
 }
 
 //export GoEditControllerGetParameterCount
@@ -186,12 +213,4 @@ func GoEditControllerSetComponentHandler(componentID C.uintptr_t, handler unsafe
 	wrapper.setComponentHandler(handler)
 
 	return C.Steinberg_tresult(vst3.ResultOK)
-}
-
-//export GoEditControllerCreateView
-func GoEditControllerCreateView(componentID C.uintptr_t, name *C.char) unsafe.Pointer {
-	defer recoverPanic("GoEditControllerCreateView")
-
-	// No GUI support
-	return nil
 }

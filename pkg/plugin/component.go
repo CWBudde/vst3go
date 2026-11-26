@@ -37,6 +37,7 @@ var (
 // only serializes those lifecycle calls against each other.
 type componentImpl struct {
 	processor  Processor
+	programs   *factoryPrograms
 	processCtx atomic.Pointer[process.Context]
 	busConfig  *bus.Configuration
 
@@ -199,6 +200,9 @@ func (c *componentImpl) SetState(stateData []byte) error {
 	if err := stateManager.Load(buf); err != nil {
 		return fmt.Errorf("set component state: %w", err)
 	}
+	if c.programs != nil {
+		c.programs.selection.And(programsRunning)
+	}
 	return nil
 }
 
@@ -328,7 +332,13 @@ func busBufferViews(buses *bus.Configuration, direction bus.Direction) ([]proces
 }
 
 func (c *componentImpl) SetProcessing(state bool) error {
+	if state && c.programs != nil {
+		c.programs.selection.Or(programsRunning)
+	}
 	c.processing.Store(state)
+	if !state && c.programs != nil {
+		c.programs.selection.And(^programsRunning)
+	}
 	return nil
 }
 
@@ -357,10 +367,14 @@ func (c *componentImpl) Process(data unsafe.Pointer) error {
 	}
 
 	c.prepareProcessContext(ctx)
+	ctx.SetNumSamples(int(processData.numSamples))
 	c.updateTransport(ctx, processData.processContext)
 	c.mapAudioBuffers(ctx, processData)
 	c.collectInputEvents(processData.inputEvents)
 	c.collectParameterChanges(ctx, unsafe.Pointer(processData.inputParameterChanges))
+	if c.programs != nil {
+		c.programs.applyPending(ctx.GetParameterChanges())
+	}
 
 	// Process audio with sample-accurate parameter automation
 	if ctx.HasParameterChanges() {
@@ -371,7 +385,7 @@ func (c *componentImpl) Process(data unsafe.Pointer) error {
 		c.processSampleAccurate(ctx)
 	} else {
 		// No parameter changes - process entire block
-		c.publishInputEvents(ctx, 0, math.MaxInt32)
+		c.publishInputEvents(ctx, 0, int32(ctx.NumSamples()))
 		c.processor.ProcessAudio(ctx)
 	}
 
@@ -434,7 +448,10 @@ func (c *componentImpl) updateTransport(processCtx *process.Context, ctx *C.stru
 	}
 
 	transport.ProjectTimeSamples = int64(ctx.projectTimeSamples)
-	transport.ContinuousTimeSamples = int64(ctx.continousTimeSamples)
+	transport.HasContinuousTime = (ctx.state & C.Steinberg_Vst_ProcessContext_StatesAndFlags_kContTimeValid) != 0
+	if transport.HasContinuousTime {
+		transport.ContinuousTimeSamples = int64(ctx.continousTimeSamples)
+	}
 
 	if (ctx.state & C.Steinberg_Vst_ProcessContext_StatesAndFlags_kClockValid) != 0 {
 		transport.SamplesToNextClock = int32(ctx.samplesToNextClock)
@@ -445,7 +462,7 @@ func (c *componentImpl) mapAudioBuffers(ctx *process.Context, processData *C.str
 	if ctx.Buses == nil {
 		return
 	}
-	numSamples := int(processData.numSamples)
+	numSamples := ctx.NumSamples()
 
 	if processData.numInputs > 0 && processData.inputs != nil {
 		inputBuses := unsafe.Slice(processData.inputs, int(processData.numInputs))
@@ -675,6 +692,9 @@ func (c *componentImpl) GetParamNormalized(id uint32) float64 {
 }
 
 func (c *componentImpl) SetParamNormalized(id uint32, value float64) error {
+	if c.programs != nil && id == c.programs.list.ParameterID {
+		return c.programs.selectFromController(value)
+	}
 	if p, ok := c.processor.GetParameters().GetOK(id); ok {
 		p.SetNormalized(value)
 		return nil
@@ -727,18 +747,19 @@ func (c *componentImpl) processSampleAccurate(ctx *process.Context) {
 	origInput := ctx.Input
 	origOutput := ctx.Output
 
-	for _, change := range changes {
-		if change.SampleOffset > lastOffset {
-			end := change.SampleOffset
-			if end > numSamples {
-				end = numSamples
-			}
-			c.processChunk(ctx, origInput, origOutput, lastOffset, end)
-			lastOffset = change.SampleOffset
+	for first := 0; first < len(changes); {
+		offset := min(changes[first].SampleOffset, numSamples)
+		if offset > lastOffset {
+			c.processChunk(ctx, origInput, origOutput, lastOffset, offset)
+			lastOffset = offset
 		}
 
-		// Apply the parameter change
-		ctx.ApplyParameterChange(change)
+		next := first + 1
+		for next < len(changes) && changes[next].SampleOffset == changes[first].SampleOffset {
+			next++
+		}
+		c.applyParameterChanges(ctx, changes[first:next])
+		first = next
 	}
 
 	// Process final chunk if there are samples remaining
@@ -751,10 +772,33 @@ func (c *componentImpl) processSampleAccurate(ctx *process.Context) {
 	ctx.Output = origOutput
 }
 
+func (c *componentImpl) applyParameterChanges(ctx *process.Context, changes []process.ParameterChange) {
+	if programs := c.programs; programs != nil {
+		// A preset establishes base values at this offset. Automation for
+		// individual controls at the same offset overrides those values.
+		for _, change := range changes {
+			if change.ParamID == programs.list.ParameterID {
+				if index, ok := programs.index(change.Value); ok {
+					programs.applyIndex(index)
+				}
+			}
+		}
+	}
+	for _, change := range changes {
+		if c.programs == nil || change.ParamID != c.programs.list.ParameterID {
+			ctx.ApplyParameterChange(change)
+		}
+	}
+}
+
 // processChunk points the context at [start, end) of the block and runs one
 // pass of user DSP over it. The chunk slice headers live in reusable scratch so
 // the loop keeps ProcessAudio's zero-allocation promise.
 func (c *componentImpl) processChunk(ctx *process.Context, input, output [][]float32, start, end int) {
+	fullBlockSamples := ctx.NumSamples()
+	ctx.SetNumSamples(end - start)
+	defer ctx.SetNumSamples(fullBlockSamples)
+
 	if buses := ctx.Buses; buses != nil {
 		fullInputBuses, fullOutputBuses := buses.InputBuses, buses.OutputBuses
 		c.chunkInput = sliceBusBuffers(c.chunkInputBuses, fullInputBuses, c.chunkInput[:0], start, end)
@@ -771,6 +815,18 @@ func (c *componentImpl) processChunk(ctx *process.Context, input, output [][]flo
 	ctx.Output = c.chunkOutput
 
 	c.publishInputEvents(ctx, int32(start), int32(end))
+
+	transport := *ctx.Transport
+	if start > 0 && transport.IsPlaying {
+		ctx.Transport.ProjectTimeSamples += int64(start)
+		if transport.HasContinuousTime {
+			ctx.Transport.ContinuousTimeSamples += int64(start)
+		}
+		if samplesPerBeat := transport.GetSamplesPerBeat(ctx.SampleRate); transport.HasMusicalTime && samplesPerBeat > 0 {
+			ctx.Transport.ProjectTimeMusic += float64(start) / samplesPerBeat
+		}
+		defer func() { *ctx.Transport = transport }()
+	}
 
 	c.processor.ProcessAudio(ctx)
 }

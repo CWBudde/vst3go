@@ -29,6 +29,12 @@ package plugin
 //     return Steinberg_kResultFalse;
 // }
 //
+// static inline void componentHandler_latencyChanged(struct Steinberg_Vst_IComponentHandler* handler) {
+//     if (handler && handler->lpVtbl && handler->lpVtbl->restartComponent) {
+//         handler->lpVtbl->restartComponent(handler, Steinberg_Vst_RestartFlags_kLatencyChanged);
+//     }
+// }
+//
 // // Every COM-style interface begins with the FUnknown vtable, so retain/release
 // // can be reached through an opaque pointer without knowing the concrete type.
 // static inline void funknown_addRef(void* obj) {
@@ -289,15 +295,26 @@ func (w *componentWrapper) releaseComponentHandler() {
 	}
 }
 
-// notifyParamBeginEdit notifies the host that parameter editing is beginning
-func (w *componentWrapper) notifyParamBeginEdit(paramID uint32) {
+// retainComponentHandler keeps the current handler alive across a callback.
+// The caller releases it after the call, outside handlerMu, because the host
+// can reenter the controller and replace the handler while handling an edit.
+func (w *componentWrapper) retainComponentHandler() unsafe.Pointer {
 	w.handlerMu.RLock()
 	handler := w.componentHandler
+	if handler != nil {
+		C.funknown_addRef(handler)
+	}
 	w.handlerMu.RUnlock()
+	return handler
+}
 
+// notifyParamBeginEdit notifies the host that parameter editing is beginning
+func (w *componentWrapper) notifyParamBeginEdit(paramID uint32) {
+	handler := w.retainComponentHandler()
 	if handler == nil {
 		return
 	}
+	defer C.funknown_release(handler)
 
 	// Call beginEdit through helper function
 	C.componentHandler_beginEdit((*C.Steinberg_Vst_IComponentHandler)(handler), C.Steinberg_Vst_ParamID(paramID))
@@ -305,13 +322,11 @@ func (w *componentWrapper) notifyParamBeginEdit(paramID uint32) {
 
 // notifyParamPerformEdit notifies the host of a parameter value change
 func (w *componentWrapper) notifyParamPerformEdit(paramID uint32, valueNormalized float64) {
-	w.handlerMu.RLock()
-	handler := w.componentHandler
-	w.handlerMu.RUnlock()
-
+	handler := w.retainComponentHandler()
 	if handler == nil {
 		return
 	}
+	defer C.funknown_release(handler)
 
 	// Call performEdit through helper function
 	C.componentHandler_performEdit((*C.Steinberg_Vst_IComponentHandler)(handler), C.Steinberg_Vst_ParamID(paramID), C.Steinberg_Vst_ParamValue(valueNormalized))
@@ -319,16 +334,23 @@ func (w *componentWrapper) notifyParamPerformEdit(paramID uint32, valueNormalize
 
 // notifyParamEndEdit notifies the host that parameter editing has ended
 func (w *componentWrapper) notifyParamEndEdit(paramID uint32) {
-	w.handlerMu.RLock()
-	handler := w.componentHandler
-	w.handlerMu.RUnlock()
-
+	handler := w.retainComponentHandler()
 	if handler == nil {
 		return
 	}
+	defer C.funknown_release(handler)
 
 	// Call endEdit through helper function
 	C.componentHandler_endEdit((*C.Steinberg_Vst_IComponentHandler)(handler), C.Steinberg_Vst_ParamID(paramID))
+}
+
+func (w *componentWrapper) notifyLatencyChanged() {
+	handler := w.retainComponentHandler()
+	if handler == nil {
+		return
+	}
+	defer C.funknown_release(handler)
+	C.componentHandler_latencyChanged((*C.Steinberg_Vst_IComponentHandler)(handler))
 }
 
 //export GoGetFactoryInfo
@@ -399,10 +421,21 @@ func GoCreateInstance(cid *C.char) unsafe.Pointer {
 
 	// Wrap in component implementation
 	component := newComponent(processor)
+	if provider, ok := processor.(FactoryProgramProvider); ok {
+		programs, err := newFactoryPrograms(provider, processor.GetParameters())
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "vst3go: %v\n", err)
+			return nil
+		}
+		component.programs = programs
+	}
 
 	// Create wrapper
 	wrapper := &componentWrapper{
 		component: component,
+	}
+	if dynamic, ok := processor.(LatencyChangeProcessor); ok {
+		dynamic.SetLatencyChangeNotifier(wrapper.notifyLatencyChanged)
 	}
 
 	// Set wrapper reference in component for notifications
@@ -593,9 +626,16 @@ func GoComponentSetState(componentID C.uintptr_t, state unsafe.Pointer) (result 
 		return C.Steinberg_tresult(vst3.ResultFalse)
 	}
 
-	// Apply state to component
+	var latency uint32
+	_, dynamic := wrapper.component.(*componentImpl).processor.(LatencyChangeProcessor)
+	if dynamic {
+		latency = wrapper.component.GetLatencySamples()
+	}
 	if err := wrapper.component.SetState(stateData); err != nil {
 		return C.Steinberg_tresult(vst3.ResultFalse)
+	}
+	if dynamic && wrapper.component.GetLatencySamples() != latency {
+		wrapper.notifyLatencyChanged()
 	}
 
 	return C.Steinberg_tresult(vst3.ResultOK)
