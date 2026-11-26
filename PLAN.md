@@ -993,9 +993,9 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Resolve the early 2008 control range and published x64 no-write
         outcomes. Verify VST3 double audio, native editors and hosts.
 - [ ] [Ring Modulator](../vst3go-plugins/plugins/modulation/ring-modulator/README.md)
-  - [ ] Mono edition
-  - [ ] Stereo edition
-  - [ ] Quad edition
+  - [x] Mono edition audio and state.
+  - [x] Stereo edition audio and state.
+  - [x] Quad edition audio and state.
   - [x] Compare all three VST3 classes to the audible x86 releases.
         Verify quad routing, program state and independent controls in REAPER.
   - [ ] Verify the native editors, the x64 release discrepancy and other hosts.
@@ -1008,6 +1008,11 @@ parameters, programs, original editor references and audio comparisons in
         callback fault. Verify original editors, VST3 double audio and
         physical Windows and macOS hosts.
 - [ ] [Spin Bug Lite](../vst3go-plugins/plugins/modulation/spin-bug-lite/README.md)
+  - [x] Compare 198 Win32 renders across ten routes and six editable slots.
+        Verify queued changes, fixed LFO timing, SDK validation, and four
+        reopened REAPER projects.
+  - [ ] Verify the published Win64 callbacks that rendered silence,
+        the original editor, and physical Windows and macOS hosts.
 - [ ] [StkChorus](../vst3go-plugins/plugins/modulation/stkchorus/README.md)
   - [x] Compare 192 renders across the released and retained Win32
         binaries. Verify stereo delay, rate and depth changes, the Long
@@ -1016,6 +1021,12 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify the original editor, artwork permissions, VST3 double
         processing and physical Windows and macOS hosts.
 - [ ] [Vibrato](../vst3go-plugins/plugins/modulation/vibrato/README.md)
+  - [x] Compare 654 renders across all six audible Win32 and Win64
+        originals. Verify pitch excursion, the fixed LFO clock, rate and
+        depth changes, and three phase-aligned REAPER reopens. Validate
+        the VST3 class and cross-build for Windows x64.
+  - [ ] Verify the early Win64 no-write release, original editor,
+        artwork permissions, VST3 double audio and native hosts.
 
 #### Delay
 
