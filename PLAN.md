@@ -463,7 +463,15 @@ parameters, programs, original editor references and audio comparisons in
 #### Filters and crossovers
 
 - [ ] [Bugpass](../vst3go-plugins/plugins/filter/bugpass/README.md)
+  - [x] Compare 54 original renders and verify 3072-sample compensation
+        at 48 and 96 kHz. Reopen editable programs in REAPER.
+  - [ ] Complete the native editor, soft bypass, aliased manual cutoff
+        endpoint and additional native hosts.
 - [ ] [Bugpass Lite](../vst3go-plugins/plugins/filter/bugpass-lite/README.md)
+  - [x] Compare both released binaries across 108 renders. Verify editable
+        programs and the modern 768-sample compensation in REAPER.
+  - [ ] Verify original editor and additional native hosts. The older ZIP
+        advertises 1024 samples for the same measured 768-sample delay.
 - [ ] [Butterworth Filters](../vst3go-plugins/plugins/filter/butterworth-filters/README.md)
   - [ ] High-pass mono and stereo
   - [ ] Low-pass mono and stereo
@@ -476,7 +484,14 @@ parameters, programs, original editor references and audio comparisons in
         live oversampler selector transitions.
 - [ ] [Chebyshev Filters](../vst3go-plugins/plugins/filter/chebyshev-filters/README.md)
   - [ ] Type I high-pass and low-pass, including mono editions
+    - [x] Match the modern stereo HP and LP, the HP mono wrapper and the
+          2008 HP. Verify response, automation and saved Linux sessions.
+    - [ ] Address the 2008 LP's nonfinite order-three response and validate
+          the retained Type I LP mono source.
   - [ ] Type II high-pass
+    - [x] Compare both published HP editions and frequency correction.
+          Reopen and render the two editions in REAPER.
+    - [ ] Verify original editor and additional native hosts.
   - [ ] Type II low-pass (source present, download contains only the license)
 - [ ] [Dual Linkwitz-Riley Filters](../vst3go-plugins/plugins/filter/dual-linkwitz-riley-filters/README.md)
 - [ ] [Hum Removal](../vst3go-plugins/plugins/filter/hum-removal/README.md)
