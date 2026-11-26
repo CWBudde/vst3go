@@ -440,7 +440,14 @@ parameters, programs, original editor references and audio comparisons in
     - [ ] Finish the earlier SNo2 LFO and Spin variants, higher oversampling
           factors, live modulation automation, native editor and other hosts.
 - [ ] [Parametri-Q (lite)](../vst3go-plugins/plugins/eq/parametri-q-lite/README.md)
+  - [x] Match 249 January 2010 release cases, including selector order and
+        running edits. Verify the four slots and reopen an edited project.
+  - [ ] Verify the earlier ZIP's distinct transitions, native editor,
+        public float64 processing and other native hosts.
 - [ ] [ParametricEQ](../vst3go-plugins/plugins/eq/parametriceq/README.md)
+  - [x] Confirm 63 no-write cases in the published x64 callback. Compare
+        the audible checkout PE32 build against the later Lite baseline.
+  - [ ] Build and verify the retained headless source as a separate edition.
 - [ ] [Posihfopit](../vst3go-plugins/plugins/eq/posihfopit/README.md)
   - [ ] Original Posihfopit
   - [ ] Armyfopit
