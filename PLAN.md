@@ -952,6 +952,11 @@ parameters, programs, original editor references and audio comparisons in
 #### Modulation
 
 - [ ] [Barberpole Flanger](../vst3go-plugins/plugins/modulation/barberpole-flanger/README.md)
+  - [x] Match 126 renders bit for bit across all four audible Win32 binaries.
+        Verify modulation modes, stereo offsets, editable programs, six
+        reopened REAPER renders, SDK validation, and a Windows x64 cross-build.
+  - [ ] Verify the x64 original that left its buffers untouched in Wine,
+        the original editor and graphics permissions, and native hosts.
 - [ ] [Flanger](../vst3go-plugins/plugins/modulation/flanger/README.md)
 - [ ] [ITA Phaser](../vst3go-plugins/plugins/modulation/ita-phaser/README.md)
 - [ ] [Phase-O-Matic](../vst3go-plugins/plugins/modulation/phase-o-matic/README.md)
