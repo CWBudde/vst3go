@@ -586,6 +586,9 @@ parameters, programs, original editor references and audio comparisons in
         leave the output buffers untouched.
 - [ ] [SimpleFilter](../vst3go-plugins/plugins/filter/simplefilter/README.md)
 - [ ] [Weighting Filter](../vst3go-plugins/plugins/filter/weighting-filter/README.md)
+  - [x] Match 176 mono renders bit for bit across both distinct releases.
+        Verify the original host controls and reopen edited banks in REAPER.
+  - [ ] Verify additional host platforms.
 
 ### 7.2 Dynamics, bass and distortion
 
