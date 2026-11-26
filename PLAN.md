@@ -862,6 +862,15 @@ parameters, programs, original editor references and audio comparisons in
         x64 originals with untouched buffers or load errors under Wine.
         Compare original editors and physical Windows and macOS hosts.
 - [ ] [Christortion](../vst3go-plugins/plugins/distortion/christortion/README.md)
+  - [x] Compare 1,320 captures from four published releases and the retained
+        Win64 build. Verify all sixteen editable slots, both 2006 oversampling
+        paths, signed phase interpolation, DC and the retained 2 dB Carnaval
+        alias. Peak finite sample error stays within 2.39e−7.
+  - [x] Reopen and render ten REAPER projects within 1.82e−12. Verify each
+        edited inactive slot, validate all five classes and cross-build for
+        Windows x64.
+  - [ ] Verify the original editors and physical Windows and macOS hosts.
+        The native VST3 runtime still exposes only float32 processing.
 - [ ] [Decimator](../vst3go-plugins/plugins/distortion/decimator/README.md)
 - [ ] [Dynamite](../vst3go-plugins/plugins/distortion/dynamite/README.md)
 - [ ] [Exciter](../vst3go-plugins/plugins/distortion/exciter/README.md)
