@@ -920,6 +920,12 @@ parameters, programs, original editor references and audio comparisons in
         Windows and macOS hosts.
 - [ ] [Scary](../vst3go-plugins/plugins/distortion/scary/README.md)
 - [ ] [TanhWaveshaper](../vst3go-plugins/plugins/distortion/tanhwaveshaper/README.md)
+  - [x] Compare 396 captures per class for the audible 2009 stereo, retained
+        stereo and Plugin Match mono editions. Verify curve selection,
+        oversampling, alias rejection, and twelve reopened REAPER projects.
+        Validate all three classes and cross-build the Windows x64 bundle.
+  - [ ] Verify the x64 stereo no-write and load failures, the Plugin Match
+        x86 first-block fault, and physical Windows and macOS VST3 hosts.
 - [ ] [Toadstunnel](../vst3go-plugins/plugins/distortion/toadstunnel/README.md)
   - [ ] Toadstunnel
   - [ ] Toadstunnel²
