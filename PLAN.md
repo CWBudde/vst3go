@@ -587,6 +587,10 @@ parameters, programs, original editor references and audio comparisons in
         macOS binary. The archived x64 replacing and accumulating paths
         leave the output buffers untouched.
 - [ ] [SimpleFilter](../vst3go-plugins/plugins/filter/simplefilter/README.md)
+  - [x] Port the audible Win32 checkout edition and match 162 float32
+        captures. Reopen its edited and untouched presets in REAPER.
+  - [ ] Verify other hosts and recover an audible reference for the published
+        x64 edition. Both checked x64 builds left output buffers untouched.
 - [ ] [Weighting Filter](../vst3go-plugins/plugins/filter/weighting-filter/README.md)
   - [x] Match 176 mono renders bit for bit across both distinct releases.
         Verify the original host controls and reopen edited banks in REAPER.
