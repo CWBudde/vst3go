@@ -565,6 +565,10 @@ parameters, programs, original editor references and audio comparisons in
         Reopen independent damping and latched spacing in Linux REAPER.
   - [ ] Verify the original custom editor and additional native hosts.
 - [ ] [Rubberfilter](../vst3go-plugins/plugins/filter/rubberfilter/README.md)
+  - [x] Match 222 renders across the 2007 and 2010 releases. Verify order 64,
+        the edition-specific Power behavior and edited programs in REAPER.
+  - [ ] Verify the original editor, remaining automation paths and additional
+        native hosts.
 - [ ] [Simple Linear Phase Filter](../vst3go-plugins/plugins/filter/simple-linear-phase-filter/README.md)
   - [ ] Linear Phase LP
     - [x] Compare all 22 windows, saved state, tail and compensation on Linux.
