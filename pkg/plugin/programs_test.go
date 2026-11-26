@@ -58,7 +58,7 @@ func TestFactoryProgramQueueUsesHostOffset(t *testing.T) {
 	ctx.AddParameterChange(1, 0.75, switchFrame)
 	ctx.AddParameterChange(programID, 1, switchFrame)
 	programs.applyPending(ctx.GetParameterChanges())
-	component.processSampleAccurate(ctx)
+	component.processSampleAccurate(ctx, nil)
 	if want := []float32{1, 1, 0.75, 0.75}; !slices.Equal(output, want) {
 		t.Fatalf("output = %v, want %v", output, want)
 	}

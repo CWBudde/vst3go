@@ -59,6 +59,9 @@ func (p *processor) ProcessAudio(ctx *process.Context) {
 			p.level = 0
 			if p.notes[i] == midi.EventTypeNoteOn {
 				p.level = 1
+				ctx.AddOutputEvent(midi.NewNoteOn(3, 60, 64, int32(i)))
+			} else {
+				ctx.AddOutputEvent(midi.NewNoteOff(3, 60, 0, int32(i)))
 			}
 		}
 		if len(ctx.Output) == 0 {
@@ -105,7 +108,8 @@ func (fixture) GetInfo() fwplugin.Info {
 }
 
 func (fixture) CreateProcessor() plugin.Processor {
-	buses := bus.NewBuilder().WithStereoInput("In").WithStereoOutput("Out").WithEventInput("Notes").MustBuild()
+	buses := bus.NewBuilder().WithStereoInput("In").WithStereoOutput("Out").
+		WithEventInput("Notes").WithEventOutput("Echo").MustBuild()
 	base := fwplugin.NewBaseProcessor(buses)
 	gain := param.New(gainID, "Gain").Range(0, 1).Default(defaultGain).Build()
 	bypass := param.BypassParameter(bypassID, "Bypass").Build()

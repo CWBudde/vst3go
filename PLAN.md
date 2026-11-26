@@ -331,16 +331,26 @@ there and reusable DSP in the sibling `algo-*` libraries.
         on processor-state restore in the C host fixture.
   - [x] Verify sample-exact delay compensation after reopening a delay probe
         at 48 and 96 kHz in REAPER 7.86.
-  - [ ] Measure reported latency, tails and host compensation with the ports.
+  - [x] Verify the Lookahead Limiter delay and tail. Reopen and render
+        16- and 258-sample settings with sample-exact compensation in REAPER.
+  - [x] Measure 768-sample latency and 1023-sample tail on Linear Phase HP
+        and LP. Check compensation after reopening at 48 and 96 kHz.
+  - [ ] Measure latency, tails and compensation with the convolution port.
+  - [ ] Measure latency and decay with the feedback port.
 - [x] Check sample-offset MIDI and automation across block boundaries, bypass
       and transport reset.
   - [x] Resolve the smoothing contract before a port relies on it. The DSP
         caller advances each smoother once per sample frame.
-- [ ] Test the Sidechain Compressor with a loaded detector plugin in the
+  - [x] Send notes from the first event output bus to the host. Verify
+        sample offsets across automation chunks and inactive bus handling.
+- [x] Test the Sidechain Compressor with a loaded detector plugin in the
       original nested processing path, including reconfiguration and saved state.
   - [x] Forward host processing start and stop independently of activation so
         a nested detector can receive both lifecycle transitions.
   - [x] Forward final component teardown to processors that own nested modules.
+  - [x] Compare the original and the port using matching Windows and Linux
+        builds of the same VST2 detector. Reopen both Linux instances with
+        their saved child state in REAPER.
 
 ### 6.3 Programs, state and host validation
 
@@ -361,7 +371,9 @@ there and reusable DSP in the sibling `algo-*` libraries.
   - [x] Run the C host suite and Steinberg Validator 3.7.2 on Linux. In REAPER
         7.86, load a three-class test bundle with a sidechain, instrument and
         X11 editor, reopen its session, and compare the sidechain impulse render.
-  - [ ] Repeat with the published port fixtures on supported host platforms.
+  - [x] Verify the EeeekU family with native editors and the Sidechain
+        Compressor with a native VST2 detector in REAPER on Linux.
+  - [ ] Verify a published instrument and repeat supported platform checks.
 
 ## Phase 7: Faithful pcjv.de VST3 ports
 
@@ -388,7 +400,10 @@ parameters, programs, original editor references and audio comparisons in
   - [x] Verify RBJ complex response and harmonics at three rates and three
         input levels. Verify Linux editor controls, 2× scaling and playback
         reopen in REAPER.
-  - [ ] Finish the native Windows and macOS editor and supported host checks.
+  - [x] Reopen both native Windows editors and saved state in Win64 REAPER
+        under Wine. Verify keyboard, focus and 2× resize in the C fixture.
+  - [ ] Finish native Windows and macOS host checks and compare the released
+        Orfanidis response when a reference mode can be selected.
 - [ ] [Electri-Q](../vst3go-plugins/plugins/eq/electri-q/README.md)
   - [ ] Commercial edition
     - [ ] Establish exact source correspondence and capture the final 1.8.8
@@ -441,7 +456,9 @@ parameters, programs, original editor references and audio comparisons in
 - [ ] [Rubberfilter](../vst3go-plugins/plugins/filter/rubberfilter/README.md)
 - [ ] [Simple Linear Phase Filter](../vst3go-plugins/plugins/filter/simple-linear-phase-filter/README.md)
   - [ ] Linear Phase LP
+    - [x] Compare all 22 windows, saved state, tail and compensation on Linux.
   - [ ] Linear Phase HP
+    - [x] Compare both released HP binaries, all windows, state and compensation on Linux.
   - [ ] LinearPhaseFilterFFT edition
 - [ ] [Simple Linear Phase Linkwitz-Riley Filter](../vst3go-plugins/plugins/filter/simple-linear-phase-linkwitz-riley-filter/README.md)
   - [ ] Linear Phase Linkwitz-Riley HP
@@ -483,8 +500,14 @@ parameters, programs, original editor references and audio comparisons in
 - [ ] [Lightweight Upward Compressor](../vst3go-plugins/plugins/dynamics/lightweight-upward-compressor/README.md)
 - [ ] [Limiter](../vst3go-plugins/plugins/dynamics/limiter/README.md)
 - [ ] [Lookahead Limiter](../vst3go-plugins/plugins/dynamics/lookahead-limiter/README.md)
+  - [x] Match the measured audio and program values and verify saved delay
+        and compensation in REAPER on Linux.
+  - [ ] Reproduce the original editor and verify live delay changes and other host platforms.
 - [ ] [Multiband Compressor](../vst3go-plugins/plugins/dynamics/multiband-compressor/README.md)
 - [ ] [Sidechain Compressor](../vst3go-plugins/plugins/dynamics/sidechain-compressor/README.md)
+  - [x] Compare all 13 released programs and the loaded detector path.
+        Validate the Linux class and restore the nested state in REAPER.
+  - [ ] Finish native detector selection, editor behavior and other host platforms.
 - [ ] [Simple Compressor](../vst3go-plugins/plugins/dynamics/simple-compressor/README.md)
 - [ ] [Simple Feedback Compressor](../vst3go-plugins/plugins/dynamics/simple-feedback-compressor/README.md)
 - [ ] [Simple Gate](../vst3go-plugins/plugins/dynamics/simple-gate/README.md)

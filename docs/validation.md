@@ -150,3 +150,9 @@ reported 120 samples at 48 kHz and 720 samples at 96 kHz from saved delay
 settings of 2.5 and 7.5 ms. After reopening each project for rendering, the
 delayed right channel and dry left channel were identical in the 16-bit PCM
 output. The first impulse landed at frame 4800 and 9600 respectively.
+
+Processors can use `Context.AddOutputEvent` to send note-on and note-off
+events over their first event output bus when it is active. Offsets are relative to the
+buffers passed to `ProcessAudio`. The bridge converts them to host block
+offsets when automation splits a block. The MIDI C smoke fixture checks
+the events and offsets with and without automation and with the bus disabled.

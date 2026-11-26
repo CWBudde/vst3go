@@ -56,6 +56,8 @@ type componentImpl struct {
 	chunkInput       [][]float32
 	chunkOutput      [][]float32
 	blockEvents      []midi.Event
+	outputEvents     []midi.Event
+	noteOutputBus    *bus.Info
 	chunkInputBuses  []process.BusBuffers
 	chunkOutputBuses []process.BusBuffers
 
@@ -330,6 +332,10 @@ func (c *componentImpl) SetupProcessing(setup *vst3.ProcessSetup) error {
 		c.chunkOutput = make([][]float32, 0, outChannels)
 		c.chunkInputBuses = make([]process.BusBuffers, len(ctx.Buses.InputBuses))
 		c.chunkOutputBuses = make([]process.BusBuffers, len(ctx.Buses.OutputBuses))
+		c.noteOutputBus = c.busConfig.GetBusInfo(bus.MediaTypeEvent, bus.DirectionOutput, 0)
+		if c.noteOutputBus != nil {
+			c.outputEvents = make([]midi.Event, 0, 128)
+		}
 	}
 	c.processCtx.Store(ctx)
 	return nil
@@ -402,11 +408,12 @@ func (c *componentImpl) Process(data unsafe.Pointer) error {
 		ctx.SortParameterChanges()
 
 		// Process audio in chunks between parameter changes
-		c.processSampleAccurate(ctx)
+		c.processSampleAccurate(ctx, processData.outputEvents)
 	} else {
 		// No parameter changes - process entire block
 		c.publishInputEvents(ctx, 0, int32(ctx.NumSamples()))
 		c.processor.ProcessAudio(ctx)
+		c.sendOutputNotes(ctx, processData.outputEvents, 0)
 	}
 
 	return nil
@@ -758,7 +765,7 @@ func (c *componentImpl) SetParamNormalizedWithNotification(id uint32, value floa
 
 // processSampleAccurate processes audio in chunks delimited by parameter
 // changes, so each change takes effect on exactly the sample the host asked for.
-func (c *componentImpl) processSampleAccurate(ctx *process.Context) {
+func (c *componentImpl) processSampleAccurate(ctx *process.Context, outputEvents *C.struct_Steinberg_Vst_IEventList) {
 	changes := ctx.GetParameterChanges()
 	numSamples := ctx.NumSamples()
 	lastOffset := 0
@@ -770,7 +777,7 @@ func (c *componentImpl) processSampleAccurate(ctx *process.Context) {
 	for first := 0; first < len(changes); {
 		offset := min(changes[first].SampleOffset, numSamples)
 		if offset > lastOffset {
-			c.processChunk(ctx, origInput, origOutput, lastOffset, offset)
+			c.processChunk(ctx, origInput, origOutput, lastOffset, offset, outputEvents)
 			lastOffset = offset
 		}
 
@@ -784,7 +791,7 @@ func (c *componentImpl) processSampleAccurate(ctx *process.Context) {
 
 	// Process final chunk if there are samples remaining
 	if lastOffset < numSamples {
-		c.processChunk(ctx, origInput, origOutput, lastOffset, numSamples)
+		c.processChunk(ctx, origInput, origOutput, lastOffset, numSamples, outputEvents)
 	}
 
 	// Restore original buffers
@@ -814,7 +821,7 @@ func (c *componentImpl) applyParameterChanges(ctx *process.Context, changes []pr
 // processChunk points the context at [start, end) of the block and runs one
 // pass of user DSP over it. The chunk slice headers live in reusable scratch so
 // the loop keeps ProcessAudio's zero-allocation promise.
-func (c *componentImpl) processChunk(ctx *process.Context, input, output [][]float32, start, end int) {
+func (c *componentImpl) processChunk(ctx *process.Context, input, output [][]float32, start, end int, outputEvents *C.struct_Steinberg_Vst_IEventList) {
 	fullBlockSamples := ctx.NumSamples()
 	ctx.SetNumSamples(end - start)
 	defer ctx.SetNumSamples(fullBlockSamples)
@@ -849,6 +856,7 @@ func (c *componentImpl) processChunk(ctx *process.Context, input, output [][]flo
 	}
 
 	c.processor.ProcessAudio(ctx)
+	c.sendOutputNotes(ctx, outputEvents, start)
 }
 
 func sliceBusBuffers(dst, src []process.BusBuffers, channels [][]float32, start, end int) [][]float32 {

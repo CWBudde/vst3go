@@ -477,6 +477,12 @@ func (c *Context) GetOutputEvents() []midi.Event {
 	return c.eventBuffer.GetOutputEvents()
 }
 
+// AppendOutputEvents appends sorted output events to caller-owned scratch.
+// It allocates only when dst has insufficient capacity.
+func (c *Context) AppendOutputEvents(dst []midi.Event) []midi.Event {
+	return c.eventBuffer.AppendOutputEvents(dst)
+}
+
 // ClearInputEvents clears the input event queue
 func (c *Context) ClearInputEvents() {
 	c.eventBuffer.ClearInput()

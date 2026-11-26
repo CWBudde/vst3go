@@ -312,7 +312,7 @@ func TestComponentKeepsBusIndicesInAutomationChunks(t *testing.T) {
 	}
 	ctx := c.processCtx.Load()
 	ctx.AddParameterChange(1, 0.5, split)
-	c.processSampleAccurate(ctx)
+	c.processSampleAccurate(ctx, nil)
 	if want := []int{numSamples, split, numSamples - split}; !slices.Equal(chunks, want) {
 		t.Errorf("DSP block lengths = %v, want %v", chunks, want)
 	}

@@ -215,7 +215,7 @@ func TestProcessSampleAccurateChunkBoundaries(t *testing.T) {
 	ctx.AddParameterChange(1, 0.75, 384)
 	ctx.SortParameterChanges()
 
-	c.processSampleAccurate(ctx)
+	c.processSampleAccurate(ctx, nil)
 
 	wantSizes := []int{128, 256, 128}
 	if len(processor.chunkSizes) != len(wantSizes) {
@@ -259,7 +259,7 @@ func TestProcessSampleAccurateReslicesEvents(t *testing.T) {
 	ctx.AddParameterChange(1, 0.5, 384)
 	ctx.SortParameterChanges()
 
-	c.processSampleAccurate(ctx)
+	c.processSampleAccurate(ctx, nil)
 
 	if len(processor.chunkEvents) != 3 {
 		t.Fatalf("chunk count = %d, want 3", len(processor.chunkEvents))
@@ -349,12 +349,12 @@ func TestProcessChunkDoesNotAllocate(t *testing.T) {
 	input, output := ctx.Input, ctx.Output
 
 	// Warm up the scratch slices; the first call is allowed to allocate them.
-	c.processChunk(ctx, input, output, 0, numSamples)
+	c.processChunk(ctx, input, output, 0, numSamples, nil)
 
 	allocs := testing.AllocsPerRun(200, func() {
-		c.processChunk(ctx, input, output, 0, 128)
-		c.processChunk(ctx, input, output, 128, 384)
-		c.processChunk(ctx, input, output, 384, numSamples)
+		c.processChunk(ctx, input, output, 0, 128, nil)
+		c.processChunk(ctx, input, output, 128, 384, nil)
+		c.processChunk(ctx, input, output, 384, numSamples, nil)
 	})
 	if allocs != 0 {
 		t.Errorf("chunk loop allocated %.1f times per block, want 0", allocs)
@@ -385,7 +385,7 @@ func TestProcessSampleAccurateWithEventsDoesNotAllocate(t *testing.T) {
 	}
 
 	prime()
-	c.processSampleAccurate(ctx)
+	c.processSampleAccurate(ctx, nil)
 
 	// Guard against a vacuous measurement: the events must actually be reaching
 	// the context, otherwise this would pass on an empty code path.
@@ -395,7 +395,7 @@ func TestProcessSampleAccurateWithEventsDoesNotAllocate(t *testing.T) {
 
 	allocs := testing.AllocsPerRun(200, func() {
 		prime()
-		c.processSampleAccurate(ctx)
+		c.processSampleAccurate(ctx, nil)
 	})
 	if allocs != 0 {
 		t.Errorf("a block with 32 MIDI events allocated %.1f times, want 0", allocs)
@@ -417,11 +417,11 @@ func TestProcessSampleAccurateDoesNotAllocate(t *testing.T) {
 	}
 
 	prime()
-	c.processSampleAccurate(ctx)
+	c.processSampleAccurate(ctx, nil)
 
 	allocs := testing.AllocsPerRun(200, func() {
 		prime()
-		c.processSampleAccurate(ctx)
+		c.processSampleAccurate(ctx, nil)
 	})
 	if allocs != 0 {
 		t.Errorf("processSampleAccurate allocated %.1f times per block, want 0", allocs)

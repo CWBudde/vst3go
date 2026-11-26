@@ -32,6 +32,39 @@ static Steinberg_Vst_IEventListVtbl event_vtbl = {
 };
 
 typedef struct {
+    Steinberg_Vst_IEventList iface;
+    struct Steinberg_Vst_Event events[frames];
+    Steinberg_int32 count;
+} OutputEvents;
+
+static Steinberg_tresult SMTG_STDMETHODCALLTYPE add_event(void* self, struct Steinberg_Vst_Event* event) {
+    OutputEvents* output = self;
+    if (output->count == frames) return Steinberg_kResultFalse;
+    output->events[output->count++] = *event;
+    return Steinberg_kResultOk;
+}
+
+static Steinberg_Vst_IEventListVtbl output_vtbl = {.addEvent = add_event};
+
+static int expect_echo(const OutputEvents* output, const struct Steinberg_Vst_Event* notes, int count) {
+    REQUIRE(output->count == count);
+    for (int i = 0; i < count; i++) {
+        const struct Steinberg_Vst_Event* observed = &output->events[i];
+        REQUIRE(observed->busIndex == 0);
+        REQUIRE(observed->sampleOffset == notes[i].sampleOffset);
+        REQUIRE(observed->type == notes[i].type);
+        if (observed->type == Steinberg_Vst_Event_EventTypes_kNoteOnEvent) {
+            struct Steinberg_Vst_NoteOnEvent note = observed->Steinberg_Vst_Event_noteOn;
+            REQUIRE(note.channel == 3 && note.pitch == 60 && note.velocity == 64.0f / 127.0f);
+        } else {
+            struct Steinberg_Vst_NoteOffEvent note = observed->Steinberg_Vst_Event_noteOff;
+            REQUIRE(note.channel == 3 && note.pitch == 60 && note.velocity == 0);
+        }
+    }
+    return 0;
+}
+
+typedef struct {
     Steinberg_int32 offset;
     Steinberg_Vst_ParamValue value;
 } Point;
@@ -132,6 +165,8 @@ int main(void) {
 
     REQUIRE(component->lpVtbl->getBusCount(component, Steinberg_Vst_MediaTypes_kEvent, Steinberg_Vst_BusDirections_kInput) == 1);
     REQUIRE(component->lpVtbl->activateBus(component, Steinberg_Vst_MediaTypes_kEvent, Steinberg_Vst_BusDirections_kInput, 0, 1) == Steinberg_kResultOk);
+    REQUIRE(component->lpVtbl->getBusCount(component, Steinberg_Vst_MediaTypes_kEvent, Steinberg_Vst_BusDirections_kOutput) == 1);
+    REQUIRE(component->lpVtbl->activateBus(component, Steinberg_Vst_MediaTypes_kEvent, Steinberg_Vst_BusDirections_kOutput, 0, 1) == Steinberg_kResultOk);
     struct Steinberg_Vst_ProcessSetup setup = {.sampleRate = 48000, .maxSamplesPerBlock = frames};
     REQUIRE(audio->lpVtbl->setupProcessing(audio, &setup) == Steinberg_kResultOk);
     REQUIRE(component->lpVtbl->setActive(component, 1) == Steinberg_kResultOk);
@@ -145,6 +180,7 @@ int main(void) {
 
     struct Steinberg_Vst_Event first_notes[] = {note(0, 1), note(4, 0), note(7, 1)};
     EventList events = {{&event_vtbl}, first_notes, 3};
+    OutputEvents echo = {.iface = {&output_vtbl}};
     const Point first_gain[] = {{3, 0.25}, {4, 0.5}, {6, 0.5}, {7, 0.75}};
     Queue first_queue[] = {{{&queue_vtbl}, gain_id, first_gain, 4}};
     ParameterChanges changes = {{&changes_vtbl}, first_queue, 1};
@@ -157,9 +193,11 @@ int main(void) {
     struct Steinberg_Vst_ProcessData data = {
         .numSamples = frames, .numInputs = 1, .numOutputs = 1, .inputs = &in_bus, .outputs = &out_bus,
         .inputEvents = &events.iface, .inputParameterChanges = &changes.iface, .processContext = &context,
+        .outputEvents = &echo.iface,
     };
     REQUIRE(audio->lpVtbl->process(audio, &data) == Steinberg_kResultOk);
     REQUIRE(expect_block("automation and note offsets", output, (float[]){1.25f, 1.25f, 1.25f, 1.25f, 0.5f, 0.5f, 0.5f, 1.75f}, 32, 64, 1, 1));
+    REQUIRE(expect_echo(&echo, first_notes, 3) == 0);
 
     struct Steinberg_Vst_Event bypass_notes[] = {note(0, 0), note(3, 1), note(7, 0)};
     const Point gain_in_first_frame[] = {{0, 0.5}};
@@ -169,6 +207,7 @@ int main(void) {
         {{&queue_vtbl}, bypass_id, bypass_points, 4},
     };
     events.events = bypass_notes;
+    echo.count = 0;
     changes.queues = bypass_queues;
     changes.count = 2;
     context.projectTimeSamples = 40;
@@ -176,9 +215,11 @@ int main(void) {
     context.projectTimeMusic = 40.0 / 24000.0;
     REQUIRE(audio->lpVtbl->process(audio, &data) == Steinberg_kResultOk);
     REQUIRE(expect_block("next block and bypass", output, (float[]){0.5f, 0.5f, 1, 1, 1, 1.5f, 1.5f, 0.5f}, 40, 72, 1, 1));
+    REQUIRE(expect_echo(&echo, bypass_notes, 3) == 0);
 
     const float dry_half[] = {0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f};
     data.inputEvents = NULL;
+    data.outputEvents = NULL;
     data.inputParameterChanges = NULL;
     context.projectTimeSamples = 0;
     context.projectTimeMusic = 0;
@@ -240,6 +281,16 @@ int main(void) {
     REQUIRE(audio->lpVtbl->process(audio, &data) == Steinberg_kResultOk);
     REQUIRE(expect_block("event-only block retained its final note and gain", output,
                          (float[]){1.25f, 1.25f, 1.25f, 1.25f, 1.25f, 1.25f, 1.25f, 1.25f}, 0, 0, 0, 0));
+
+    data.inputEvents = &events.iface;
+    data.outputEvents = &echo.iface;
+    echo.count = 0;
+    REQUIRE(audio->lpVtbl->process(audio, &data) == Steinberg_kResultOk);
+    REQUIRE(expect_echo(&echo, final_frame, 1) == 0);
+    REQUIRE(component->lpVtbl->activateBus(component, Steinberg_Vst_MediaTypes_kEvent, Steinberg_Vst_BusDirections_kOutput, 0, 0) == Steinberg_kResultOk);
+    echo.count = 0;
+    REQUIRE(audio->lpVtbl->process(audio, &data) == Steinberg_kResultOk);
+    REQUIRE(echo.count == 0);
 
     REQUIRE(audio->lpVtbl->setProcessing(audio, 0) == Steinberg_kResultOk);
     REQUIRE(component->lpVtbl->setActive(component, 0) == Steinberg_kResultOk);
