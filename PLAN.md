@@ -1265,6 +1265,14 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify the original 665 × 281 editor and native Windows and macOS
         hosts. The VST3 runtime exposes float32 audio.
 - [ ] [Spinbug](../vst3go-plugins/plugins/spatial/spinbug/README.md)
+  - [x] Port the public installer, BetaBugs collection and retained
+        loose classes. Match 840 complete finite renders and six
+        prefixes within 7.898e-7, verify timed changes in the ABI and
+        four Linux REAPER reopens, pass 141 SDK checks and cross-build
+        Windows x64. Recheck Spin Bug Lite after sharing its cascade.
+  - [ ] Verify the retained installer's non-finite Old One behavior
+        on a native host and reproduce the original editor and native
+        Windows and macOS host sessions.
 - [ ] [Surround to Stereo](../vst3go-plugins/plugins/spatial/surround-to-stereo/README.md)
 - [ ] [Tina-Turner](../vst3go-plugins/plugins/spatial/tina-turner/README.md)
   - [x] Identify the single-Angle 2005 installer. Match 252 original
