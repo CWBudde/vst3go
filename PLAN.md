@@ -630,6 +630,12 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Resolve the published x86 callback fault and verify the native editor
         and other host platforms.
 - [ ] [Bass Extender](../vst3go-plugins/plugins/bass/bass-extender/README.md)
+  - [x] Match the divider, crossover, detector and sample-offset edits against
+        360 audible x86 captures. Validate and reopen four REAPER projects,
+        including mid-only routing and independently edited program slots.
+  - [ ] Verify the x64 callback, which left outputs untouched under Wine, and
+        test the original editor and additional native hosts. Reconcile the
+        original zero tail report with the measured sustained shaped output.
 - [ ] [SubBoost](../vst3go-plugins/plugins/bass/subboost/README.md)
 
 #### Dynamics
