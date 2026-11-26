@@ -1036,7 +1036,17 @@ parameters, programs, original editor references and audio comparisons in
         Verify saved feedback clocks in REAPER and validate the VST3.
   - [ ] Compare the original editor and native Windows and macOS hosts.
 - [ ] [FeedBUG](../vst3go-plugins/plugins/delay/feedbug/README.md)
+  - [x] Compare 114 captures per class across the 2004, May 2005 and
+        retained April 2005 editions. Verify cabinet morphing from the
+        original externally supplied resource, feedback, editable banks,
+        and twelve reopened REAPER projects. Validate and cross-build.
+  - [ ] Resolve the retained February edition, resource redistribution,
+        native editor and physical platform checks.
 - [ ] [ModDelay](../vst3go-plugins/plugins/delay/moddelay/README.md)
+  - [x] Compare 630 renders across five audible retained editions.
+        Verify tap timing, feedback polarity, filtering, the initial
+        modulation-rate alias, queued edits, five REAPER reopens and SDK.
+  - [ ] Verify the published x64 no-write callback and native hosts.
 - [ ] [Party-Delay](../vst3go-plugins/plugins/delay/party-delay/README.md)
 - [ ] [Simple Sample Delay](../vst3go-plugins/plugins/delay/simple-sample-delay/README.md)
   - [x] Compare delay, feedback and timed resize against 72 x86 renders.
@@ -1047,6 +1057,11 @@ parameters, programs, original editor references and audio comparisons in
         five editable programs and exact saved-session taps in Linux REAPER.
   - [ ] Verify the native editor and additional host platforms.
 - [ ] [VariableDelay](../vst3go-plugins/plugins/delay/variabledelay/README.md)
+  - [x] Match 864 stereo captures across six audible original builds
+        exactly. Verify zero-delay behavior, sample-rate setup, all
+        three editable Init slots, REAPER reopen and SDK validation.
+  - [ ] Verify the published x64 no-write build, VST3 double processing,
+        the original editor and physical Windows and macOS hosts.
 
 #### Pitch
 
