@@ -266,7 +266,9 @@ linked and loaded, and every host would have rejected it as invalid.
         job; the C bridge is now also compiled `-Werror` with MinGW-w64,
         because `SMTG_STDMETHODCALLTYPE` is `__stdcall` there and empty
         elsewhere.
-  - Not covered: Steinberg's `validator` on Windows (Linux only), any real DAW
+  - Not covered: Steinberg's `validator` on Windows (it has run on Linux in CI,
+    and against all ports on Linux and macOS arm64 in the 2026-11-26 stress
+    test), any real DAW
     on Windows, and `windows/arm64`, which has a bundle layout but no CI build.
     `windows/386` is refused outright — the SDK's `PLUGIN_API` is `__stdcall`
     there and cgo emits `cdecl` for `//export`.
@@ -312,6 +314,9 @@ there and reusable DSP in the sibling `algo-*` libraries.
         gesture changes the host-visible frequency from 500 to 520 Hz.
   - [x] Exercise HWND attach, remove, reopen and 1.5× scaling in Win64
         REAPER 7.86 under Wine. Pin the Go DLL through host unload.
+  - [x] pluginval (strictness 10, Linux, Xvfb) opened and automated the
+        editor of every loadable class without a failure: 218 classes in 122
+        bundles, including the 13 projects with custom X11 editors.
   - [ ] Implement the macOS editor: an `NSView` child in the host's parent
         view, with Cocoa event handling and Retina scaling. There is no darwin
         view code yet, so on macOS every port falls back to the host's
@@ -1551,6 +1556,10 @@ parameters, programs, original editor references and audio comparisons in
         suite with the recent captured reference sets.
   - [x] Measure the available Linux companion audio benchmarks. The
         measured callback cases report zero allocations.
+  - [x] Run the Steinberg validator and pluginval at strictness 10 for all
+        132 projects on Linux x86_64 and macOS arm64: silence, automation,
+        state restore and non-finite checks at 44.1, 48 and 96 kHz with blocks
+        of 32 to 1024. The failures are tracked in 7.7.
   - [ ] Fill the remaining class-specific stress and worst-case performance
         coverage, including settings and hosts with open parity gates.
 - [ ] Compare the original and ported editor at matched size and parameter
