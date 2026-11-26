@@ -934,8 +934,13 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify the x64 stereo no-write and load failures, the Plugin Match
         x86 first-block fault, and physical Windows and macOS VST3 hosts.
 - [ ] [Toadstunnel](../vst3go-plugins/plugins/distortion/toadstunnel/README.md)
-  - [ ] Toadstunnel
+  - [x] Port the 2003 Toadstunnel class. Match 48 undithered renders exactly
+        and compare high-pass dither energy and timing in 24 cases. Verify
+        four editable slots, queued changes, SDK and four REAPER reopens.
   - [ ] Toadstunnel²
+  - [ ] Verify the native editors, artwork permissions, and physical Windows
+        and macOS hosts. The 2003 Wine original emits an integer sentinel
+        at the start of dithered blocks. Compare this on native Win32.
 - [ ] [Tubster](../vst3go-plugins/plugins/distortion/tubster/README.md)
 
 ### 7.3 Modulation, delay, pitch, spectral processing and reverb
