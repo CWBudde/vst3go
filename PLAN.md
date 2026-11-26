@@ -1072,12 +1072,34 @@ parameters, programs, original editor references and audio comparisons in
 #### Pitch
 
 - [ ] [Bode Frequency Shifter](../vst3go-plugins/plugins/pitch/bode-frequency-shifter/README.md)
-  - [ ] Mono edition
-  - [ ] Stereo edition
+  - [x] Port the Win32 mono core and the stereo wrappers. Compare 1,008
+        captures, including routing, both sidebands and timed edits. The two
+        published wrappers are identical and resolve an alternate core filename.
+        Initialized frames match within 1.073e-6. Clear both Hilbert histories
+        for deterministic output where the originals leave one uncleared.
+  - [x] Verify both classes in eight reopened Linux REAPER projects, validate
+        all 94 SDK cases and cross-build Windows x64.
+  - [ ] Resolve the original x64 no-write and load failures. Verify the
+        original custom editor and physical Windows and macOS hosts.
 - [ ] [Granular Pitch Shifter](../vst3go-plugins/plugins/pitch/granular-pitch-shifter/README.md)
+  - [x] Match 486 stereo captures across three Win32/Win64 originals,
+        including sub-minimum factory grain values, effective startup settings
+        and sample-offset automation. 480 renders are sample-exact and the
+        remaining peak difference is 3.73e-9. Verify all four factory slots and
+        one edit in reopened Linux REAPER projects, SDK validation and Win64
+        cross-build.
+  - [ ] Verify the original editor, double-processing capability and native
+        Windows and macOS hosts.
 - [ ] [SoundTouch based Pitch Shifter](../vst3go-plugins/plugins/pitch/soundtouch-based-pitch-shifter/README.md)
 - [ ] [Split Harmonizer](../vst3go-plugins/plugins/pitch/split-harmonizer/README.md)
 - [ ] [StkPitchShift](../vst3go-plugins/plugins/pitch/stkpitchshift/README.md)
+  - [x] Match 194 stereo captures from the published and retained Win32
+        builds within 1.193e-7. Verify the unreported 512-sample unity delay,
+        two controls, all five editable slots and history through rate and
+        activation changes. Three Linux REAPER reopens render sample-exact.
+        Pass SDK validation and cross-build Windows x64.
+  - [ ] Verify the original editor and native hosts. Both originals process
+        double-precision audio at the same unity delay. The port uses float32.
 
 #### Reverb
 
