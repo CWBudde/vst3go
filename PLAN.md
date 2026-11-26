@@ -454,7 +454,9 @@ parameters, programs, original editor references and audio comparisons in
 - [ ] [ParametricEQ](../vst3go-plugins/plugins/eq/parametriceq/README.md)
   - [x] Confirm 63 no-write cases in the published x64 callback. Compare
         the audible checkout PE32 build against the later Lite baseline.
-  - [ ] Build and verify the retained headless source as a separate edition.
+  - [x] Port the retained headless PE32 edition and match 135 release and
+        checkout captures. Reopen blank and edited slots in REAPER.
+  - [ ] Verify other platforms and obtain an audible published x64 baseline.
 - [ ] [Posihfopit](../vst3go-plugins/plugins/eq/posihfopit/README.md)
   - [ ] Original Posihfopit
     - [x] Match the released processing modes, filter detents, editable
@@ -520,13 +522,19 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Type I high-pass and low-pass, including mono editions
     - [x] Match the modern stereo HP and LP, the HP mono wrapper and the
           2008 HP. Verify response, automation and saved Linux sessions.
-    - [ ] Address the 2008 LP's nonfinite order-three response and validate
-          the retained Type I LP mono source.
+    - [x] Match 78 retained Type I LP mono source captures. Reopen and
+          render the mono source class at two rates in REAPER.
+    - [ ] Resolve the 2008 LP release's nonfinite order-three response.
   - [ ] Type II high-pass
     - [x] Compare both published HP editions and frequency correction.
           Reopen and render the two editions in REAPER.
     - [ ] Verify original editor and additional native hosts.
-  - [ ] Type II low-pass (source present, download contains only the license)
+  - [ ] Type II low-pass
+    - [x] Match 96 unchanged Pascal source renders. Reopen and render the
+          stereo source class with frequency correction in REAPER.
+    - [ ] Verify the exact retained x64 build on a supported Windows host.
+          The website archive contains only the license and Wine reports
+          error 998 during binary initialization.
 - [ ] [Dual Linkwitz-Riley Filters](../vst3go-plugins/plugins/filter/dual-linkwitz-riley-filters/README.md)
   - [x] Compare 78 release renders across the four modes and timed changes.
         Verify both editable slots and reopen bandpass output in REAPER.
