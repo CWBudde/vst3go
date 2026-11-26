@@ -170,24 +170,24 @@ to 0, and `go vet ./...` is clean for the first time.
         them. Documented as a `replace`-directive workaround for now. Deciding
         the real fix — vendor the header and accept the licensing implication,
         generate a shim header at build time, or accept checkout-only
-        consumption — belongs to Phase 6 release scope.
+        consumption — belongs to Phase 8 release scope.
 
         Decided: vendor it. The header is now three regular files in
-        `include/vst3`, and the same `git archive` check that found the problem
-        confirms the fix — a source-only tree compiles every cgo package. The
-        licensing implication is accepted explicitly rather than in passing:
-        redistribution is permitted only by Steinberg's GPLv3 alternative, since
-        the proprietary license forbids distributing the SDK in parts without a
-        signed agreement, so the copy this repository hands out is GPLv3.
-        `LICENSE`'s third-party notice says so, and says what it does not change
-        — a plug-in built against these headers was always a combined work, on
-        exactly these terms. Taking the GPLv3 route also means shipping the
-        GPLv3: section 4 requires whoever conveys the work to give recipients a
-        copy of the License, and a URL is not a copy, so the full text is in
-        `COPYING`. The shim-header option was not taken: hand-writing
-        the declarations avoids redistribution but makes an ABI mistake a silent
-        memory-layout bug instead of a compile error, which is a poor trade for
-        a runtime whose whole job is matching a host's vtable layout.
+            `include/vst3`, and the same `git archive` check that found the problem
+            confirms the fix — a source-only tree compiles every cgo package. The
+            licensing implication is accepted explicitly rather than in passing:
+            redistribution is permitted only by Steinberg's GPLv3 alternative, since
+            the proprietary license forbids distributing the SDK in parts without a
+            signed agreement, so the copy this repository hands out is GPLv3.
+            `LICENSE`'s third-party notice says so, and says what it does not change
+            — a plug-in built against these headers was always a combined work, on
+            exactly these terms. Taking the GPLv3 route also means shipping the
+            GPLv3: section 4 requires whoever conveys the work to give recipients a
+            copy of the License, and a URL is not a copy, so the full text is in
+            `COPYING`. The shim-header option was not taken: hand-writing
+            the declarations avoids redistribution but makes an ABI mistake a silent
+            memory-layout bug instead of a compile error, which is a poor trade for
+            a runtime whose whole job is matching a host's vtable layout.
 
 - [x] Add a `LICENSE` file and state the Steinberg dual-license implication for
       distributed binaries.
@@ -285,7 +285,349 @@ linked and loaded, and every host would have rejected it as invalid.
         build-over-the-top.
   - [x] Path-length edge cases: `MAX_PATH` is 260 and the bundle layout is deep.
 
-## Phase 6: Release Readiness
+## Phase 6: Runtime prerequisites for the pcjv.de ports
+
+The product catalog and per-family Delphi references live in
+[`vst3go-plugins`](../vst3go-plugins/CATALOG.md). Keep product implementations
+there and reusable DSP in the sibling `algo-*` libraries.
+
+### 6.0 Multiple classes per bundle
+
+- [ ] Extend the single-plugin factory in `pkg/plugin/wrapper.go` to enumerate
+      classes in a stable order and construct the processor for the requested CID.
+      Preserve single-class registration. Test unknown IDs, multiple live instances,
+      isolation of state and parameters, and discovery of every class in a bundle.
+
+### 6.1 Native editor and host automation
+
+- [ ] Implement the controller's `createView` and the `IPlugView` lifecycle
+      for supported native host windows. Exercise attach, remove, reopen, resize,
+      focus, keyboard input and display scaling in real hosts. Keep the generic
+      host editor available for originals without a custom view.
+- [ ] Wire editor gestures through the retained component handler
+      (begin, perform, end). Send host automation and preset changes back to the
+      editor. Deliver meters and plots without locking or allocating on the audio
+      thread. Exercise two open instances and close a view during playback.
+- [ ] Keep skins, fonts, knob strips, control layout and product-specific
+      drawing in the companion repo. Validate its editor with a real port.
+
+### 6.2 Processing and host contracts
+
+- [ ] Exercise existing bus negotiation with optional sidechains, mono,
+      stereo, quad and 5.1 arrangements. Verify routing with channel-isolated
+      impulses, sidechain disconnect/reconnect and inactive buses.
+- [ ] Verify latency and tail reporting for lookahead, FIR, convolution and
+      feedback. Support host notification when latency changes, and check delay
+      compensation across reconfiguration and preset restore.
+- [ ] Check sample-offset MIDI and automation across block boundaries, bypass
+      and transport reset. Resolve the smoothing contract tracked in Phase 8
+      before a port relies on it.
+- [ ] Test the Sidechain Compressor with a loaded detector plugin in the
+      original nested processing path, including reconfiguration and saved state.
+
+### 6.3 Programs, state and host validation
+
+- [ ] Support factory program enumeration and selection where the Delphi
+      product supplies programs. Preserve parameter IDs, units, display curves and
+      defaults. Round-trip processor and editor state in a saved host session.
+- [ ] Validate the affected runtime interfaces using the C host smoke tests
+      and Steinberg validator. Repeat in a real host with a family bundle,
+      an instrument, a sidechain and a native editor before declaring coverage.
+
+## Phase 7: Faithful pcjv.de VST3 ports
+
+Use the [product checklist](../vst3go-plugins/CATALOG.md) for the full
+inventory, editions and outstanding identification work. Each family owns its
+parameters, programs, original editor references and audio comparisons in
+`../vst3go-plugins/plugins/<category>/<product>/`.
+
+### 7.1 Filters and equalizers
+
+- [ ] Port EQs, pass filters, crossovers and linear-phase variants. Compare
+      impulse responses, magnitude, phase, channel summation and reported latency.
+      Check response plots against the actual output at the same control settings.
+
+#### Equalizers
+
+- [ ] [EeeekU](../vst3go-plugins/plugins/eq/eeeeku/README.md)
+- [ ] [Electri-Q](../vst3go-plugins/plugins/eq/electri-q/README.md)
+  - [ ] Commercial edition
+  - [ ] Posihfopit edition
+- [ ] [Graphic EQ](../vst3go-plugins/plugins/eq/graphic-eq/README.md)
+- [ ] [Noname EQ](../vst3go-plugins/plugins/eq/noname-eq/README.md)
+  - [ ] Original
+  - [ ] Split and oversampled edition
+- [ ] [Parametri-Q (lite)](../vst3go-plugins/plugins/eq/parametri-q-lite/README.md)
+- [ ] [ParametricEQ](../vst3go-plugins/plugins/eq/parametriceq/README.md)
+- [ ] [Posihfopit](../vst3go-plugins/plugins/eq/posihfopit/README.md)
+  - [ ] Original Posihfopit
+  - [ ] Armyfopit
+  - [ ] Smallifopit 4-band mono
+  - [ ] Smallifopit 4-band stereo
+  - [ ] Smallifopit 8-band mono
+  - [ ] Smallifopit 8-band stereo
+- [ ] [Pushtec 5+1A](../vst3go-plugins/plugins/eq/pushtec-5-1a/README.md) — confirm contributor scope before porting.
+- [ ] [Soul EQ](../vst3go-plugins/plugins/eq/soul-eq/README.md)
+- [ ] [Tiny-Q](../vst3go-plugins/plugins/eq/tiny-q/README.md)
+- [ ] [UNIQUE EQ](../vst3go-plugins/plugins/eq/unique-eq/README.md)
+- [ ] [Valuable EQ](../vst3go-plugins/plugins/eq/valuable-eq/README.md)
+  - [ ] Valueable
+  - [ ] Valueable Stereo
+
+#### Filters and crossovers
+
+- [ ] [Bugpass](../vst3go-plugins/plugins/filter/bugpass/README.md)
+- [ ] [Bugpass Lite](../vst3go-plugins/plugins/filter/bugpass-lite/README.md)
+- [ ] [Butterworth Filters](../vst3go-plugins/plugins/filter/butterworth-filters/README.md)
+  - [ ] High-pass mono and stereo
+  - [ ] Low-pass mono and stereo
+  - [ ] Frequency splitter
+  - [ ] Butterworth²HP oversampled edition
+- [ ] [Chebyshev Filters](../vst3go-plugins/plugins/filter/chebyshev-filters/README.md)
+  - [ ] Type I high-pass and low-pass, including mono editions
+  - [ ] Type II high-pass
+  - [ ] Type II low-pass (source present, download contains only the license)
+- [ ] [Dual Linkwitz-Riley Filters](../vst3go-plugins/plugins/filter/dual-linkwitz-riley-filters/README.md)
+- [ ] [Hum Removal](../vst3go-plugins/plugins/filter/hum-removal/README.md)
+- [ ] [Lavaland](../vst3go-plugins/plugins/filter/lavaland/README.md)
+- [ ] [Linear Phase Butterworth](../vst3go-plugins/plugins/filter/linear-phase-butterworth/README.md)
+  - [ ] Linear Phase Butterworth HP
+  - [ ] Linear Phase Butterworth LP
+- [ ] [Linear Phase Frequency Crossover](../vst3go-plugins/plugins/filter/linear-phase-frequency-crossover/README.md)
+- [ ] [MoogVST](../vst3go-plugins/plugins/filter/moogvst/README.md)
+- [ ] [Phase Rotator](../vst3go-plugins/plugins/filter/phase-rotator/README.md)
+- [ ] [QR-Filter](../vst3go-plugins/plugins/filter/qr-filter/README.md)
+- [ ] [Rubberfilter](../vst3go-plugins/plugins/filter/rubberfilter/README.md)
+- [ ] [Simple Linear Phase Filter](../vst3go-plugins/plugins/filter/simple-linear-phase-filter/README.md)
+  - [ ] Linear Phase LP
+  - [ ] Linear Phase HP
+  - [ ] LinearPhaseFilterFFT edition
+- [ ] [Simple Linear Phase Linkwitz-Riley Filter](../vst3go-plugins/plugins/filter/simple-linear-phase-linkwitz-riley-filter/README.md)
+  - [ ] Linear Phase Linkwitz-Riley HP
+  - [ ] Linear Phase Linkwitz-Riley LP
+- [ ] [Simple Linkwitz-Riley Crossover](../vst3go-plugins/plugins/filter/simple-linkwitz-riley-crossover/README.md)
+  - [ ] LinkwitzRiley
+  - [ ] LinkwitzRileyStereo
+- [ ] [SimpleFilter](../vst3go-plugins/plugins/filter/simplefilter/README.md)
+- [ ] [Weighting Filter](../vst3go-plugins/plugins/filter/weighting-filter/README.md)
+
+### 7.2 Dynamics, bass and distortion
+
+- [ ] Port dynamics processors, waveshapers and bass effects. Measure static
+      curves, attack/release, lookahead, sidechain routing, harmonics and aliasing.
+      Match intentional saturation and original oversampling modes.
+
+#### Bass
+
+- [ ] [Bass Baron](../vst3go-plugins/plugins/bass/bass-baron/README.md)
+- [ ] [Bass Extender](../vst3go-plugins/plugins/bass/bass-extender/README.md)
+- [ ] [SubBoost](../vst3go-plugins/plugins/bass/subboost/README.md)
+
+#### Dynamics
+
+- [ ] [Adhesive](../vst3go-plugins/plugins/dynamics/adhesive/README.md)
+- [ ] [Audiocation Compressor](../vst3go-plugins/plugins/dynamics/audiocation-compressor/README.md)
+  - [ ] Mono compressor
+  - [ ] Stereo compressor
+- [ ] [EnhancedGate](../vst3go-plugins/plugins/dynamics/enhancedgate/README.md)
+- [ ] [Hard Knee Compressor](../vst3go-plugins/plugins/dynamics/hard-knee-compressor/README.md)
+- [ ] [LA4029](../vst3go-plugins/plugins/dynamics/la4029/README.md)
+- [ ] [Lightweight Dynamics](../vst3go-plugins/plugins/dynamics/lightweight-dynamics/README.md)
+- [ ] [Lightweight Feedback Compressor](../vst3go-plugins/plugins/dynamics/lightweight-feedback-compressor/README.md)
+- [ ] [Lightweight Feedback Limiter](../vst3go-plugins/plugins/dynamics/lightweight-feedback-limiter/README.md)
+- [ ] [Lightweight Multiband Compressor](../vst3go-plugins/plugins/dynamics/lightweight-multiband-compressor/README.md)
+- [ ] [Lightweight Soft Knee Compressor](../vst3go-plugins/plugins/dynamics/lightweight-soft-knee-compressor/README.md)
+- [ ] [Lightweight Soft Knee Gate](../vst3go-plugins/plugins/dynamics/lightweight-soft-knee-gate/README.md)
+- [ ] [Lightweight Soft Knee Limiter](../vst3go-plugins/plugins/dynamics/lightweight-soft-knee-limiter/README.md)
+- [ ] [Lightweight Upward Compressor](../vst3go-plugins/plugins/dynamics/lightweight-upward-compressor/README.md)
+- [ ] [Limiter](../vst3go-plugins/plugins/dynamics/limiter/README.md)
+- [ ] [Lookahead Limiter](../vst3go-plugins/plugins/dynamics/lookahead-limiter/README.md)
+- [ ] [Multiband Compressor](../vst3go-plugins/plugins/dynamics/multiband-compressor/README.md)
+- [ ] [Sidechain Compressor](../vst3go-plugins/plugins/dynamics/sidechain-compressor/README.md)
+- [ ] [Simple Compressor](../vst3go-plugins/plugins/dynamics/simple-compressor/README.md)
+- [ ] [Simple Feedback Compressor](../vst3go-plugins/plugins/dynamics/simple-feedback-compressor/README.md)
+- [ ] [Simple Gate](../vst3go-plugins/plugins/dynamics/simple-gate/README.md)
+- [ ] [Simple Limiter](../vst3go-plugins/plugins/dynamics/simple-limiter/README.md)
+- [ ] [Smooth Multiband Compressor](../vst3go-plugins/plugins/dynamics/smooth-multiband-compressor/README.md)
+- [ ] [Soft Knee Feedback Compressor](../vst3go-plugins/plugins/dynamics/soft-knee-feedback-compressor/README.md)
+- [ ] [Soft Knee Feedback Limiter](../vst3go-plugins/plugins/dynamics/soft-knee-feedback-limiter/README.md)
+  - [ ] Feedback build (SKFBLimiter)
+  - [ ] Soft Knee Limiter build (SKLDM)
+- [ ] [Transient Bug](../vst3go-plugins/plugins/dynamics/transient-bug/README.md)
+  - [ ] BugWars release
+  - [ ] TrBug release
+
+#### Distortion
+
+- [ ] [2-Band Distortion](../vst3go-plugins/plugins/distortion/2-band-distortion/README.md)
+- [ ] [Advanced Clipper](../vst3go-plugins/plugins/distortion/advanced-clipper/README.md)
+- [ ] [Amp Sim](../vst3go-plugins/plugins/distortion/amp-sim/README.md)
+- [ ] [Analogue Mojo](../vst3go-plugins/plugins/distortion/analogue-mojo/README.md)
+- [ ] [Chebyshev Waveshaper](../vst3go-plugins/plugins/distortion/chebyshev-waveshaper/README.md)
+- [ ] [Christortion](../vst3go-plugins/plugins/distortion/christortion/README.md)
+- [ ] [Decimator](../vst3go-plugins/plugins/distortion/decimator/README.md)
+- [ ] [Dynamite](../vst3go-plugins/plugins/distortion/dynamite/README.md)
+- [ ] [Exciter](../vst3go-plugins/plugins/distortion/exciter/README.md)
+- [ ] [Hysteresis](../vst3go-plugins/plugins/distortion/hysteresis/README.md)
+- [ ] [OpAmp](../vst3go-plugins/plugins/distortion/opamp/README.md)
+- [ ] [Oversampled Tanh](../vst3go-plugins/plugins/distortion/oversampled-tanh/README.md)
+- [ ] [Scary](../vst3go-plugins/plugins/distortion/scary/README.md)
+- [ ] [TanhWaveshaper](../vst3go-plugins/plugins/distortion/tanhwaveshaper/README.md)
+- [ ] [Toadstunnel](../vst3go-plugins/plugins/distortion/toadstunnel/README.md)
+  - [ ] Toadstunnel
+  - [ ] Toadstunnel²
+- [ ] [Tubster](../vst3go-plugins/plugins/distortion/tubster/README.md)
+
+### 7.3 Modulation, delay, pitch, spectral processing and reverb
+
+- [ ] Compare modulation speed/depth and channel phase, delay taps and
+      feedback, pitch ratio and transients, noise profiles, impulse responses
+      and reverb decay. Use envelope or spectral comparisons for random processes.
+
+#### Modulation
+
+- [ ] [Barberpole Flanger](../vst3go-plugins/plugins/modulation/barberpole-flanger/README.md)
+- [ ] [Flanger](../vst3go-plugins/plugins/modulation/flanger/README.md)
+- [ ] [ITA Phaser](../vst3go-plugins/plugins/modulation/ita-phaser/README.md)
+- [ ] [Phase-O-Matic](../vst3go-plugins/plugins/modulation/phase-o-matic/README.md)
+- [ ] [Ring Modulator](../vst3go-plugins/plugins/modulation/ring-modulator/README.md)
+  - [ ] Mono edition
+  - [ ] Stereo edition
+  - [ ] Quad edition
+- [ ] [Simple Chorus](../vst3go-plugins/plugins/modulation/simple-chorus/README.md)
+- [ ] [Spin Bug Lite](../vst3go-plugins/plugins/modulation/spin-bug-lite/README.md)
+- [ ] [StkChorus](../vst3go-plugins/plugins/modulation/stkchorus/README.md)
+- [ ] [Vibrato](../vst3go-plugins/plugins/modulation/vibrato/README.md)
+
+#### Delay
+
+- [ ] [DegradingDelay](../vst3go-plugins/plugins/delay/degradingdelay/README.md)
+- [ ] [FeedBUG](../vst3go-plugins/plugins/delay/feedbug/README.md)
+- [ ] [ModDelay](../vst3go-plugins/plugins/delay/moddelay/README.md)
+- [ ] [Party-Delay](../vst3go-plugins/plugins/delay/party-delay/README.md)
+- [ ] [Simple Sample Delay](../vst3go-plugins/plugins/delay/simple-sample-delay/README.md)
+- [ ] [StkEcho](../vst3go-plugins/plugins/delay/stkecho/README.md)
+- [ ] [VariableDelay](../vst3go-plugins/plugins/delay/variabledelay/README.md)
+
+#### Pitch
+
+- [ ] [Bode Frequency Shifter](../vst3go-plugins/plugins/pitch/bode-frequency-shifter/README.md)
+  - [ ] Mono edition
+  - [ ] Stereo edition
+- [ ] [Granular Pitch Shifter](../vst3go-plugins/plugins/pitch/granular-pitch-shifter/README.md)
+- [ ] [SoundTouch based Pitch Shifter](../vst3go-plugins/plugins/pitch/soundtouch-based-pitch-shifter/README.md)
+- [ ] [Split Harmonizer](../vst3go-plugins/plugins/pitch/split-harmonizer/README.md)
+- [ ] [StkPitchShift](../vst3go-plugins/plugins/pitch/stkpitchshift/README.md)
+
+#### Reverb
+
+- [ ] [ConvoFX](../vst3go-plugins/plugins/reverb/convofx/README.md)
+- [ ] [ConvoFXLite](../vst3go-plugins/plugins/reverb/convofxlite/README.md)
+- [ ] [Dynamic Convolution Plugin](../vst3go-plugins/plugins/reverb/dynamic-convolution-plugin/README.md) — resolve the discontinued release and reference build.
+- [ ] [Freeverb](../vst3go-plugins/plugins/reverb/freeverb/README.md)
+- [ ] [Plate Reverb](../vst3go-plugins/plugins/reverb/plate-reverb/README.md)
+- [ ] [StkReverb](../vst3go-plugins/plugins/reverb/stkreverb/README.md)
+
+#### Spectral processing
+
+- [ ] [Noise Reduction](../vst3go-plugins/plugins/spectral/noise-reduction/README.md)
+- [ ] [Spectral Gate](../vst3go-plugins/plugins/spectral/spectral-gate/README.md)
+
+### 7.4 Spatial processing, instruments and MIDI
+
+- [ ] Check channel order, matrix coefficients, HRTF selection and IRs.
+      Reproduce instrument note handling, velocity, voice allocation, sample
+      loading, tuning and envelopes. Check MIDI-generating effects at block edges.
+
+#### Spatial processing
+
+- [ ] [Digital Crosstalk Cancellator (DCC)](../vst3go-plugins/plugins/spatial/digital-crosstalk-cancellator-dcc/README.md)
+- [ ] [DualWideBug](../vst3go-plugins/plugins/spatial/dualwidebug/README.md)
+- [ ] [Headphone Mix](../vst3go-plugins/plugins/spatial/headphone-mix/README.md)
+- [ ] [HRTF 3D](../vst3go-plugins/plugins/spatial/hrtf-3d/README.md)
+- [ ] [PhaseBug](../vst3go-plugins/plugins/spatial/phasebug/README.md)
+  - [ ] PhaseBug
+  - [ ] PhaseBug Mono
+- [ ] [Quadrophonics](../vst3go-plugins/plugins/spatial/quadrophonics/README.md)
+  - [ ] SQ encoder
+  - [ ] SQ decoder
+  - [ ] QS encoder
+  - [ ] QS decoder
+- [ ] [Quadropolis](../vst3go-plugins/plugins/spatial/quadropolis/README.md)
+- [ ] [Simple Crosstalk Cancellation](../vst3go-plugins/plugins/spatial/simple-crosstalk-cancellation/README.md)
+- [ ] [Spinbug](../vst3go-plugins/plugins/spatial/spinbug/README.md)
+- [ ] [Surround to Stereo](../vst3go-plugins/plugins/spatial/surround-to-stereo/README.md)
+- [ ] [Tina-Turner](../vst3go-plugins/plugins/spatial/tina-turner/README.md)
+
+#### Instruments and vocoders
+
+- [ ] [2-Oszillator Synth](../vst3go-plugins/plugins/synth/2-oszillator-synth/README.md)
+- [ ] [FunKEYS](../vst3go-plugins/plugins/synth/funkeys/README.md)
+- [ ] [Simple Sampler](../vst3go-plugins/plugins/synth/simple-sampler/README.md)
+- [ ] [Simple Sine Synth](../vst3go-plugins/plugins/synth/simple-sine-synth/README.md)
+- [ ] [Vocoder](../vst3go-plugins/plugins/synth/vocoder/README.md)
+
+### 7.5 Analysis, utilities, educational, hosting and other plugins
+
+- [ ] Validate meter scales, detector timing and readouts against known
+      signals. Exercise actual host/external I/O, scripts, GUIs and interactive
+      behavior as applicable. Record host or hardware dependencies per product.
+
+#### Analysis
+
+- [ ] [Barberpole Tuner](../vst3go-plugins/plugins/analysis/barberpole-tuner/README.md)
+- [ ] [BetaMeta](../vst3go-plugins/plugins/analysis/betameta/README.md)
+- [ ] [StereoMeterVST](../vst3go-plugins/plugins/analysis/stereometervst/README.md)
+- [ ] [Third-Octave Analyser (VST-Plugin)](../vst3go-plugins/plugins/analysis/third-octave-analyser-vst-plugin/README.md)
+- [ ] [TunaBUG](../vst3go-plugins/plugins/analysis/tunabug/README.md)
+
+#### Utilities and MIDI
+
+- [ ] [Audio2Midi Trigger](../vst3go-plugins/plugins/utility/audio2midi-trigger/README.md)
+- [ ] [Dither & Noiseshaper](../vst3go-plugins/plugins/utility/dither-noiseshaper/README.md)
+- [ ] [PhaseAdjustment](../vst3go-plugins/plugins/utility/phaseadjustment/README.md)
+- [ ] [VST Host Opcode Logger](../vst3go-plugins/plugins/utility/vst-host-opcode-logger/README.md)
+- [ ] [VST Pascal Script](../vst3go-plugins/plugins/utility/vst-pascal-script/README.md)
+
+#### Hosting
+
+- [ ] [VST interfaced ASIO-Host](../vst3go-plugins/plugins/hosting/vst-interfaced-asio-host/README.md)
+
+#### Other effects
+
+- [ ] [Ather](../vst3go-plugins/plugins/misc/ather/README.md)
+- [ ] [Audio Amelioration](../vst3go-plugins/plugins/misc/audio-amelioration/README.md)
+
+#### Educational processors
+
+- [ ] [ChunkDemo](../vst3go-plugins/plugins/education/chunkdemo/README.md)
+- [ ] [Compander](../vst3go-plugins/plugins/education/compander/README.md)
+- [ ] [Sigma Delta](../vst3go-plugins/plugins/education/sigma-delta/README.md)
+
+#### Games
+
+- [ ] [Tetris](../vst3go-plugins/plugins/game/tetris/README.md)
+
+### 7.6 Acceptance for every published class
+
+- [ ] Trace the original Delphi project, processor, form resources and
+      factory programs for each edition. Compare each `algo-*` candidate against
+      the original topology and coefficients. Implement missing reusable DSP
+      upstream and verify it against reference vectors.
+- [ ] Capture original renders with source version, input, preset, rate, block
+      size, routing and latency alignment. Set tolerances per measured behavior.
+      Compare null residuals for deterministic paths, and use spectral/time
+      measures and listening checks where exact cancellation is inappropriate.
+- [ ] Exercise silence, tails, bypass, automation, reload and non-finite
+      output checks at multiple supported rates and block sizes. Measure audio
+      callback allocations and CPU at the most demanding supported setting.
+- [ ] Compare the original and ported editor at matched size and parameter
+      state, including meters, interaction, readouts and HiDPI behavior. Record
+      validation results for each class and supported host platform.
+- [ ] Document any unresolved source identity, original assets, reference
+      binaries or differences before marking the corresponding port complete.
+
+## Phase 8: Release Readiness
 
 - [ ] Decide who drives parameter smoothing. `Parameter.EnableSmoothing` attaches
       a smoother and `SetNormalized` retargets it, but nothing in
