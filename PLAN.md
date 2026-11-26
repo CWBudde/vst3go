@@ -405,6 +405,10 @@ parameters, programs, original editor references and audio comparisons in
 - [ ] Port EQs, pass filters, crossovers and linear-phase variants. Compare
       impulse responses, magnitude, phase, channel summation and reported latency.
       Check response plots against the actual output at the same control settings.
+  - [x] Record released, retained and gated editions for all 30 filter and
+        equalizer entries. Verify audio and recall for the usable paths.
+  - [ ] Complete the remaining live transitions, response displays,
+        commercial references, editor and native host checks by product.
 
 #### Equalizers
 
@@ -505,7 +509,8 @@ parameters, programs, original editor references and audio comparisons in
         DLLs. Match all 772 renders on the channels written by the originals.
   - [x] Verify explicit Mono selection and fresh REAPER reopen for both classes.
   - [ ] Verify original editors and remaining hosts. The port uses
-        separately supplied, hash-checked response tables.
+        eight separately supplied, hash-checked response tables subject
+        to the author's noncommercial-use terms.
 
 #### Filters and crossovers
 
@@ -564,8 +569,8 @@ parameters, programs, original editor references and audio comparisons in
 - [ ] [Linear Phase Butterworth](../vst3go-plugins/plugins/filter/linear-phase-butterworth/README.md)
   - [x] Match HP and LP audio and adaptive latency across 252 release renders.
         Verify manual edits and restore compensation in fresh REAPER renders.
-  - [ ] Verify audio-queue latency transitions, live FIR history, the
-        original editors and additional native hosts.
+  - [ ] Locate the original Pascal entry point. Verify audio-queue latency
+        transitions, live FIR history, the original editors and native hosts.
 - [ ] [Linear Phase Frequency Crossover](../vst3go-plugins/plugins/filter/linear-phase-frequency-crossover/README.md)
   - [x] Match 432 release renders, including timed cutoff edits. Reopen the
         mono input and two output routes with 1024-sample PDC at 48 and 96 kHz.
@@ -600,6 +605,8 @@ parameters, programs, original editor references and audio comparisons in
   - [x] Match 138 LinearPhaseFilterFFT split captures outside the original
         uninitialized High startup. Verify live and reopened compensation
         for the measured delay, which differs from the original 1024 report.
+  - [ ] Verify the HP and LP editors, time-varying automation and VST2
+        preset import. Verify native Windows and macOS hosts for all classes.
 - [ ] [Simple Linear Phase Linkwitz-Riley Filter](../vst3go-plugins/plugins/filter/simple-linear-phase-linkwitz-riley-filter/README.md)
   - [x] Match the HP and LP filter audio and reported latency across 846
         captures. Reopen eight compensated REAPER projects at 48 and 96 kHz.
@@ -631,7 +638,7 @@ parameters, programs, original editor references and audio comparisons in
 
 #### Bass
 
-- [ ] [Bass Baron](../vst3go-plugins/plugins/bass/bass-baron/README.md)
+- [ ] [Bass Baron](../vst3go-plugins/plugins/bass/bass-baron/testdata/reference/CAPTURE.md)
   - [x] Match 132 captures from the published x64 release, covering float32,
         float64, live algorithm and response changes, lowcut and program recall.
         Reopen independently edited programs in REAPER. The port uses the
@@ -661,7 +668,7 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify the native editor, original sidechain edit timing and other
         native hosts. The port selects the sidechain immediately and the
         retained x64 DLL failed to load under Wine.
-- [ ] [Audiocation Compressor](../vst3go-plugins/plugins/dynamics/audiocation-compressor/README.md)
+- [ ] [Audiocation Compressor](../vst3go-plugins/plugins/dynamics/audiocation-compressor/testdata/reference/CAPTURE.md)
   - [x] Port the released DVL1 mono and DVL2 stereo classes. Match 196
         transformer, detector, automation, finite expansion and rate-change
         captures. Reopen both layouts and edited programs in REAPER.
@@ -688,7 +695,7 @@ parameters, programs, original editor references and audio comparisons in
         Use the two measured gain curves from [algo-dsp PR #50](https://github.com/CWBudde/algo-dsp/pull/50).
   - [ ] Verify the original meters and native editors, additional host
         platforms, and permission to redistribute the original assets.
-- [ ] [Lightweight Dynamics](../vst3go-plugins/plugins/dynamics/lightweight-dynamics/README.md)
+- [ ] [Lightweight Dynamics](../vst3go-plugins/plugins/dynamics/lightweight-dynamics/testdata/reference/CAPTURE.md)
   - [x] Match 48 x86 release renders through the gate, compressor, limiter
         and Soft Clip paths, including the original right-only Soft Clip
         detector and Auto MakeUp latch. Reopen edited programs in REAPER.
@@ -712,7 +719,7 @@ parameters, programs, original editor references and audio comparisons in
         captures and verify finite output in 24 zero-ratio runs. Reopen six
         REAPER projects with independently edited splits and band controls.
   - [ ] Verify the native editor, meters and additional host platforms.
-- [ ] [Lightweight Soft Knee Compressor](../vst3go-plugins/plugins/dynamics/lightweight-soft-knee-compressor/README.md)
+- [ ] [Lightweight Soft Knee Compressor](../vst3go-plugins/plugins/dynamics/lightweight-soft-knee-compressor/testdata/reference/CAPTURE.md)
   - [x] Port three release editions and match 159 captures across the
         detector timings, clip curves, stereo routing and editable programs.
         Verify independent edits in a reopened REAPER project.
@@ -736,7 +743,7 @@ parameters, programs, original editor references and audio comparisons in
         reopened REAPER projects using the curve from [algo-dsp PR #52](https://github.com/CWBudde/algo-dsp/pull/52).
   - [ ] Verify the native editor, characteristic display and other host
         platforms. The port bounds gain and output at exponent overflow.
-- [ ] [Limiter](../vst3go-plugins/plugins/dynamics/limiter/README.md)
+- [ ] [Limiter](../vst3go-plugins/plugins/dynamics/limiter/testdata/reference/CAPTURE.md)
   - [x] Match all 72 renders from the three audible retained binaries sample
         for sample. Reopen the unassigned timing and explicit minimum timing
         states and the edited Default program in REAPER.
@@ -761,9 +768,9 @@ parameters, programs, original editor references and audio comparisons in
   - [x] Match 72 stable January 2010 Win32 renders, including the measured
         RMS window, queued edits and four reopened REAPER projects.
   - [ ] Confirm the 2008 ZIP and published x64 audio in other native hosts,
-        and verify the original editor. The ZIP returned nonfinite samples,
-        and the published x64 build returned silence. The VST3 resumes finite
-        compression after silence.
+        and verify the original editor and its graphics permissions. The ZIP
+        returned nonfinite samples, and the published x64 build returned
+        silence. The VST3 resumes finite compression after silence.
 - [ ] [Simple Feedback Compressor](../vst3go-plugins/plugins/dynamics/simple-feedback-compressor/README.md)
   - [x] Compare the audible 2010 edition across three sample rates and two
         block sizes. Verify zero latency, tail and saved settings on Linux.
@@ -777,7 +784,7 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify the 54 untouched-buffer renders from the published headless
         x64 binary in another host, and compare the original editor and
         physical Windows and macOS host behavior.
-- [ ] [Simple Limiter](../vst3go-plugins/plugins/dynamics/simple-limiter/README.md)
+- [ ] [Simple Limiter](../vst3go-plugins/plugins/dynamics/simple-limiter/testdata/reference/CAPTURE.md)
   - [x] Compare the published four-control and retained three-control
         editions. Match 60 published renders within 1.20e−7 and all 24 retained
         renders exactly. Verify all 72 plain Limiter regression renders,
@@ -791,7 +798,7 @@ parameters, programs, original editor references and audio comparisons in
         Validate the class and reopen four REAPER projects within 1.20e−7.
   - [ ] Compare the original editor and its auto-makeup controls, verify Windows
         and macOS hosts, and confirm permission to redistribute original assets.
-- [ ] [Soft Knee Feedback Compressor](../vst3go-plugins/plugins/dynamics/soft-knee-feedback-compressor/README.md)
+- [ ] [Soft Knee Feedback Compressor](../vst3go-plugins/plugins/dynamics/soft-knee-feedback-compressor/testdata/reference/CAPTURE.md)
   - [x] Port both releases and compare 180 original captures. The 2010 class
         matches within 4.77e−7. The 2008 ZIP matches 74 renders within 1.20e−7.
         Its 16 high-feedback traces differ by up to 0.02771 peak and 1.31%
@@ -800,7 +807,7 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify the original editors and additional native hosts. The ZIP
         uses the original fixed-rate feedback circuit and its displayed zero
         values only replace the effective settings when explicitly edited.
-- [ ] [Soft Knee Feedback Limiter](../vst3go-plugins/plugins/dynamics/soft-knee-feedback-limiter/README.md)
+- [ ] [Soft Knee Feedback Limiter](../vst3go-plugins/plugins/dynamics/soft-knee-feedback-limiter/testdata/reference/CAPTURE.md)
   - [x] Compare the audible September 2008 ZIP and January 2010 SKLDM
         builds. Match 228 renders within 4.77e−7 on finite samples and
         eight reopened REAPER projects within 2.99e−8. Map the ZIP's
@@ -810,7 +817,7 @@ parameters, programs, original editor references and audio comparisons in
         named SKFBLimiter prototype. The retained implementation is disabled.
   - [ ] Check the retained x64 binary, which fails to load with Wine error
         998, and verify the original editors and remaining native hosts.
-- [ ] [Transient Bug](../vst3go-plugins/plugins/dynamics/transient-bug/README.md)
+- [ ] [Transient Bug](../vst3go-plugins/plugins/dynamics/transient-bug/testdata/reference/CAPTURE.md)
   - [x] Match every finite sample across 96 BugWars renders. Use the finite
         zero-Attack limit where the original emits NaNs.
   - [x] Match 240 TrBug renders within 1.61e−22, including all selector modes,
@@ -821,7 +828,7 @@ parameters, programs, original editor references and audio comparisons in
 
 #### Distortion
 
-- [ ] [2-Band Distortion](../vst3go-plugins/plugins/distortion/2-band-distortion/README.md)
+- [ ] [2-Band Distortion](../vst3go-plugins/plugins/distortion/2-band-distortion/testdata/reference/CAPTURE.md)
   - [x] Compare 522 original captures across both modern builds and the 2008
         ZIP. Match modern renders within 5.97e−8 and the ZIP within 3.52e−6.
         Verify 18 reopened REAPER sessions, including edited program slots and
@@ -839,7 +846,7 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify x64 audibility in an independent Windows host, the original
         float64 callback and the original editor and graphics permissions.
         The 144 x64 Wine captures were silent. Native VST3 host checks remain open.
-- [ ] [Amp Sim](../vst3go-plugins/plugins/distortion/amp-sim/README.md)
+- [ ] [Amp Sim](../vst3go-plugins/plugins/distortion/amp-sim/testdata/reference/CAPTURE.md)
   - [x] Compare 378 renders from the audible Win32 archive and both installer
         builds. Verify all seven cabinets, stereo and summed routing, both
         presets, live controls and noise RMS within 1.05%. Confirm the cold
@@ -850,7 +857,7 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify the original editor and physical Windows and macOS hosts.
         Check the headless x64 archive in another host. Its float32 and
         float64 callbacks left the output untouched in Wine.
-- [ ] [Analogue Mojo](../vst3go-plugins/plugins/distortion/analogue-mojo/README.md)
+- [ ] [Analogue Mojo](../vst3go-plugins/plugins/distortion/analogue-mojo/testdata/reference/CAPTURE.md)
   - [x] Compare 660 finite renders across five verified profiles, including
         120 fresh-process retained x86 renders. Verify sample error within
         9.54e−7 and harmonic amplitude error within 2.56e−8, SDK validation
@@ -858,7 +865,7 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify retained x86 repeat-instance gain, the January x64 no-write
         callback, the older x86 build's nonfinite output and the i386 Mac
         build. Compare original editors and native hosts.
-- [ ] [Chebyshev Waveshaper](../vst3go-plugins/plugins/distortion/chebyshev-waveshaper/README.md)
+- [ ] [Chebyshev Waveshaper](../vst3go-plugins/plugins/distortion/chebyshev-waveshaper/testdata/reference/CAPTURE.md)
   - [x] Port the 2010 and 2008 editions with 24 signed harmonics and an
         unclamped evaluator from [algo-dsp PR #55](https://github.com/CWBudde/algo-dsp/pull/55).
         Compare 732 original renders and eight reopened REAPER projects.
@@ -866,7 +873,7 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify the no-editor builds, which faulted before metadata, and the
         x64 originals with untouched buffers or load errors under Wine.
         Compare original editors and physical Windows and macOS hosts.
-- [ ] [Christortion](../vst3go-plugins/plugins/distortion/christortion/README.md)
+- [ ] [Christortion](../vst3go-plugins/plugins/distortion/christortion/testdata/reference/CAPTURE.md)
   - [x] Compare 1,320 captures from four published releases and the retained
         Win64 build. Verify all sixteen editable slots, both 2006 oversampling
         paths, signed phase interpolation, DC and the retained 2 dB Carnaval
@@ -884,14 +891,14 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Compare the original editor and physical Windows and macOS hosts,
         confirm graphics redistribution and support the measured original
         float64 input path. REAPER's variable silent pre-roll affects hold phase.
-- [ ] [Dynamite](../vst3go-plugins/plugins/distortion/dynamite/README.md)
+- [ ] [Dynamite](../vst3go-plugins/plugins/distortion/dynamite/PORT.md)
   - [x] Compare 108 archived Win32 renders for the four-step, 12-tap stereo
         classic profile within 1.20e−7. Verify synthetic profile import,
         both edited program slots after REAPER reopen and SDK validation.
   - [ ] Verify the loose Win32 build, which failed during the ordinary render,
         additional profile formats, native editor and hosts. The installer
         remains encrypted and the retained notice restricts distribution.
-- [ ] [Exciter](../vst3go-plugins/plugins/distortion/exciter/README.md)
+- [ ] [Exciter](../vst3go-plugins/plugins/distortion/exciter/testdata/reference/CAPTURE.md)
   - [x] Match 342 renders across the 2008, 2010 and 2011 editions. Verify
         the 2011 reset on resume and the older editions' retained history,
         both editable slots, and twelve reopened REAPER projects within
@@ -900,7 +907,7 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify the retained Win32 pre-metadata failure and the x64 no-write
         or load failures in another host. Compare original editors and
         physical Windows and macOS hosts.
-- [ ] [Hysteresis](../vst3go-plugins/plugins/distortion/hysteresis/README.md)
+- [ ] [Hysteresis](../vst3go-plugins/plugins/distortion/hysteresis/testdata/reference/CAPTURE.md)
   - [x] Match 468 renders across all six Win32 and Win64 originals bit for
         bit with the Preisach processor from [algo-dsp PR #56](https://github.com/CWBudde/algo-dsp/pull/56).
         Verify independent loops, saturation, nearest-even thresholds,
@@ -915,7 +922,7 @@ parameters, programs, original editor references and audio comparisons in
         four reopened REAPER renders, and SDK validation.
   - [ ] Verify the original editor, graphics redistribution permissions and
         physical Windows and macOS hosts.
-- [ ] [Oversampled Tanh](../vst3go-plugins/plugins/distortion/oversampled-tanh/README.md)
+- [ ] [Oversampled Tanh](../vst3go-plugins/plugins/distortion/oversampled-tanh/PORT.md)
   - [x] Compare 540 Win32 and Win64 traces across the published and retained
         classes. Verify 16 and zero samples of latency, transition resets on
         same-value writes and saved overrides in REAPER, and SDK validation.
@@ -923,7 +930,7 @@ parameters, programs, original editor references and audio comparisons in
         [algo-dsp PR #58](https://github.com/CWBudde/algo-dsp/pull/58).
   - [ ] Verify the native editor, redistribution permissions, and physical
         Windows and macOS hosts.
-- [ ] [Scary](../vst3go-plugins/plugins/distortion/scary/README.md)
+- [ ] [Scary](../vst3go-plugins/plugins/distortion/scary/PORT.md)
   - [x] Match all 288 captures across the 2005 website, retained Betabugs
         and retained Waveshaper classes. Verify cold settings, same-value
         writes, live changes, rate handling and all four editable slots.
@@ -931,7 +938,7 @@ parameters, programs, original editor references and audio comparisons in
         Windows x64 cross-build.
   - [ ] Compare the original editors and verify graphics permissions and
         physical Windows and macOS VST3 hosts.
-- [ ] [TanhWaveshaper](../vst3go-plugins/plugins/distortion/tanhwaveshaper/README.md)
+- [ ] [TanhWaveshaper](../vst3go-plugins/plugins/distortion/tanhwaveshaper/testdata/reference/CAPTURE.md)
   - [x] Compare 396 captures per class for the audible 2009 stereo, retained
         stereo and Plugin Match mono editions. Verify curve selection,
         oversampling, alias rejection, and twelve reopened REAPER projects.
@@ -950,13 +957,13 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify the native editors, artwork permissions, and physical Windows
         and macOS hosts. The 2003 Wine original emits an integer sentinel
         at the start of dithered blocks. Compare this on native Win32.
-- [ ] [Tubster](../vst3go-plugins/plugins/distortion/tubster/README.md)
+- [ ] [Tubster](../vst3go-plugins/plugins/distortion/tubster/PORT.md)
   - [x] Verify the original editor-open capture path and the eight harmonic
         controls. Match 300 original float32 renders within 3.82e−6 and
         preserve the active-harmonic mask across REAPER reopen. Validate
         the VST3 class and the original's working double callback.
-  - [ ] Verify VST3 double audio, the native editor, and physical Windows
-        and macOS VST3 hosts.
+  - [ ] Identify the original Pascal entry point. Verify VST3 double audio,
+        the original editor and physical Windows and macOS VST3 hosts.
 
 ### 7.3 Modulation, delay, pitch, spectral processing and reverb
 
@@ -968,13 +975,13 @@ parameters, programs, original editor references and audio comparisons in
 
 #### Modulation
 
-- [ ] [Barberpole Flanger](../vst3go-plugins/plugins/modulation/barberpole-flanger/README.md)
+- [ ] [Barberpole Flanger](../vst3go-plugins/plugins/modulation/barberpole-flanger/testdata/reference/CAPTURE.md)
   - [x] Match 126 renders bit for bit across all four audible Win32 binaries.
         Verify modulation modes, stereo offsets, editable programs, six
         reopened REAPER renders, SDK validation, and a Windows x64 cross-build.
   - [ ] Verify the x64 original that left its buffers untouched in Wine,
         the original editor and graphics permissions, and native hosts.
-- [ ] [Flanger](../vst3go-plugins/plugins/modulation/flanger/README.md)
+- [ ] [Flanger](../vst3go-plugins/plugins/modulation/flanger/PORT.md)
   - [x] Compare 774 renders across the 2010, later editor and headless
         classes. Verify the fixed oscillator clock, variable delay, Mix
         behavior, and edition-specific activation using
@@ -984,13 +991,13 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify the original editor and artwork permissions, early
         headless x64 no-write builds, the i386 Mac release, VST3 double
         audio, and physical Windows and macOS hosts.
-- [ ] [ITA Phaser](../vst3go-plugins/plugins/modulation/ita-phaser/README.md)
+- [ ] [ITA Phaser](../vst3go-plugins/plugins/modulation/ita-phaser/testdata/reference/CAPTURE.md)
   - [x] Match all 126 published Win32 renders exactly. Verify the notch
         sweep, stereo traces, startup Mix history, six reopened REAPER
         renders, SDK validation and the Windows x64 cross-build.
-  - [ ] Compare the original editor and verify physical Windows and
-        macOS VST3 hosts.
-- [ ] [Phase-O-Matic](../vst3go-plugins/plugins/modulation/phase-o-matic/README.md)
+  - [ ] Locate the published ITAP Pascal entry point. Compare the original
+        editor and verify physical Windows and macOS VST3 hosts.
+- [ ] [Phase-O-Matic](../vst3go-plugins/plugins/modulation/phase-o-matic/PORT.md)
   - [x] Match 1,248 original captures bit for bit across the website
         editor, later editor and retained headless classes. Verify rate
         assignment order, sample-offset edits, and saved Default state in
@@ -1004,7 +1011,7 @@ parameters, programs, original editor references and audio comparisons in
   - [x] Compare all three VST3 classes to the audible x86 releases.
         Verify quad routing, program state and independent controls in REAPER.
   - [ ] Verify the native editors, the x64 release discrepancy and other hosts.
-- [ ] [Simple Chorus](../vst3go-plugins/plugins/modulation/simple-chorus/README.md)
+- [ ] [Simple Chorus](../vst3go-plugins/plugins/modulation/simple-chorus/testdata/reference/CAPTURE.md)
   - [x] Compare 114 scenarios per class across the 2009, later editor
         and retained host-editor builds. Verify settled dry taps, stereo
         drift statistics, and repeated renders from the saved seed in
@@ -1018,14 +1025,14 @@ parameters, programs, original editor references and audio comparisons in
         reopened REAPER projects.
   - [ ] Verify the published Win64 callbacks that rendered silence,
         the original editor, and physical Windows and macOS hosts.
-- [ ] [StkChorus](../vst3go-plugins/plugins/modulation/stkchorus/README.md)
+- [ ] [StkChorus](../vst3go-plugins/plugins/modulation/stkchorus/PORT.md)
   - [x] Compare 192 renders across the released and retained Win32
         binaries. Verify stereo delay, rate and depth changes, the Long
         preset's 600 ms value, and three phase-aligned REAPER reopens.
         Validate the class and cross-build for Windows x64.
   - [ ] Verify the original editor, artwork permissions, VST3 double
         processing and physical Windows and macOS hosts.
-- [ ] [Vibrato](../vst3go-plugins/plugins/modulation/vibrato/README.md)
+- [ ] [Vibrato](../vst3go-plugins/plugins/modulation/vibrato/PORT.md)
   - [x] Compare 654 renders across all six audible Win32 and Win64
         originals. Verify pitch excursion, the fixed LFO clock, rate and
         depth changes, and three phase-aligned REAPER reopens. Validate
@@ -1035,12 +1042,12 @@ parameters, programs, original editor references and audio comparisons in
 
 #### Delay
 
-- [ ] [DegradingDelay](../vst3go-plugins/plugins/delay/degradingdelay/README.md)
+- [ ] [DegradingDelay](../vst3go-plugins/plugins/delay/degradingdelay/PORT.md)
   - [x] Match 234 stereo renders exactly, including crossed routing,
         the held feedback tap, rate-order effects and live delay resize.
         Verify saved feedback clocks in REAPER and validate the VST3.
   - [ ] Compare the original editor and native Windows and macOS hosts.
-- [ ] [FeedBUG](../vst3go-plugins/plugins/delay/feedbug/README.md)
+- [ ] [FeedBUG](../vst3go-plugins/plugins/delay/feedbug/testdata/reference/CAPTURE.md)
   - [x] Compare 114 captures per class across the 2004, May 2005 and
         retained April 2005 editions. Verify cabinet morphing from the
         original externally supplied resource, feedback, editable banks,
@@ -1052,7 +1059,7 @@ parameters, programs, original editor references and audio comparisons in
         Verify tap timing, feedback polarity, filtering, the initial
         modulation-rate alias, queued edits, five REAPER reopens and SDK.
   - [ ] Verify the published x64 no-write callback and native hosts.
-- [ ] [Party-Delay](../vst3go-plugins/plugins/delay/party-delay/README.md)
+- [ ] [Party-Delay](../vst3go-plugins/plugins/delay/party-delay/PORT.md)
   - [x] Compare 186 renders across its four bands, nine filters and
         Bode settings. Verify both editable slots, below-range saved
         values, four reopened REAPER projects and SDK validation.
@@ -1067,7 +1074,7 @@ parameters, programs, original editor references and audio comparisons in
   - [x] Match 60 stereo renders, including sample-offset edits. Verify all
         five editable programs and exact saved-session taps in Linux REAPER.
   - [ ] Verify the native editor and additional host platforms.
-- [ ] [VariableDelay](../vst3go-plugins/plugins/delay/variabledelay/README.md)
+- [ ] [VariableDelay](../vst3go-plugins/plugins/delay/variabledelay/PORT.md)
   - [x] Match 864 stereo captures across six audible original builds
         exactly. Verify zero-delay behavior, sample-rate setup, all
         three editable Init slots, REAPER reopen and SDK validation.
@@ -1076,7 +1083,7 @@ parameters, programs, original editor references and audio comparisons in
 
 #### Pitch
 
-- [ ] [Bode Frequency Shifter](../vst3go-plugins/plugins/pitch/bode-frequency-shifter/README.md)
+- [ ] [Bode Frequency Shifter](../vst3go-plugins/plugins/pitch/bode-frequency-shifter/testdata/reference/CAPTURE.md)
   - [x] Port the Win32 mono core and the stereo wrappers. Compare 1,008
         captures, including routing, both sidebands and timed edits. The two
         published wrappers are identical and resolve an alternate core filename.
@@ -1095,7 +1102,7 @@ parameters, programs, original editor references and audio comparisons in
         cross-build.
   - [ ] Verify the original editor, double-processing capability and native
         Windows and macOS hosts.
-- [ ] [SoundTouch based Pitch Shifter](../vst3go-plugins/plugins/pitch/soundtouch-based-pitch-shifter/README.md)
+- [ ] [SoundTouch based Pitch Shifter](../vst3go-plugins/plugins/pitch/soundtouch-based-pitch-shifter/PORT.md)
   - [x] Match 264 renders from the 2010 stereo edition within 2.39e-7,
         including unison, both octave endpoints and automation. Use an
         opt-in, version-checked external SoundTouch 1.4.1 engine. Verify
@@ -1103,7 +1110,7 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Resolve the 2009 mono unity and transition differences and obtain
         a matching engine for the retained x64 binary. Verify the original
         editor and host platforms beyond Linux amd64.
-- [ ] [Split Harmonizer](../vst3go-plugins/plugins/pitch/split-harmonizer/README.md)
+- [ ] [Split Harmonizer](../vst3go-plugins/plugins/pitch/split-harmonizer/PORT.md)
   - [x] Identify and port separate nine-control 2009 and fifteen-control
         2010 classes for Linux amd64. Out of 288 release captures,
         match 216 settled windows within 2.608e-7. Verify both reported
@@ -1113,7 +1120,7 @@ parameters, programs, original editor references and audio comparisons in
         live transitions, original double audio and in-place behavior,
         and the full ±12,000-cent range. Verify the retained no-space
         builds, original editors and other physical host platforms.
-- [ ] [StkPitchShift](../vst3go-plugins/plugins/pitch/stkpitchshift/README.md)
+- [ ] [StkPitchShift](../vst3go-plugins/plugins/pitch/stkpitchshift/testdata/reference/CAPTURE.md)
   - [x] Match 194 stereo captures from the published and retained Win32
         builds within 1.193e-7. Verify the unreported 512-sample unity delay,
         two controls, all five editable slots and history through rate and
@@ -1146,7 +1153,7 @@ parameters, programs, original editor references and audio comparisons in
         both SDK configurations, and Windows x64 cross-build.
   - [ ] Resolve the discontinued release's distribution permissions and
         verify the custom editor and native Windows and macOS hosts.
-- [ ] [Freeverb](../vst3go-plugins/plugins/reverb/freeverb/README.md)
+- [ ] [Freeverb](../vst3go-plugins/plugins/reverb/freeverb/testdata/reference/CAPTURE.md)
   - [x] Port the 2008 ZIP and 2009 release classes. Replay 567 comparable
         windows from six Win32 originals, with 198 for the two released
         classes within 9.32e-10. Match 12 timed Freeze and damp cases
@@ -1156,7 +1163,7 @@ parameters, programs, original editor references and audio comparisons in
         and physical Windows and macOS hosts. The port initializes resized
         delay history and caps damping where the original emits non-finite
         audio.
-- [ ] [Plate Reverb](../vst3go-plugins/plugins/reverb/plate-reverb/README.md)
+- [ ] [Plate Reverb](../vst3go-plugins/plugins/reverb/plate-reverb/PORT.md)
   - [x] Port all three modulation variants. Match 388 stereo captures
         from four originals within 2.84e-7, including automation,
         rate changes, activation and in-place buffers. Verify six
@@ -1164,7 +1171,7 @@ parameters, programs, original editor references and audio comparisons in
         Windows x64 cross-build.
   - [ ] Verify original editor interaction and native Windows and macOS
         hosts. The original double callbacks leave buffers untouched.
-- [ ] [StkReverb](../vst3go-plugins/plugins/reverb/stkreverb/README.md)
+- [ ] [StkReverb](../vst3go-plugins/plugins/reverb/stkreverb/PORT.md)
   - [x] Match all five algorithms on 420 installer, retained, in-place
         and pre-open captures within 1.193e-7. Confirm stereo tap timing and
         tails, valid setup ordering, and active and inactive program edits
@@ -1185,8 +1192,9 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Resolve exact trained-signal parity, including the Rectangle
         case at 0.02644 peak and 3.58% relative RMS. Verify the distinct
         retained Win32 response, the original Win64 no-write callbacks,
-        the original editor and native Windows and macOS hosts.
-- [ ] [Spectral Gate](../vst3go-plugins/plugins/spectral/spectral-gate/README.md)
+        the original editor and native Windows and macOS hosts. Resolve
+        redistribution permission for the original editor artwork.
+- [ ] [Spectral Gate](../vst3go-plugins/plugins/spectral/spectral-gate/PORT.md)
   - [x] Match 114 original captures at recorded tolerances. Verify all
         22 windows, seven controls, fixed latency, stereo isolation, Linux
         REAPER state, the SDK class, and Windows x64 cross-build. Use
@@ -1204,7 +1212,7 @@ parameters, programs, original editor references and audio comparisons in
 
 #### Spatial processing
 
-- [ ] [Digital Crosstalk Cancellator (DCC)](../vst3go-plugins/plugins/spatial/digital-crosstalk-cancellator-dcc/README.md)
+- [ ] [Digital Crosstalk Cancellator (DCC)](../vst3go-plugins/plugins/spatial/digital-crosstalk-cancellator-dcc/PORT.md)
   - [x] Identify the matching 2007 installer and retained Win32 DLL.
         Verify independent Left and Right editor controls, zero latency,
         and 36 sample-exact audible captures. Reopen all four routing
@@ -1219,14 +1227,14 @@ parameters, programs, original editor references and audio comparisons in
         SDK classes, and Windows x64 cross-build.
   - [ ] Verify the retained Win32 host-setter discrepancy on native hosts,
         original editor and artwork, and physical Windows and macOS hosts.
-- [ ] [Headphone Mix](../vst3go-plugins/plugins/spatial/headphone-mix/README.md)
+- [ ] [Headphone Mix](../vst3go-plugins/plugins/spatial/headphone-mix/PORT.md)
   - [x] Verify stereo crossfeed in the installer and right-input duplication
         in the retained Win32 and Win64 editions. Match 288 captures within
         5.961e-8. Verify three models and polarity in four Linux REAPER
         reopens, both SDK classes, and Windows x64 cross-build.
   - [ ] Resolve the older retained Win32 host-setter behavior and verify
         physical Windows and macOS hosts.
-- [ ] [HRTF 3D](../vst3go-plugins/plugins/spatial/hrtf-3d/README.md)
+- [ ] [HRTF 3D](../vst3go-plugins/plugins/spatial/hrtf-3d/PORT.md)
   - [x] Verify the 2007, 2009 and retained legacy classes against external
         checksum-verified impulse sets. Match 67 original captures both
         in-place and out-of-place within 3.726e-8. Reopen six Linux REAPER
@@ -1235,14 +1243,14 @@ parameters, programs, original editor references and audio comparisons in
         [algo-dsp PR #64](https://github.com/CWBudde/algo-dsp/pull/64).
   - [ ] Verify the later VSTPack Win32 and Win64 editions, which fail
         during Wine entry, and native editors and hosts.
-- [ ] [PhaseBug](../vst3go-plugins/plugins/spatial/phasebug/README.md)
+- [ ] [PhaseBug](../vst3go-plugins/plugins/spatial/phasebug/PORT.md)
   - [x] Port the stereo and mono installer classes. Compare 84 installer
         captures within 2.43e-7 and the 84 collection captures within
         3.78e-5. Reopen eight Linux REAPER projects with 3,072-sample
         compensation, pass 94 SDK checks and cross-build Windows x64.
   - [ ] Verify the original 316 × 309 editor and ring interactions,
         native Windows and macOS hosts, and old project migration.
-- [ ] [Quadrophonics](../vst3go-plugins/plugins/spatial/quadrophonics/README.md)
+- [ ] [Quadrophonics](../vst3go-plugins/plugins/spatial/quadrophonics/PORT.md)
   - [x] SQ encode and decode. Match 60 published references within
         2.981e-7 and verify the 768-sample compensated quad/stereo routing.
   - [x] QS encode and retained decode. Match 60 audible captures within
@@ -1253,7 +1261,7 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify native hosts, the static original editor and the alternate
         retained SQ decoder. Both published QS decode callbacks leave all
         probed output buffers untouched.
-- [ ] [Quadropolis](../vst3go-plugins/plugins/spatial/quadropolis/README.md)
+- [ ] [Quadropolis](../vst3go-plugins/plugins/spatial/quadropolis/PORT.md)
   - [x] Verify the published 2004 right-ear-only and 2010 binaural classes
         using external checksum-verified HRTFs. Match 270 reference
         captures within 5.018e-8 and verify 512-sample compensation in
@@ -1261,14 +1269,14 @@ parameters, programs, original editor references and audio comparisons in
         Windows x64.
   - [ ] Verify native editors, physical ASIO and native hosts. Both retained
         VSTPack binaries fail during ordinary Wine effOpen.
-- [ ] [Simple Crosstalk Cancellation](../vst3go-plugins/plugins/spatial/simple-crosstalk-cancellation/README.md)
+- [ ] [Simple Crosstalk Cancellation](../vst3go-plugins/plugins/spatial/simple-crosstalk-cancellation/PORT.md)
   - [x] Match 432 float32 captures from the published Win32 and retained
         Win32 and Win64 DLLs within 4.173e-7. Verify 18 original double
         captures against the widened float32 model, two editable programs,
         four Linux REAPER reopens, 47 SDK checks and the Windows x64 build.
   - [ ] Verify the original 665 × 281 editor and native Windows and macOS
         hosts. The VST3 runtime exposes float32 audio.
-- [ ] [Spinbug](../vst3go-plugins/plugins/spatial/spinbug/README.md)
+- [ ] [Spinbug](../vst3go-plugins/plugins/spatial/spinbug/PORT.md)
   - [x] Port the public installer, BetaBugs collection and retained
         loose classes. Match 840 complete finite renders and six
         prefixes within 7.898e-7, verify timed changes in the ABI and
@@ -1277,7 +1285,7 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify the retained installer's non-finite Old One behavior
         on a native host and reproduce the original editor and native
         Windows and macOS host sessions.
-- [ ] [Surround to Stereo](../vst3go-plugins/plugins/spatial/surround-to-stereo/README.md)
+- [ ] [Surround to Stereo](../vst3go-plugins/plugins/spatial/surround-to-stereo/PORT.md)
   - [x] Port the 2005 and 2006 six-input editions using five local
         checksum-verified profiles. Match 134 unchanged release captures
         and 32 profile comparisons within 1.491e-8. Verify 512-sample
@@ -1286,7 +1294,7 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify native host and editor behavior and custom HRTF import.
         The 2006 original changes the displayed program while keeping
         Setup 1 active. The port applies the selected local setup.
-- [ ] [Tina-Turner](../vst3go-plugins/plugins/spatial/tina-turner/README.md)
+- [ ] [Tina-Turner](../vst3go-plugins/plugins/spatial/tina-turner/PORT.md)
   - [x] Identify the single-Angle 2005 installer. Match 252 original
         replacements and accumulating captures within 4.553e-21. Verify
         untouched silence and explicit 0° across three Linux REAPER
@@ -1296,7 +1304,7 @@ parameters, programs, original editor references and audio comparisons in
 
 #### Instruments and vocoders
 
-- [ ] [2-Oszillator Synth](../vst3go-plugins/plugins/synth/2-oszillator-synth/README.md)
+- [ ] [2-Oszillator Synth](../vst3go-plugins/plugins/synth/2-oszillator-synth/PORT.md)
   - [x] Verify the byte-identical 2009 installer and archive. Match
         240 deterministic original renders and 36 direct VST3 ABI
         renders within 6.706e-8, with separate RMS comparisons for noise.
@@ -1304,7 +1312,7 @@ parameters, programs, original editor references and audio comparisons in
         inactive factory slot edits, 47 SDK checks and Windows x64.
   - [ ] Verify the original 498 × 189 editor and native Windows and macOS
         hosts. The original double callbacks leave the buffers untouched.
-- [ ] [FunKEYS](../vst3go-plugins/plugins/synth/funkeys/README.md)
+- [ ] [FunKEYS](../vst3go-plugins/plugins/synth/funkeys/PORT.md)
   - [x] Identify the byte-identical website and retained archive. Port
         the retained Wurley voice with local checksum-verified wavetables,
         eight-voice stealing and sample-offset CC126. Verify the reopened
@@ -1312,7 +1320,7 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify published audio parity and the original editor on native
         hosts. Both Win32 callbacks raise a range exception at the second
         output, including on the first silent block under Wine.
-- [ ] [Simple Sampler](../vst3go-plugins/plugins/synth/simple-sampler/README.md)
+- [ ] [Simple Sampler](../vst3go-plugins/plugins/synth/simple-sampler/PORT.md)
   - [x] Match 18 published Win32 and 12 VST3 ABI renders bit-for-bit.
         Reopen the sine and loaded WAV sessions in Linux REAPER after
         moving the source WAV. Verify the file picker, persisted sample,
@@ -1326,7 +1334,7 @@ parameters, programs, original editor references and audio comparisons in
   - [x] Verify CC126 at its sample offset in the ABI and a reopened REAPER
         session. Confirm that CC123 leaves held notes active.
   - [ ] Verify native Windows and macOS editors.
-- [ ] [Vocoder](../vst3go-plugins/plugins/synth/vocoder/README.md)
+- [ ] [Vocoder](../vst3go-plugins/plugins/synth/vocoder/PORT.md)
   - [x] Recover the published 32-band filter bank and MIDI carrier.
         Match 54 captures within 1.193e-7 and verify the dry and wet
         Linux REAPER reopens, CC126, 47 SDK checks and Windows x64.
@@ -1339,24 +1347,29 @@ parameters, programs, original editor references and audio comparisons in
 - [ ] Validate meter scales, detector timing and readouts against known
       signals. Exercise actual host/external I/O, scripts, GUIs and interactive
       behavior as applicable. Record host or hardware dependencies per product.
+  - [x] Compare the working release paths against original meters, audio,
+        event and script traces. Check Linux REAPER recall and run saved-state
+        and editor probes where the product provides those interfaces.
+  - [ ] Verify physical ASIO I/O, native Windows and macOS DAWs, and the
+        original controls and assets listed in the product notes.
 
 #### Analysis
 
-- [ ] [Barberpole Tuner](../vst3go-plugins/plugins/analysis/barberpole-tuner/README.md)
+- [ ] [Barberpole Tuner](../vst3go-plugins/plugins/analysis/barberpole-tuner/PORT.md)
   - [x] Match 384 published mono captures within 3.726e-9 and compare
         the 256-column phase history. Verify the 274 × 90 X11 strip,
         H-string gesture and two reopened REAPER beat magnitudes,
         47 SDK checks and Windows x64 cross-build.
   - [ ] Verify retained DLLs that timed out in Wine, native Windows
         and macOS hosts, and the original textured editor and fonts.
-- [ ] [BetaMeta](../vst3go-plugins/plugins/analysis/betameta/README.md)
+- [ ] [BetaMeta](../vst3go-plugins/plugins/analysis/betameta/PORT.md)
   - [x] Identify the 2005 Win32 release and archived copies. Match 72
         stereo passthrough cases, 63 calibrated positions on each meter,
         and 16 RMS steps. Exercise the 454 × 187 X11 view and reopen
         Peak and RMS projects in Linux REAPER with exact audio, 47 SDK
         checks and a Windows x64 cross-build.
   - [ ] Verify original skins and native Windows and macOS meter views.
-- [ ] [StereoMeterVST](../vst3go-plugins/plugins/analysis/stereometervst/README.md)
+- [ ] [StereoMeterVST](../vst3go-plugins/plugins/analysis/stereometervst/PORT.md)
   - [x] Identify the website release and the misnamed retained
         Surround to Stereo payload. Verify 252 stereo captures, visible
         program settings, four plot directions and stretch in the
@@ -1364,14 +1377,14 @@ parameters, programs, original editor references and audio comparisons in
         200 × 220 X11 plot, 47 SDK checks and Windows x64 build.
   - [ ] Verify native Windows and macOS views, original pixel smoothing,
         artwork, blend and alternate update modes.
-- [ ] [Third-Octave Analyser (VST-Plugin)](../vst3go-plugins/plugins/analysis/third-octave-analyser-vst-plugin/README.md)
+- [ ] [Third-Octave Analyser (VST-Plugin)](../vst3go-plugins/plugins/analysis/third-octave-analyser-vst-plugin/PORT.md)
   - [x] Port the published and retained measurement paths and compare
         90 captures. Published readouts match exactly. Retained Win64
         matches within 0.00271 dB. Verify both Linux X11 views and saved
         settings, 94 SDK checks and Windows x64 cross-build.
   - [ ] Verify native live chart motion, Windows and macOS views, and
         the retained Win32 floor and decay discrepancy.
-- [ ] [TunaBUG](../vst3go-plugins/plugins/analysis/tunabug/README.md)
+- [ ] [TunaBUG](../vst3go-plugins/plugins/analysis/tunabug/PORT.md)
   - [x] Verify 90 exact audio passthrough cases and 96 original tuner
         positions within two pixels. Exercise both custom controls and
         the live 300 × 192 X11 needle in a reopened Linux REAPER session,
@@ -1381,14 +1394,14 @@ parameters, programs, original editor references and audio comparisons in
 
 #### Utilities and MIDI
 
-- [ ] [Audio2Midi Trigger](../vst3go-plugins/plugins/utility/audio2midi-trigger/README.md)
-  - [x] Compare 98 original audio and MIDI cases. Preserve note-on and
-        note-off pairs at offset zero, including duplicate events, and
+- [ ] [Audio2Midi Trigger](../vst3go-plugins/plugins/utility/audio2midi-trigger/PORT.md)
+  - [x] Compare 98 original audio and MIDI cases. Preserve duplicate
+        ordered Note Ons at offset zero, including zero velocity, and
         verify note and velocity recall in REAPER. Pass 47 SDK checks and
         cross-build Windows x64.
   - [ ] Verify native Windows and macOS hosts. The published Win64 VST2
         callback left output untouched and emitted no events under Wine.
-- [ ] [Dither & Noiseshaper](../vst3go-plugins/plugins/utility/dither-noiseshaper/README.md)
+- [ ] [Dither & Noiseshaper](../vst3go-plugins/plugins/utility/dither-noiseshaper/PORT.md)
   - [x] Port the published IIR and retained Win32 IIR and FIR editions.
         Verify 552 original captures, 12 sample-exact seeded sequences
         and three sample-exact REAPER reopens. Pass 141 SDK checks and
@@ -1396,7 +1409,7 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify native Windows and macOS hosts and the retained Win64 FIR
         no-write behavior outside Wine. Reconcile the recorded rounding
         differences in the retained IIR binaries.
-- [ ] [PhaseAdjustment](../vst3go-plugins/plugins/utility/phaseadjustment/README.md)
+- [ ] [PhaseAdjustment](../vst3go-plugins/plugins/utility/phaseadjustment/PORT.md)
   - [x] Port the working retained Win32 edition with six editable slots
         and measured latency of 1,152 samples. Match 84 reference captures
         and five compensated REAPER reopens. Pass 47 SDK checks and
@@ -1404,7 +1417,7 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Recover the published Win64 and other retained DSP paths that
         failed before the descriptor under Wine. Verify custom graphics
         and native Windows and macOS hosts.
-- [ ] [VST Host Opcode Logger](../vst3go-plugins/plugins/utility/vst-host-opcode-logger/README.md)
+- [ ] [VST Host Opcode Logger](../vst3go-plugins/plugins/utility/vst-host-opcode-logger/PORT.md)
   - [x] Identify the released DVOL and retained DVOl editions. Check
         108 original float32 buffers and three double callback probes,
         dated local logs, and ordered VST3 lifecycle and parameter calls.
@@ -1413,11 +1426,14 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify native Windows and macOS views and the retained Win32
         audio capture failure. Published and retained Win64 VST2
         buffers remain untouched. VST3 provides silent output.
-- [ ] [VST Pascal Script](../vst3go-plugins/plugins/utility/vst-pascal-script/README.md)
+- [ ] [VST Pascal Script](../vst3go-plugins/plugins/utility/vst-pascal-script/PORT.md)
   - [x] Compare 90 compiled-script captures across five original files.
         Verify the Linux X11 chooser and compile controls and two
         sample-exact REAPER reopens after moving the source. Pass
         47 SDK checks and cross-build Windows x64.
+  - [x] Verify dry-state recall in an open view. Destroy the X11 parent
+        before the child and verify timer cleanup, resize rejection and
+        reattachment in a C host.
   - [ ] Verify broader Delphi PascalScript syntax, original edit widget
         styling, original VST2 chunk import and native Windows and macOS.
         VST3 recompiles saved source on recall. The original stayed dry
@@ -1425,7 +1441,7 @@ parameters, programs, original editor references and audio comparisons in
 
 #### Hosting
 
-- [ ] [VST interfaced ASIO-Host](../vst3go-plugins/plugins/hosting/vst-interfaced-asio-host/README.md)
+- [ ] [VST interfaced ASIO-Host](../vst3go-plugins/plugins/hosting/vst-interfaced-asio-host/PORT.md)
   - [x] Identify five distributed editions. Verify the published Wine
         editor, 45 latency cases and a software stereo exchange with
         zero callback allocations.
@@ -1436,19 +1452,43 @@ parameters, programs, original editor references and audio comparisons in
 
 #### Other effects
 
-- [ ] [Ather](../vst3go-plugins/plugins/misc/ather/README.md)
-- [ ] [Audio Amelioration](../vst3go-plugins/plugins/misc/audio-amelioration/README.md)
+- [ ] [Ather](../vst3go-plugins/plugins/misc/ather/PORT.md)
+  - [x] Verify four measured editions and 92 original captures, including
+        release-specific Preview and gain. Match 12 VST3 automation traces
+        within 1.49e-8 and four REAPER renders sample-for-sample. Pass 188
+        SDK checks and cross-build the Windows HWND editor.
+  - [ ] Verify native Windows and macOS DAWs and original skin details.
+- [ ] [Audio Amelioration](../vst3go-plugins/plugins/misc/audio-amelioration/PORT.md)
+  - [x] Compare 550 original captures and port the published and retained
+        chains. Match published audio within 3.58e-7 and retained Win64
+        within 1.63e-5. Reopen speaker and headphone projects in REAPER
+        with exact audio. Pass 94 SDK checks and cross-build Windows x64.
+  - [ ] Verify the retained Win32 ambience clipping in native Windows and
+        the original display and controls on native Windows and macOS.
 
 #### Educational processors
 
-- [ ] [ChunkDemo](../vst3go-plugins/plugins/education/chunkdemo/README.md)
-- [ ] [Compander](../vst3go-plugins/plugins/education/compander/README.md)
+- [ ] [ChunkDemo](../vst3go-plugins/plugins/education/chunkdemo/PORT.md)
+  - [x] Match 198 published and retained renders within 2.87e-7. Verify
+        the shared granular core against its 486 existing references.
+        Restore four edited controls and Preset 2 in Linux REAPER. Pass
+        47 SDK checks and cross-build Windows x64.
+  - [ ] Verify the original 285 × 123 four-dial editor and native Windows
+        and macOS DAWs. The port saves active controls. The original
+        echoed preset chunks without updating its live DSP.
+- [ ] [Compander](../vst3go-plugins/plugins/education/compander/PORT.md)
+  - [x] Match 360 original buffers bit for bit. Verify both quantisation
+        modes and the native 611 × 226 controls in Linux REAPER reopens
+        and in a Win64 HWND fixture under Wine. Pass 47 SDK checks.
+  - [ ] Verify the original artwork, HiDPI scaling and physical Windows
+        and macOS DAWs.
 - [ ] [Sigma Delta](../vst3go-plugins/plugins/education/sigma-delta/README.md)
 
 #### Games
 
-- [ ] [Tetris](../vst3go-plugins/plugins/game/tetris/README.md)
-  - [x] Identify the published source and both website archives. The
+- [ ] Tetris
+  - [x] Identify the published source and the website archives
+        `VST/Tetris.zip` and `VST/7z/Tetris.7z`. The
         catalog identifies this as a clone of the existing game, and
         `TetrisUnit.pas` credits its game core to Arnaud Celermajer.
   - [ ] A faithful recreation of the existing Tetris game remains
@@ -1460,17 +1500,39 @@ parameters, programs, original editor references and audio comparisons in
       factory programs for each edition. Compare each `algo-*` candidate against
       the original topology and coefficients. Implement missing reusable DSP
       upstream and verify it against reference vectors.
+  - [x] Reconcile the 136 product entries with the published and retained
+        evidence in their port notes. Record measured source identities,
+        usable editions and upstream dependencies, including the pinned
+        algo-dsp revisions through PR #64.
+  - [ ] Resolve the separately listed source, licensed reference and
+        author permissions where the retained evidence is incomplete.
 - [ ] Capture original renders with source version, input, preset, rate, block
       size, routing and latency alignment. Set tolerances per measured behavior.
       Compare null residuals for deterministic paths, and use spectral/time
       measures and listening checks where exact cancellation is inappropriate.
+  - [x] Record capture and replay conditions, per-edition comparisons and
+        selected deterministic, spectral and timing measurements in the
+        product notes and reference tests.
+  - [ ] Repeat the original cases that faulted, returned nonfinite samples
+        or left buffers untouched on the native platforms listed by product.
 - [ ] Exercise silence, tails, bypass, automation, reload and non-finite
       output checks at multiple supported rates and block sizes. Measure audio
       callback allocations and CPU at the most demanding supported setting.
+  - [x] Run the combined runtime race, C host and SDK suite, vet and lint.
+        Verify Windows x64 exports. Run the companion tagged race and vet
+        suite with the recent captured reference sets.
+  - [x] Measure the available Linux companion audio benchmarks. The
+        measured callback cases report zero allocations.
+  - [ ] Fill the remaining class-specific stress and worst-case performance
+        coverage, including settings and hosts with open parity gates.
 - [ ] Compare the original and ported editor at matched size and parameter
       state, including meters, interaction, readouts and HiDPI behavior. Record
       validation results for each class and supported host platform.
-- [ ] Document any unresolved source identity, original assets, reference
+  - [x] Record Linux REAPER and isolated Wine checks with their tested
+        editors, programs, host versions and original pixel dimensions.
+  - [ ] Complete the remaining native Windows and macOS editor comparisons
+        and hardware-dependent checks listed by product.
+- [x] Document known unresolved source identity, original assets, reference
       binaries or differences before marking the corresponding port complete.
 
 ## Phase 8: Release Readiness
