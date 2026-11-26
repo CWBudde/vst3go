@@ -308,10 +308,12 @@ there and reusable DSP in the sibling `algo-*` libraries.
         scaling and generic-editor fallback in the C host fixture.
   - [x] Exercise native X11 attach, remove, reopen, resize and 2× scaling in
         REAPER 7.86.
+  - [x] Click the EeeekU graph in REAPER on Linux and verify a keyboard
+        gesture changes the host-visible frequency from 500 to 520 Hz.
   - [x] Exercise HWND attach, remove, reopen and 1.5× scaling in Win64
         REAPER 7.86 under Wine. Pin the Go DLL through host unload.
-  - [ ] Exercise focus and keyboard in a real host and run the native Windows
-        and macOS editor checks.
+  - [ ] Run the native Windows and macOS editor checks, including focus and
+        keyboard interaction.
 - [x] Wire editor gestures through the retained component handler
       (begin, perform, end). Send host automation and preset changes back to the
       editor. Deliver meters and plots without locking or allocating on the audio
