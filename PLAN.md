@@ -677,6 +677,12 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify the original editor, retained Win64 audio, additional native
         hosts and redistribution permission.
 - [ ] [LA4029](../vst3go-plugins/plugins/dynamics/la4029/README.md)
+  - [x] Port the 2008 and 2010 releases separately. Compare both sample
+        widths in 192 captures, including the linked detector, wet mix and
+        live highpass changes. Reopen and render four REAPER projects.
+        Use the two measured gain curves from [algo-dsp PR #50](https://github.com/CWBudde/algo-dsp/pull/50).
+  - [ ] Verify the original meters and native editors, additional host
+        platforms, and permission to redistribute the original assets.
 - [ ] [Lightweight Dynamics](../vst3go-plugins/plugins/dynamics/lightweight-dynamics/README.md)
 - [ ] [Lightweight Feedback Compressor](../vst3go-plugins/plugins/dynamics/lightweight-feedback-compressor/README.md)
 - [ ] [Lightweight Feedback Limiter](../vst3go-plugins/plugins/dynamics/lightweight-feedback-limiter/README.md)
