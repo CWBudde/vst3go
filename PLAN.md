@@ -782,8 +782,15 @@ parameters, programs, original editor references and audio comparisons in
 - [ ] [Smooth Multiband Compressor](../vst3go-plugins/plugins/dynamics/smooth-multiband-compressor/README.md)
 - [ ] [Soft Knee Feedback Compressor](../vst3go-plugins/plugins/dynamics/soft-knee-feedback-compressor/README.md)
 - [ ] [Soft Knee Feedback Limiter](../vst3go-plugins/plugins/dynamics/soft-knee-feedback-limiter/README.md)
-  - [ ] Feedback build (SKFBLimiter)
-  - [ ] Soft Knee Limiter build (SKLDM)
+  - [x] Compare the audible September 2008 ZIP and January 2010 SKLDM
+        builds. Match 228 renders within 4.77e−7 on finite samples and
+        eight reopened REAPER projects within 2.99e−8. Map the ZIP's
+        cold zero-input NaNs to silence. Validate both classes and cross-build
+        them for Windows x64.
+  - [ ] Locate an audible binary or executable DSP for the separately
+        named SKFBLimiter prototype. The retained implementation is disabled.
+  - [ ] Check the retained x64 binary, which fails to load with Wine error
+        998, and verify the original editors and remaining native hosts.
 - [ ] [Transient Bug](../vst3go-plugins/plugins/dynamics/transient-bug/README.md)
   - [ ] BugWars release
   - [ ] TrBug release
