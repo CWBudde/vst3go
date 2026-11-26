@@ -8,17 +8,30 @@
 // [Parameter.GetPlain]/[Parameter.SetPlain] spellings; the older Value forms
 // are deprecated aliases that do not say which domain they mean.
 //
+// # Parameter smoothing
+//
+// Parameter smoothing is caller-driven. Enable it during processor setup with
+// [Parameter.EnableSmoothing]. Host automation and calls to [Parameter.SetPlain]
+// or [Parameter.SetNormalized] update the target. [Parameter.GetNormalized] and
+// [Parameter.GetPlain] return that target immediately in their respective units.
+//
+// In the processor's audio loop, call [Parameter.Advance] once per sample frame
+// and use the returned plain value for every channel in that frame. To advance
+// a group of parameters, call [ParameterSmoother.AdvanceAll] once per frame and
+// read each value with [ParameterSmoother.Value]. [Parameter.SmoothedValue] also
+// reads the latest smoothed plain value without advancing the ramp.
+//
 // # Threading
 //
 // The value of a Parameter is stored atomically and is the supported channel
 // between the control thread and the audio thread:
 //
 //   - Safe on any thread: GetNormalized, SetNormalized, GetPlain, SetPlain,
-//     Normalize, Denormalize, Advance, SmoothedValue, Smoother. All are
+//     Normalize, Denormalize, SmoothedValue, Smoother. All are
 //     lock-free and allocation-free.
 //   - Control thread only: EnableSmoothing, DisableSmoothing, SetFormatter,
 //     and every [Registry] mutation ([Registry.Add] and the builders).
-//   - Audio thread, once per sample: [Parameter.Advance]. It owns the ramp
+//   - Audio thread, once per sample frame: [Parameter.Advance]. It owns the ramp
 //     state, so exactly one thread may call it.
 //   - Formatting and parsing (FormatValue, ParseValue) allocate and are
 //     control-thread only.
@@ -35,9 +48,6 @@
 // rate through atomics, the audio thread owns the ramp and picks changes up in
 // [Smoother.Next]. [Smoother.Reset] touches ramp state directly and is
 // control-thread only, to be called while stopped.
-//
-// Note that nothing in the runtime calls Advance for you. A parameter with
-// smoothing enabled ramps only if the plugin's own DSP advances it per sample.
 package param
 
 import (
@@ -95,7 +105,7 @@ func (p *Parameter) GetValue() float64 {
 	return p.GetNormalized()
 }
 
-// GetNormalized returns the current normalized value (0-1)
+// GetNormalized returns the target value in normalized units (0–1).
 func (p *Parameter) GetNormalized() float64 {
 	return math.Float64frombits(p.value.Load())
 }
@@ -132,7 +142,7 @@ func (p *Parameter) GetPlainValue() float64 {
 	return p.GetPlain()
 }
 
-// GetPlain converts the current normalized value to a plain value.
+// GetPlain returns the target value in the parameter's plain units.
 func (p *Parameter) GetPlain() float64 {
 	return p.Denormalize(p.GetNormalized())
 }
@@ -152,9 +162,9 @@ func (p *Parameter) SetPlain(plain float64) {
 	p.SetNormalized(p.Normalize(plain))
 }
 
-// EnableSmoothing attaches a smoother to the parameter. Every subsequent
-// SetNormalized retargets it, and the audio thread reads the ramp through
-// Advance. Call this during setup, not from the audio thread.
+// EnableSmoothing attaches a smoother initialized to the current plain value.
+// Call it during processor setup. Subsequent value changes retarget the
+// smoother, which the processor advances explicitly with [Parameter.Advance].
 func (p *Parameter) EnableSmoothing(smoothingType SmoothingType, rate float64) *Smoother {
 	s := NewSmoother(smoothingType, rate)
 	s.Reset(p.GetPlain())
@@ -177,9 +187,9 @@ func (p *Parameter) attachSmoother(s *Smoother) {
 	p.smoother.Store(s)
 }
 
-// Advance advances the smoothing ramp by one sample and returns the resulting
-// plain value. Call it exactly once per sample from the audio thread; it is
-// lock-free and allocation-free.
+// Advance moves the smoothing ramp by one sample frame and returns its plain
+// value. With smoothing disabled it returns [Parameter.GetPlain]. Call it once
+// per frame from the audio thread. It is lock-free and allocation-free.
 func (p *Parameter) Advance() float64 {
 	if s := p.smoother.Load(); s != nil {
 		return s.Next()

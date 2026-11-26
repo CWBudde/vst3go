@@ -277,7 +277,7 @@ func (sp *SmoothedParameter) UpdateSampleRate(sampleRate, targetTimeMs float64) 
 	}
 }
 
-// ParameterSmoother manages smoothing for multiple parameters.
+// ParameterSmoother manages caller-driven smoothing for multiple parameters.
 type ParameterSmoother struct {
 	smoothers map[uint32]*SmoothedParameter
 	// order mirrors smoothers so AdvanceAll can iterate a slice instead of a
@@ -324,7 +324,8 @@ func (ps *ParameterSmoother) Advance(id uint32) float64 {
 	return 0
 }
 
-// AdvanceAll advances all smoothers by one sample (call once per sample).
+// AdvanceAll advances all managed smoothers by one sample frame. Call it once
+// per frame from the audio thread, then read the values with [ParameterSmoother.Value].
 func (ps *ParameterSmoother) AdvanceAll() {
 	for _, sp := range ps.order {
 		sp.Advance()

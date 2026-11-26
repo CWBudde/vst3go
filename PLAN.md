@@ -320,8 +320,9 @@ there and reusable DSP in the sibling `algo-*` libraries.
       feedback. Support host notification when latency changes, and check delay
       compensation across reconfiguration and preset restore.
 - [ ] Check sample-offset MIDI and automation across block boundaries, bypass
-      and transport reset. Resolve the smoothing contract tracked in Phase 8
-      before a port relies on it.
+      and transport reset.
+  - [x] Resolve the smoothing contract before a port relies on it. The DSP
+        caller advances each smoother once per sample frame.
 - [ ] Test the Sidechain Compressor with a loaded detector plugin in the
       original nested processing path, including reconfiguration and saved state.
 
@@ -629,13 +630,7 @@ parameters, programs, original editor references and audio comparisons in
 
 ## Phase 8: Release Readiness
 
-- [ ] Decide who drives parameter smoothing. `Parameter.EnableSmoothing` attaches
-      a smoother and `SetNormalized` retargets it, but nothing in
-      `pkg/framework/process` or `pkg/plugin` calls `Advance()`, so smoothing is
-      inaudible unless the user's DSP advances it per sample. Either the runtime
-      advances registered smoothers inside the process loop, or the contract is
-      documented as caller-driven — but shipping it ambiguous is worse than
-      either.
+- [x] Document caller-driven parameter smoothing in `pkg/framework/param`.
 - [ ] Keep architectural guardrails enforced.
 - [ ] Keep retained runtime packages tested and documented.
 - [ ] Confirm the public API boundary is stable enough for downstream repos.
