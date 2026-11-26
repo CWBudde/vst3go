@@ -1171,6 +1171,16 @@ parameters, programs, original editor references and audio comparisons in
 #### Spectral processing
 
 - [ ] [Noise Reduction](../vst3go-plugins/plugins/spectral/noise-reduction/README.md)
+  - [x] Identify three published containers and replay 198 original
+        captures. Port the audible Win32 edition, including training,
+        22 windows and four editable slots. Verify 84 aligned Go
+        comparisons, 42 exact VST3 block pairs, six direct ABI renders,
+        three Linux REAPER reopens at 24,576 samples of compensation,
+        SDK checks and Windows x64 cross-build.
+  - [ ] Resolve exact trained-signal parity, including the Rectangle
+        case at 0.02644 peak and 3.58% relative RMS. Verify the distinct
+        retained Win32 response, the original Win64 no-write callbacks,
+        the original editor and native Windows and macOS hosts.
 - [ ] [Spectral Gate](../vst3go-plugins/plugins/spectral/spectral-gate/README.md)
 
 ### 7.4 Spatial processing, instruments and MIDI
@@ -1182,6 +1192,13 @@ parameters, programs, original editor references and audio comparisons in
 #### Spatial processing
 
 - [ ] [Digital Crosstalk Cancellator (DCC)](../vst3go-plugins/plugins/spatial/digital-crosstalk-cancellator-dcc/README.md)
+  - [x] Identify the matching 2007 installer and retained Win32 DLL.
+        Verify independent Left and Right editor controls, zero latency,
+        and 36 sample-exact audible captures. Reopen all four routing
+        states in Linux REAPER, pass SDK checks and cross-build Windows x64.
+  - [ ] Locate the original Pascal entry point and verify native editor
+        and physical Windows and macOS host behavior. Original float32
+        replacing and double callbacks leave the probed buffers untouched.
 - [ ] [DualWideBug](../vst3go-plugins/plugins/spatial/dualwidebug/README.md)
 - [ ] [Headphone Mix](../vst3go-plugins/plugins/spatial/headphone-mix/README.md)
 - [ ] [HRTF 3D](../vst3go-plugins/plugins/spatial/hrtf-3d/README.md)
