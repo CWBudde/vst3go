@@ -36,10 +36,11 @@ var (
 // never blocks on a lifecycle call from the host's UI or scanner thread. mu
 // only serializes those lifecycle calls against each other.
 type componentImpl struct {
-	processor  Processor
-	programs   *factoryPrograms
-	processCtx atomic.Pointer[process.Context]
-	busConfig  *bus.Configuration
+	processor        Processor
+	hostCallObserver HostCallObserver
+	programs         *factoryPrograms
+	processCtx       atomic.Pointer[process.Context]
+	busConfig        *bus.Configuration
 
 	// sampleRateBits is the current sample rate as math.Float64bits.
 	sampleRateBits atomic.Uint64
@@ -100,8 +101,9 @@ func (c *componentImpl) stateManager() (*state.Manager, error) {
 // newComponent creates a new component implementation
 func newComponent(processor Processor) *componentImpl {
 	params := processor.GetParameters()
+	observer, _ := processor.(HostCallObserver)
 	c := &componentImpl{
-		processor:    processor,
+		processor: processor, hostCallObserver: observer,
 		maxBlockSize: 8192,
 	}
 	c.processCtx.Store(process.NewContext(8192, params)) // Default max block size
@@ -110,6 +112,7 @@ func newComponent(processor Processor) *componentImpl {
 
 // IComponent implementation
 func (c *componentImpl) Initialize(_ interface{}) error {
+	c.traceHostCall("IComponent.initialize", 0, 0, 0, 0)
 	if err := c.processor.Initialize(48000, c.maxBlockSize); err != nil {
 		return err
 	}
@@ -118,6 +121,7 @@ func (c *componentImpl) Initialize(_ interface{}) error {
 }
 
 func (c *componentImpl) Terminate() error {
+	c.traceHostCall("IComponent.terminate", 0, 0, 0, 0)
 	processor, ok := c.processor.(TerminatingProcessor)
 	if !ok {
 		return nil
@@ -136,11 +140,13 @@ func (c *componentImpl) Terminate() error {
 }
 
 func (c *componentImpl) GetControllerClassID() [16]byte {
+	c.traceHostCall("IComponent.getControllerClassId", 0, 0, 0, 0)
 	// Return same ID - we're a single component
 	return [16]byte{}
 }
 
-func (c *componentImpl) SetIOMode(_ int32) error {
+func (c *componentImpl) SetIOMode(mode int32) error {
+	c.traceHostCall("IComponent.setIoMode", int64(mode), 0, 0, 0)
 	return nil
 }
 
@@ -152,6 +158,7 @@ func (c *componentImpl) buses() *bus.Configuration {
 }
 
 func (c *componentImpl) GetBusCount(mediaType, direction int32) int32 {
+	c.traceHostCall("IComponent.getBusCount", int64(mediaType), int64(direction), 0, 0)
 	buses := c.buses()
 	if buses == nil {
 		return 0
@@ -160,6 +167,7 @@ func (c *componentImpl) GetBusCount(mediaType, direction int32) int32 {
 }
 
 func (c *componentImpl) GetBusInfo(mediaType, direction, index int32) (*vst3.BusInfo, error) {
+	c.traceHostCall("IComponent.getBusInfo", int64(mediaType), int64(direction), int64(index), 0)
 	buses := c.buses()
 	if buses == nil {
 		return nil, vst3.ErrNotImplemented
@@ -185,10 +193,12 @@ func (c *componentImpl) GetBusInfo(mediaType, direction, index int32) (*vst3.Bus
 }
 
 func (c *componentImpl) GetRoutingInfo(inInfo, outInfo interface{}) error {
+	c.traceHostCall("IComponent.getRoutingInfo", 0, 0, 0, 0)
 	return vst3.ErrNotImplemented
 }
 
 func (c *componentImpl) ActivateBus(mediaType, direction, index int32, state bool) error {
+	c.traceHostCall("IComponent.activateBus", int64(mediaType), int64(direction), int64(index), float64(hostFlag(state)))
 	if c.busConfig == nil {
 		return bus.ErrBusNotFound
 	}
@@ -196,6 +206,7 @@ func (c *componentImpl) ActivateBus(mediaType, direction, index int32, state boo
 }
 
 func (c *componentImpl) SetActive(active bool) error {
+	c.traceHostCall("IComponent.setActive", hostFlag(active), 0, 0, 0)
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -208,6 +219,7 @@ func (c *componentImpl) SetActive(active bool) error {
 }
 
 func (c *componentImpl) SetState(stateData []byte) error {
+	c.traceHostCall("IComponent.setState", int64(len(stateData)), 0, 0, 0)
 	stateManager, err := c.stateManager()
 	if err != nil {
 		return fmt.Errorf("set component state: %w", err)
@@ -224,6 +236,7 @@ func (c *componentImpl) SetState(stateData []byte) error {
 }
 
 func (c *componentImpl) GetState() ([]byte, error) {
+	c.traceHostCall("IComponent.getState", 0, 0, 0, 0)
 	stateManager, err := c.stateManager()
 	if err != nil {
 		return nil, fmt.Errorf("get component state: %w", err)
@@ -239,12 +252,13 @@ func (c *componentImpl) GetState() ([]byte, error) {
 
 // IAudioProcessor implementation
 func (c *componentImpl) SetBusArrangements(inputs, outputs []int64) error {
+	c.traceHostCall("IAudioProcessor.setBusArrangements", int64(len(inputs)), int64(len(outputs)), 0, 0)
 	for direction, arrangements := range [][]int64{inputs, outputs} {
-		if len(arrangements) != int(c.GetBusCount(int32(bus.MediaTypeAudio), int32(direction))) {
+		if len(arrangements) != int(c.audioBusCount(direction)) {
 			return vst3.ErrInvalidArgument
 		}
 		for i, requested := range arrangements {
-			declared, err := c.GetBusArrangement(int32(direction), int32(i))
+			declared, err := c.busArrangement(int32(direction), int32(i))
 			if err != nil || requested != declared {
 				return vst3.ErrInvalidArgument
 			}
@@ -253,7 +267,19 @@ func (c *componentImpl) SetBusArrangements(inputs, outputs []int64) error {
 	return nil
 }
 
+func (c *componentImpl) audioBusCount(direction int) int32 {
+	if buses := c.buses(); buses != nil {
+		return buses.GetBusCount(bus.MediaTypeAudio, bus.Direction(direction))
+	}
+	return 0
+}
+
 func (c *componentImpl) GetBusArrangement(direction, index int32) (int64, error) {
+	c.traceHostCall("IAudioProcessor.getBusArrangement", int64(direction), int64(index), 0, 0)
+	return c.busArrangement(direction, index)
+}
+
+func (c *componentImpl) busArrangement(direction, index int32) (int64, error) {
 	buses := c.buses()
 	if buses == nil {
 		return 0, bus.ErrBusNotFound
@@ -290,6 +316,7 @@ func speakerArrangement(channels int32) int64 {
 }
 
 func (c *componentImpl) CanProcessSampleSize(symbolicSampleSize int32) error {
+	c.traceHostCall("IAudioProcessor.canProcessSampleSize", int64(symbolicSampleSize), 0, 0, 0)
 	// We only support 32-bit float
 	if symbolicSampleSize == 0 { // kSample32
 		return nil
@@ -298,6 +325,7 @@ func (c *componentImpl) CanProcessSampleSize(symbolicSampleSize int32) error {
 }
 
 func (c *componentImpl) GetLatencySamples() uint32 {
+	c.traceHostCall("IAudioProcessor.getLatencySamples", 0, 0, 0, 0)
 	return uint32(c.processor.GetLatencySamples())
 }
 
@@ -309,6 +337,7 @@ func (c *componentImpl) SetupProcessing(setup *vst3.ProcessSetup) error {
 		return fmt.Errorf("setup processing: nil process setup")
 	}
 
+	c.traceHostCall("IAudioProcessor.setupProcessing", int64(setup.MaxSamplesPerBlock), int64(setup.ProcessMode), int64(setup.SymbolicSampleSize), setup.SampleRate)
 	c.sampleRateBits.Store(math.Float64bits(setup.SampleRate))
 	if setup.MaxSamplesPerBlock > 0 {
 		c.maxBlockSize = setup.MaxSamplesPerBlock
@@ -353,6 +382,7 @@ func busBufferViews(buses *bus.Configuration, direction bus.Direction) ([]proces
 }
 
 func (c *componentImpl) SetProcessing(state bool) error {
+	c.traceHostCall("IAudioProcessor.setProcessing", hostFlag(state), 0, 0, 0)
 	if processor, ok := c.processor.(ProcessingStateProcessor); ok {
 		if err := processor.SetProcessing(state); err != nil {
 			return err
@@ -384,6 +414,7 @@ func (c *componentImpl) Process(data unsafe.Pointer) error {
 
 	// Get raw process data struct
 	processData := (*C.struct_Steinberg_Vst_ProcessData)(data)
+	c.traceHostCall("IAudioProcessor.process", int64(processData.numSamples), int64(processData.numInputs), int64(processData.numOutputs), 0)
 
 	// In double-precision mode the host hands us double[] buffers. Reading
 	// those as float[] would yield garbage and read only half the block, so
@@ -565,6 +596,7 @@ func (c *componentImpl) collectParameterChanges(ctx *process.Context, inputParam
 }
 
 func (c *componentImpl) GetTailSamples() uint32 {
+	c.traceHostCall("IAudioProcessor.getTailSamples", 0, 0, 0, 0)
 	return uint32(c.processor.GetTailSamples())
 }
 
@@ -660,10 +692,12 @@ func (c *componentImpl) SetComponentState(state []byte) error {
 }
 
 func (c *componentImpl) GetParameterCount() int32 {
+	c.traceHostCall("IEditController.getParameterCount", 0, 0, 0, 0)
 	return c.processor.GetParameters().Count()
 }
 
 func (c *componentImpl) GetParameterInfo(index int32) (*vst3.ParameterInfo, error) {
+	c.traceHostCall("IEditController.getParameterInfo", int64(index), 0, 0, 0)
 	p := c.processor.GetParameters().GetByIndex(index)
 	if p == nil {
 		return nil, vst3.ErrInvalidArgument
@@ -682,6 +716,7 @@ func (c *componentImpl) GetParameterInfo(index int32) (*vst3.ParameterInfo, erro
 }
 
 func (c *componentImpl) GetParamStringByValue(id uint32, value float64) (string, error) {
+	c.traceHostCall("IEditController.getParamStringByValue", int64(id), 0, 0, value)
 	if p := c.processor.GetParameters().Get(id); p != nil {
 		result := p.FormatValue(value)
 		// fmt.Printf("Component.GetParamStringByValue: id=%d, value=%.3f -> '%s'\n", id, value, result)
@@ -691,6 +726,7 @@ func (c *componentImpl) GetParamStringByValue(id uint32, value float64) (string,
 }
 
 func (c *componentImpl) GetParamValueByString(id uint32, str string) (float64, error) {
+	c.traceHostCall("IEditController.getParamValueByString", int64(id), 0, 0, 0)
 	if p := c.processor.GetParameters().Get(id); p != nil {
 		return p.ParseValue(str)
 	}
@@ -698,6 +734,7 @@ func (c *componentImpl) GetParamValueByString(id uint32, str string) (float64, e
 }
 
 func (c *componentImpl) NormalizedParamToPlain(id uint32, normalized float64) float64 {
+	c.traceHostCall("IEditController.normalizedParamToPlain", int64(id), 0, 0, normalized)
 	if p, ok := c.processor.GetParameters().GetOK(id); ok {
 		return p.Denormalize(normalized)
 	}
@@ -705,6 +742,7 @@ func (c *componentImpl) NormalizedParamToPlain(id uint32, normalized float64) fl
 }
 
 func (c *componentImpl) PlainParamToNormalized(id uint32, plain float64) float64 {
+	c.traceHostCall("IEditController.plainParamToNormalized", int64(id), 0, 0, plain)
 	if p, ok := c.processor.GetParameters().GetOK(id); ok {
 		return p.Normalize(plain)
 	}
@@ -712,13 +750,13 @@ func (c *componentImpl) PlainParamToNormalized(id uint32, plain float64) float64
 }
 
 func (c *componentImpl) GetParamNormalized(id uint32) float64 {
-	if value, ok := c.processor.GetParameters().GetNormalized(id); ok {
-		return value
-	}
-	return 0
+	value, _ := c.processor.GetParameters().GetNormalized(id)
+	c.traceHostCall("IEditController.getParamNormalized", int64(id), 0, 0, value)
+	return value
 }
 
 func (c *componentImpl) SetParamNormalized(id uint32, value float64) error {
+	c.traceHostCall("IEditController.setParamNormalized", int64(id), 0, 0, value)
 	if c.programs != nil && id == c.programs.list.ParameterID {
 		return c.programs.selectFromController(value)
 	}
@@ -791,6 +829,9 @@ func (c *componentImpl) processSampleAccurate(ctx *process.Context, outputEvents
 		next := first + 1
 		for next < len(changes) && changes[next].SampleOffset == changes[first].SampleOffset {
 			next++
+		}
+		for _, change := range changes[first:next] {
+			c.traceHostCall("IAudioProcessor.process.parameter", int64(change.ParamID), int64(change.SampleOffset), 0, change.Value)
 		}
 		c.applyParameterChanges(ctx, changes[first:next])
 		first = next

@@ -33,6 +33,7 @@ const (
 // on the host UI thread, including any reentrant resize from RequestResize.
 type editorViewBridge struct {
 	view       EditorView
+	component  *componentImpl
 	native     unsafe.Pointer
 	rect       C.struct_Steinberg_ViewRect
 	attachment editorAttachment
@@ -55,12 +56,13 @@ func GoEditControllerCreateView(componentID C.uintptr_t, native unsafe.Pointer, 
 	if !ok {
 		return 0
 	}
+	component.traceHostCall("IEditController.createView", 0, 0, 0, 0)
 	provider, ok := component.processor.(EditorProvider)
 	if !ok {
 		return 0
 	}
 
-	view := &editorViewBridge{}
+	view := &editorViewBridge{component: component}
 	view.view = provider.CreateEditor(EditorContext{
 		Parameters: EditorParameters{wrapper: wrapper},
 		resize:     view.requestResize,
@@ -106,6 +108,9 @@ func GoPlugViewAttach(id C.uintptr_t, parent C.uintptr_t, kind *C.char) (result 
 }
 
 func (v *editorViewBridge) attach(platform EditorPlatform, parent uintptr) bool {
+	if v.component != nil {
+		v.component.traceHostCall("IPlugView.attached", 0, 0, 0, 0)
+	}
 	if v.attachment != editorDetached || !v.view.SupportsPlatform(platform) {
 		return false
 	}
@@ -130,6 +135,9 @@ func GoPlugViewRemove(id C.uintptr_t) (result C.Steinberg_tresult) {
 }
 
 func (v *editorViewBridge) remove() bool {
+	if v.component != nil {
+		v.component.traceHostCall("IPlugView.removed", 0, 0, 0, 0)
+	}
 	if v.attachment != editorAttached {
 		return false
 	}
