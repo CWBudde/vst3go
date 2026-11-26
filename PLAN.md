@@ -787,6 +787,14 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Compare the original editor and its auto-makeup controls, verify Windows
         and macOS hosts, and confirm permission to redistribute original assets.
 - [ ] [Soft Knee Feedback Compressor](../vst3go-plugins/plugins/dynamics/soft-knee-feedback-compressor/README.md)
+  - [x] Port both releases and compare 180 original captures. The 2010 class
+        matches within 4.77e−7. The 2008 ZIP matches 74 renders within 1.20e−7.
+        Its 16 high-feedback traces differ by up to 0.02771 peak and 1.31%
+        relative RMS. Verify eight reopened REAPER renders within 2.39e−7,
+        both classes in the SDK Validator, and a Windows x64 cross-build.
+  - [ ] Verify the original editors and additional native hosts. The ZIP
+        uses the original fixed-rate feedback circuit and its displayed zero
+        values only replace the effective settings when explicitly edited.
 - [ ] [Soft Knee Feedback Limiter](../vst3go-plugins/plugins/dynamics/soft-knee-feedback-limiter/README.md)
   - [x] Compare the audible September 2008 ZIP and January 2010 SKLDM
         builds. Match 228 renders within 4.77e−7 on finite samples and
