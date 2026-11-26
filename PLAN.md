@@ -450,16 +450,23 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Build and verify the retained headless source as a separate edition.
 - [ ] [Posihfopit](../vst3go-plugins/plugins/eq/posihfopit/README.md)
   - [ ] Original Posihfopit
+    - [x] Match the released processing modes, filter detents, editable
+          programs and variable band count. Reopen edited state in REAPER.
+    - [ ] Verify the graph, FFT and skin controls, native VST2 chunk import
+          and additional native hosts.
   - [ ] Armyfopit
     - [x] Compare 189 release renders across all eight programs, three input
           levels and timed controls. Reopen independently edited slots in REAPER.
     - [ ] Verify the original graphical editor, alternate coefficient design
           and additional native hosts.
-  - [ ] Smallifopit 4-band mono
-  - [ ] Smallifopit 4-band stereo
-  - [ ] Smallifopit 8-band mono
-  - [ ] Smallifopit 8-band stereo
-- [ ] [Pushtec 5+1A](../vst3go-plugins/plugins/eq/pushtec-5-1a/README.md) — confirm contributor scope before porting.
+  - [x] Match Smallifopit 4-band mono and stereo DSP and editable programs.
+  - [x] Match Smallifopit 8-band mono and stereo DSP and editable programs.
+  - [x] Reproduce 2784 renders across both releases and the four shell classes,
+        including running edits. Reopen the six-class bundle in Linux REAPER.
+  - [ ] Verify the Smallifopit native editors and remaining hosts.
+- [ ] [Pushtec 5+1A](../vst3go-plugins/plugins/eq/pushtec-5-1a/README.md)
+  - [x] Confirm attribution and the original archive's redistribution terms.
+  - [ ] Obtain the contributors' VST3 port authorization.
 - [ ] [Soul EQ](../vst3go-plugins/plugins/eq/soul-eq/README.md)
 - [ ] [Tiny-Q](../vst3go-plugins/plugins/eq/tiny-q/README.md)
 - [ ] [UNIQUE EQ](../vst3go-plugins/plugins/eq/unique-eq/README.md)
@@ -502,6 +509,11 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Type II low-pass (source present, download contains only the license)
 - [ ] [Dual Linkwitz-Riley Filters](../vst3go-plugins/plugins/filter/dual-linkwitz-riley-filters/README.md)
 - [ ] [Hum Removal](../vst3go-plugins/plugins/filter/hum-removal/README.md)
+  - [x] Match 187 audible release traces, including fixed-rate capture,
+        filter transitions and harmonic attenuation. Reopen the edited
+        programs and capture profile in Linux REAPER.
+  - [ ] Verify the native editor and remaining hosts. The archived x64
+        callback leaves output buffers untouched.
 - [ ] [Lavaland](../vst3go-plugins/plugins/filter/lavaland/README.md)
 - [ ] [Linear Phase Butterworth](../vst3go-plugins/plugins/filter/linear-phase-butterworth/README.md)
   - [ ] Linear Phase Butterworth HP
