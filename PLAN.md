@@ -986,6 +986,12 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Compare the original editor and verify physical Windows and
         macOS VST3 hosts.
 - [ ] [Phase-O-Matic](../vst3go-plugins/plugins/modulation/phase-o-matic/README.md)
+  - [x] Match 1,248 original captures bit for bit across the website
+        editor, later editor and retained headless classes. Verify rate
+        assignment order, sample-offset edits, and saved Default state in
+        REAPER. Validate all three classes.
+  - [ ] Resolve the early 2008 control range and published x64 no-write
+        outcomes. Verify VST3 double audio, native editors and hosts.
 - [ ] [Ring Modulator](../vst3go-plugins/plugins/modulation/ring-modulator/README.md)
   - [ ] Mono edition
   - [ ] Stereo edition
@@ -996,6 +1002,12 @@ parameters, programs, original editor references and audio comparisons in
 - [ ] [Simple Chorus](../vst3go-plugins/plugins/modulation/simple-chorus/README.md)
 - [ ] [Spin Bug Lite](../vst3go-plugins/plugins/modulation/spin-bug-lite/README.md)
 - [ ] [StkChorus](../vst3go-plugins/plugins/modulation/stkchorus/README.md)
+  - [x] Compare 192 renders across the released and retained Win32
+        binaries. Verify stereo delay, rate and depth changes, the Long
+        preset's 600 ms value, and three phase-aligned REAPER reopens.
+        Validate the class and cross-build for Windows x64.
+  - [ ] Verify the original editor, artwork permissions, VST3 double
+        processing and physical Windows and macOS hosts.
 - [ ] [Vibrato](../vst3go-plugins/plugins/modulation/vibrato/README.md)
 
 #### Delay
