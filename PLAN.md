@@ -576,8 +576,10 @@ parameters, programs, original editor references and audio comparisons in
     - [x] Compare both released HP binaries, all windows, state and compensation on Linux.
   - [ ] LinearPhaseFilterFFT edition
 - [ ] [Simple Linear Phase Linkwitz-Riley Filter](../vst3go-plugins/plugins/filter/simple-linear-phase-linkwitz-riley-filter/README.md)
-  - [ ] Linear Phase Linkwitz-Riley HP
-  - [ ] Linear Phase Linkwitz-Riley LP
+  - [x] Match the HP and LP filter audio and reported latency across 846
+        captures. Reopen eight compensated REAPER projects at 48 and 96 kHz.
+  - [ ] Verify live convolution history, audio-queue latency automation, the
+        original editors and additional native hosts.
 - [ ] [Simple Linkwitz-Riley Crossover](../vst3go-plugins/plugins/filter/simple-linkwitz-riley-crossover/README.md)
   - [x] Match the x86 LinkwitzRiley and LinkwitzRileyStereo across 162 renders.
         Verify unity summation and reopen their two- and four-channel routes.
