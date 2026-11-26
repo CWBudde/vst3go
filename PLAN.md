@@ -1048,6 +1048,12 @@ parameters, programs, original editor references and audio comparisons in
         modulation-rate alias, queued edits, five REAPER reopens and SDK.
   - [ ] Verify the published x64 no-write callback and native hosts.
 - [ ] [Party-Delay](../vst3go-plugins/plugins/delay/party-delay/README.md)
+  - [x] Compare 186 renders across its four bands, nine filters and
+        Bode settings. Verify both editable slots, below-range saved
+        values, four reopened REAPER projects and SDK validation.
+        Use the shared shifter from [algo-dsp PR #60](https://github.com/CWBudde/algo-dsp/pull/60).
+  - [ ] Resolve the variable and nonfinite original Bode captures and
+        verify the original editor, artwork permissions and native hosts.
 - [ ] [Simple Sample Delay](../vst3go-plugins/plugins/delay/simple-sample-delay/README.md)
   - [x] Compare delay, feedback and timed resize against 72 x86 renders.
         Reopen the three editable Init slots and render exact taps in REAPER.
