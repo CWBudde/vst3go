@@ -312,6 +312,10 @@ there and reusable DSP in the sibling `algo-*` libraries.
         gesture changes the host-visible frequency from 500 to 520 Hz.
   - [x] Exercise HWND attach, remove, reopen and 1.5× scaling in Win64
         REAPER 7.86 under Wine. Pin the Go DLL through host unload.
+  - [ ] Implement the macOS editor: an `NSView` child in the host's parent
+        view, with Cocoa event handling and Retina scaling. There is no darwin
+        view code yet, so on macOS every port falls back to the host's
+        generic editor (found by the 2026-11-26 stress test).
   - [ ] Run the native Windows and macOS editor checks, including focus and
         keyboard interaction.
 - [x] Wire editor gestures through the retained component handler
@@ -392,6 +396,10 @@ there and reusable DSP in the sibling `algo-*` libraries.
   - [x] Verify Simple Sine Synth as an instrument in REAPER on Linux. Check
         its keyboard, voice timing, playback reopen and saved state.
   - [ ] Repeat port validation on the remaining supported platforms.
+    - [x] macOS arm64 (macOS 27.2): built, ad-hoc signed and validated all 132
+          projects with the Steinberg validator and pluginval. Results match
+          Linux apart from Party-Delay (see 7.7).
+    - [ ] Windows x64 on native Windows.
 
 ## Phase 7: Faithful pcjv.de VST3 ports
 
@@ -598,9 +606,9 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify the original editor, remaining automation paths and additional
         native hosts.
 - [ ] [Simple Linear Phase Filter](../vst3go-plugins/plugins/filter/simple-linear-phase-filter/README.md)
-  - [ ] Linear Phase LP
+  - [x] Linear Phase LP
     - [x] Compare all 22 windows, saved state, tail and compensation on Linux.
-  - [ ] Linear Phase HP
+  - [x] Linear Phase HP
     - [x] Compare both released HP binaries, all windows, state and compensation on Linux.
   - [x] Match 138 LinearPhaseFilterFFT split captures outside the original
         uninitialized High startup. Verify live and reopened compensation
@@ -1555,15 +1563,74 @@ parameters, programs, original editor references and audio comparisons in
 - [x] Document known unresolved source identity, original assets, reference
       binaries or differences before marking the corresponding port complete.
 
+### 7.7 Stress-test findings (2026-11-26)
+
+All 132 projects were built and run through Steinberg's validator and pluginval
+(strictness 10; 44.1, 48 and 96 kHz; blocks 32 to 1024) on Linux x86_64 and
+macOS arm64. The validator passed 122 on both platforms. pluginval passed 111 of
+131 on Linux and 109 of 132 on macOS. Results, seeds and per-plugin rows are in
+[`docs/research/stress-2026-11-26.md`](../vst3go-plugins/docs/research/stress-2026-11-26.md).
+Re-run with `vst3go-plugins/scripts/stress.sh`.
+
+- [ ] Make the data-dependent plugins loadable. Electri-Q registers no class
+      without `ELECTRIQ_NATIVE_FACTORY_BANK`. Valuable EQ, ConvoFX, ConvoFXLite,
+      HRTF 3D, Quadropolis, Surround to Stereo, FunKEYS, SoundTouch Pitch Shifter
+      and Split Harmonizer cannot be instantiated without their `VST3GO_*`
+      data. In a DAW they show up as nothing.
+  - [ ] Decide per product where the data comes from: shipped in the bundle's
+        `Contents/Resources`, generated on first run from the original
+        download, or user-supplied. Licensing decides for the sampled
+        third-party data (Valuable EQ, HRTF sets, impulse responses).
+  - [ ] Register every class unconditionally. Without data, show a clear
+        "data missing" state (editor message, silent or bypassed output)
+        instead of failing to load.
+  - [ ] Split Harmonizer: a default build without the `soundtouch141` tag
+        exports no `ModuleEntry`. Either drop the tag requirement or exclude
+        the project from default builds explicitly.
+  - [ ] Add data fixtures to the stress run and repeat the validator and
+        pluginval runs for all ten.
+- [ ] Fix NaN, Inf and subnormal output under parameter automation. All nine
+      plugins contain Butterworth or Linkwitz-Riley sections. Exciter,
+      2-Band Distortion, Simple Linkwitz-Riley Crossover, Bass Extender, Dual
+      Linkwitz-Riley Filters, Multiband Compressor, SubBoost, Butterworth Filters
+      and Rubberfilter (the last only seen on macOS, seed `0x3058512`).
+  - [ ] Reproduce each with its logged pluginval seed. Add a Go test per plugin
+        that sweeps random parameter values at 44.1, 48 and 96 kHz and fails on
+        non-finite or subnormal output.
+  - [ ] Fix the shared causes in `internal/linkwitzriley`,
+        `internal/davbutterworth` and, upstream, `algo-dsp/dsp/filter/design`:
+        cutoffs at or above Nyquist, high orders and coefficient changes that
+        leave stale state. Clamp where the original clamped, and keep
+        faithful behaviour inside the original ranges.
+  - [ ] Re-run the Automation test for the nine with fresh seeds.
+- [ ] Flush subnormals in plain processing. Linear Phase Butterworth and
+      Simple Linear Phase Linkwitz-Riley Filter fail only at 48 kHz, and
+      Variable Delay only at block size 64 (48 and 96 kHz), on both platforms.
+      Decide whether to flush in the shared FIR/delay code or per product.
+- [ ] Fix Party-Delay's NaN output on macOS arm64. Every audio processing case
+      fails at every rate and block size, while Linux amd64 passes. Check
+      uninitialised state, architecture-dependent maths and races; add a
+      regression test that runs on both architectures.
+- [ ] Decide whether the twelve plugins that refuse the validator's extreme
+      rates (1234.568 Hz and 1234567.8 Hz) should accept any rate. VST3 allows
+      refusing, so this is low priority. Chunk Demo also refuses the low rate.
+- [ ] Add the stress run to CI: the validator and pluginval for every project
+      on Linux (Xvfb), and macOS without GUI tests until the Cocoa editor lands.
+
 ## Phase 8: Release Readiness
 
 - [x] Document caller-driven parameter smoothing in `pkg/framework/param`.
 - [ ] Keep architectural guardrails enforced.
+  - [ ] Nothing enforces them yet. Add a `depguard` rule to `.golangci.yml`
+        that keeps `pkg/` from importing `algo-*`, `synthkit` or
+        `vst3go-plugins` code, so CI catches DSP or product code drifting back.
 - [ ] Keep retained runtime packages tested and documented.
 - [ ] Confirm the public API boundary is stable enough for downstream repos.
 - [ ] Decide supported release scope explicitly.
   - [ ] Linux/macOS only, or include Windows.
-  - [ ] Runtime-only, with higher-level features delegated to companion repos.
+  - [x] Runtime-only, with higher-level features delegated to companion repos.
+        The README's Scope section and the Repo Boundary above state it, and
+        the pcjv.de ports keep DSP in `algo-*` and products in `vst3go-plugins`.
 
 ## Ongoing Rules
 
