@@ -942,6 +942,12 @@ parameters, programs, original editor references and audio comparisons in
         and macOS hosts. The 2003 Wine original emits an integer sentinel
         at the start of dithered blocks. Compare this on native Win32.
 - [ ] [Tubster](../vst3go-plugins/plugins/distortion/tubster/README.md)
+  - [x] Verify the original editor-open capture path and the eight harmonic
+        controls. Match 300 original float32 renders within 3.82e−6 and
+        preserve the active-harmonic mask across REAPER reopen. Validate
+        the VST3 class and the original's working double callback.
+  - [ ] Verify VST3 double audio, the native editor, and physical Windows
+        and macOS VST3 hosts.
 
 ### 7.3 Modulation, delay, pitch, spectral processing and reverb
 
@@ -959,6 +965,11 @@ parameters, programs, original editor references and audio comparisons in
         the original editor and graphics permissions, and native hosts.
 - [ ] [Flanger](../vst3go-plugins/plugins/modulation/flanger/README.md)
 - [ ] [ITA Phaser](../vst3go-plugins/plugins/modulation/ita-phaser/README.md)
+  - [x] Match all 126 published Win32 renders exactly. Verify the notch
+        sweep, stereo traces, startup Mix history, six reopened REAPER
+        renders, SDK validation and the Windows x64 cross-build.
+  - [ ] Compare the original editor and verify physical Windows and
+        macOS VST3 hosts.
 - [ ] [Phase-O-Matic](../vst3go-plugins/plugins/modulation/phase-o-matic/README.md)
 - [ ] [Ring Modulator](../vst3go-plugins/plugins/modulation/ring-modulator/README.md)
   - [ ] Mono edition
