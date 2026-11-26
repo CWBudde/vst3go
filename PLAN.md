@@ -714,6 +714,11 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify the original editor, characteristic plot and additional native
         hosts. The published VST2 double callback left outputs untouched.
 - [ ] [Lightweight Soft Knee Gate](../vst3go-plugins/plugins/dynamics/lightweight-soft-knee-gate/README.md)
+  - [x] Verify 132 cases per release class, including the different timing
+        curves, sample-offset edits and factory knees above 10 dB. Reopen
+        and render 12 REAPER sessions with edited and untouched slots.
+  - [ ] Verify the native editor and additional hosts. The port evaluates
+        finite underflow where the released x87 exponent wraps.
 - [ ] [Lightweight Soft Knee Limiter](../vst3go-plugins/plugins/dynamics/lightweight-soft-knee-limiter/README.md)
 - [ ] [Lightweight Upward Compressor](../vst3go-plugins/plugins/dynamics/lightweight-upward-compressor/README.md)
 - [ ] [Limiter](../vst3go-plugins/plugins/dynamics/limiter/README.md)
