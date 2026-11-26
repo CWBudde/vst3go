@@ -527,6 +527,10 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify the native editor and remaining hosts. The archived x64
         callback leaves output buffers untouched.
 - [ ] [Lavaland](../vst3go-plugins/plugins/filter/lavaland/README.md)
+  - [x] Match 78 release renders across the five oversampling settings,
+        live edits and rail saturation. Reopen both tested settings in REAPER.
+  - [ ] Verify the original editor, repeated same-value setter behavior
+        and remaining native hosts.
 - [ ] [Linear Phase Butterworth](../vst3go-plugins/plugins/filter/linear-phase-butterworth/README.md)
   - [ ] Linear Phase Butterworth HP
   - [ ] Linear Phase Butterworth LP
