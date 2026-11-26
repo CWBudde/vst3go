@@ -428,7 +428,9 @@ parameters, programs, original editor references and audio comparisons in
           Compare 154 reference renders for the verified filter paths.
     - [x] Match all 32 untouched factory programs in 192 additional renders.
           Verify the seven-mode, 19-selector pilot and variable-band state in REAPER.
-    - [ ] Finish the remaining selectors and nonlinear modes, original editor,
+    - [x] Match 2,106 renders through all nine modes and 39 selectors. Reopen
+          a project from the earlier pilot and save the expanded controls.
+    - [ ] Finish the remaining slope selectors and original editor,
           factory-bank distribution and remaining platforms.
 - [ ] [Graphic EQ](../vst3go-plugins/plugins/eq/graphic-eq/README.md)
   - [x] Compare all 22 band controls and channel isolation across 207 audible
@@ -444,8 +446,10 @@ parameters, programs, original editor references and audio comparisons in
           distinct split release binaries.
     - [x] Compare the nine SNEQ 1100 modes at three rates and two block sizes.
           Verify the seven editable slots and reopen a 2× Spin session in REAPER.
-    - [ ] Finish the earlier SNo2 LFO and Spin variants, higher oversampling
-          factors, live modulation automation, native editor and other hosts.
+    - [x] Match 2,088 SNo2 and SNEQ renders across factors 1–16, including
+          timed modulation and the early oscillator's suspend/resume phase.
+          Verify high-factor REAPER projects and sample-offset queues.
+    - [ ] Verify the original native editor and additional hosts.
 - [ ] [Parametri-Q (lite)](../vst3go-plugins/plugins/eq/parametri-q-lite/README.md)
   - [x] Match 249 January 2010 release cases, including selector order and
         running edits. Verify the four slots and reopen an edited project.
