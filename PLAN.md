@@ -773,6 +773,12 @@ parameters, programs, original editor references and audio comparisons in
         x64 binary in another host, and compare the original editor and
         physical Windows and macOS host behavior.
 - [ ] [Simple Limiter](../vst3go-plugins/plugins/dynamics/simple-limiter/README.md)
+  - [x] Compare the published four-control and retained three-control
+        editions. Match 60 published renders within 1.20e−7 and all 24 retained
+        renders exactly. Verify all 72 plain Limiter regression renders,
+        SDK validation and REAPER save and reopen for both classes.
+  - [ ] Compare each original editor, including the retained editor's Attack
+        update on opening, and verify the remaining native host platforms.
 - [ ] [Smooth Multiband Compressor](../vst3go-plugins/plugins/dynamics/smooth-multiband-compressor/README.md)
 - [ ] [Soft Knee Feedback Compressor](../vst3go-plugins/plugins/dynamics/soft-knee-feedback-compressor/README.md)
 - [ ] [Soft Knee Feedback Limiter](../vst3go-plugins/plugins/dynamics/soft-knee-feedback-limiter/README.md)
