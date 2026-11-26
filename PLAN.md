@@ -1142,7 +1142,23 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Resolve the discontinued release's distribution permissions and
         verify the custom editor and native Windows and macOS hosts.
 - [ ] [Freeverb](../vst3go-plugins/plugins/reverb/freeverb/README.md)
+  - [x] Port the 2008 ZIP and 2009 release classes. Replay 567 comparable
+        windows from six Win32 originals, with 198 for the two released
+        classes within 9.32e-10. Match 12 timed Freeze and damp cases
+        sample-exact. Verify eight Linux REAPER reopens, both SDK classes,
+        and Windows x64 cross-build. Use algo-dsp PR #61.
+  - [ ] Resolve original x64 no-write and load failures, the native editor,
+        and physical Windows and macOS hosts. The port initializes resized
+        delay history and caps damping where the original emits non-finite
+        audio.
 - [ ] [Plate Reverb](../vst3go-plugins/plugins/reverb/plate-reverb/README.md)
+  - [x] Port all three modulation variants. Match 388 stereo captures
+        from four originals within 2.84e-7, including automation,
+        rate changes, activation and in-place buffers. Verify six
+        Linux REAPER reopens at the tank clock, 141 SDK checks, and the
+        Windows x64 cross-build.
+  - [ ] Verify original editor interaction and native Windows and macOS
+        hosts. The original double callbacks leave buffers untouched.
 - [ ] [StkReverb](../vst3go-plugins/plugins/reverb/stkreverb/README.md)
   - [x] Match all five algorithms on 420 installer, retained, in-place
         and pre-open captures within 1.193e-7. Confirm stereo tap timing and
