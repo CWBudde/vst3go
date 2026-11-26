@@ -16,6 +16,10 @@ import (
 func GoAudioSetBusArrangements(componentID C.uintptr_t, inputs unsafe.Pointer, numIns C.int32_t, outputs unsafe.Pointer, numOuts C.int32_t) (result C.Steinberg_tresult) {
 	defer recoverPanicResult("GoAudioSetBusArrangements", &result)
 
+	if numIns < 0 || numOuts < 0 || (numIns > 0 && inputs == nil) || (numOuts > 0 && outputs == nil) {
+		return C.Steinberg_tresult(vst3.ResultFalse)
+	}
+
 	wrapper := getComponent(uintptr(componentID))
 	if wrapper == nil {
 		return C.Steinberg_tresult(vst3.ResultFalse)
@@ -23,12 +27,12 @@ func GoAudioSetBusArrangements(componentID C.uintptr_t, inputs unsafe.Pointer, n
 
 	// Convert arrangements
 	var inputArrs []int64
-	if numIns > 0 && inputs != nil {
+	if numIns > 0 {
 		inputArrs = unsafe.Slice((*int64)(inputs), int(numIns))
 	}
 
 	var outputArrs []int64
-	if numOuts > 0 && outputs != nil {
+	if numOuts > 0 {
 		outputArrs = unsafe.Slice((*int64)(outputs), int(numOuts))
 	}
 

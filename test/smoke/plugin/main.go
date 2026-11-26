@@ -3,8 +3,8 @@
 //
 // It is built with -buildmode=c-shared by the smoke test in the parent
 // directory and driven from C by testdata/driver.c. Keep it deliberately
-// boring: the smoke test asserts against one parameter and one stereo bus
-// pair per class.
+// boring: one parameter and one stereo bus pair per class, with a sidechain
+// enabled in the C host fixture build.
 package main
 
 import (
@@ -19,15 +19,28 @@ import (
 
 type processor struct {
 	params *param.Registry
+	buses  *bus.Configuration
 }
 
 func (p *processor) Initialize(sampleRate float64, maxBlockSize int32) error { return nil }
-func (p *processor) ProcessAudio(ctx *process.Context)                       { ctx.PassThrough() }
-func (p *processor) GetParameters() *param.Registry                          { return p.params }
-func (p *processor) GetBuses() *bus.Configuration                            { return bus.Stereo() }
-func (p *processor) SetActive(active bool) error                             { return nil }
-func (p *processor) GetLatencySamples() int32                                { return 0 }
-func (p *processor) GetTailSamples() int32                                   { return 0 }
+func (p *processor) ProcessAudio(ctx *process.Context) {
+	ctx.PassThrough()
+	if runtimeSmoke == "" || ctx.Buses == nil {
+		return
+	}
+	outputs := ctx.Buses.GetMainOutput()
+	sidechain := ctx.Buses.GetSidechainInput()
+	for ch := 0; ch < min(len(outputs), len(sidechain)); ch++ {
+		for n := 0; n < min(len(outputs[ch]), len(sidechain[ch])); n++ {
+			outputs[ch][n] += sidechain[ch][n]
+		}
+	}
+}
+func (p *processor) GetParameters() *param.Registry { return p.params }
+func (p *processor) GetBuses() *bus.Configuration   { return p.buses }
+func (p *processor) SetActive(active bool) error    { return nil }
+func (p *processor) GetLatencySamples() int32       { return 0 }
+func (p *processor) GetTailSamples() int32          { return 0 }
 
 type smokePlugin struct {
 	suffix       string
@@ -47,10 +60,17 @@ func (p smokePlugin) GetInfo() fwplugin.Info {
 func (p smokePlugin) CreateProcessor() plugin.Processor {
 	registry := param.NewRegistry()
 	_ = registry.Add(param.New(0, "Gain").Range(0, 1).Default(p.defaultValue).Build())
-	return &processor{params: registry}
+	buses := bus.Stereo()
+	if runtimeSmoke != "" {
+		buses = bus.EffectStereoSidechain()
+	}
+	return &processor{params: registry, buses: buses}
 }
 
-var multiClass string // Set by the C smoke test's multi-class build.
+var (
+	multiClass   string // Set by the multi-class builds.
+	runtimeSmoke string // Set for the C host processing fixture.
+)
 
 func init() {
 	first := smokePlugin{defaultValue: 1}

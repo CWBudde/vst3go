@@ -38,6 +38,7 @@ var (
 type componentImpl struct {
 	processor  Processor
 	processCtx atomic.Pointer[process.Context]
+	busConfig  *bus.Configuration
 
 	// sampleRateBits is the current sample rate as math.Float64bits.
 	sampleRateBits atomic.Uint64
@@ -50,9 +51,11 @@ type componentImpl struct {
 
 	// Audio-thread scratch. Reused across blocks so the chunk loop and the
 	// event fan-out stay allocation-free.
-	chunkInput  [][]float32
-	chunkOutput [][]float32
-	blockEvents []midi.Event
+	chunkInput       [][]float32
+	chunkOutput      [][]float32
+	blockEvents      []midi.Event
+	chunkInputBuses  []process.BusBuffers
+	chunkOutputBuses []process.BusBuffers
 
 	// Out-parameters for cgo calls. Taking the address of a local would make it
 	// escape to the heap on every call; a field is allocated once with the
@@ -103,7 +106,11 @@ func newComponent(processor Processor) *componentImpl {
 
 // IComponent implementation
 func (c *componentImpl) Initialize(_ interface{}) error {
-	return c.processor.Initialize(48000, c.maxBlockSize) // Default sample rate
+	if err := c.processor.Initialize(48000, c.maxBlockSize); err != nil {
+		return err
+	}
+	c.busConfig = c.processor.GetBuses()
+	return nil
 }
 
 func (c *componentImpl) Terminate() error {
@@ -119,21 +126,34 @@ func (c *componentImpl) SetIOMode(_ int32) error {
 	return nil
 }
 
+func (c *componentImpl) buses() *bus.Configuration {
+	if c.busConfig != nil {
+		return c.busConfig
+	}
+	return c.processor.GetBuses()
+}
+
 func (c *componentImpl) GetBusCount(mediaType, direction int32) int32 {
-	buses := c.processor.GetBuses()
+	buses := c.buses()
+	if buses == nil {
+		return 0
+	}
 	return buses.GetBusCount(bus.MediaType(mediaType), bus.Direction(direction))
 }
 
 func (c *componentImpl) GetBusInfo(mediaType, direction, index int32) (*vst3.BusInfo, error) {
-	buses := c.processor.GetBuses()
+	buses := c.buses()
+	if buses == nil {
+		return nil, vst3.ErrNotImplemented
+	}
 	info := buses.GetBusInfo(bus.MediaType(mediaType), bus.Direction(direction), index)
 	if info == nil {
 		return nil, vst3.ErrNotImplemented
 	}
 
-	flags := uint32(1) // Default active
-	if !info.IsActive {
-		flags = 0
+	var flags uint32
+	if info.DefaultActive() {
+		flags = C.Steinberg_Vst_BusInfo_BusFlags_kDefaultActive
 	}
 
 	return &vst3.BusInfo{
@@ -151,7 +171,10 @@ func (c *componentImpl) GetRoutingInfo(inInfo, outInfo interface{}) error {
 }
 
 func (c *componentImpl) ActivateBus(mediaType, direction, index int32, state bool) error {
-	return nil
+	if c.busConfig == nil {
+		return bus.ErrBusNotFound
+	}
+	return c.busConfig.SetBusActive(bus.MediaType(mediaType), bus.Direction(direction), index, state)
 }
 
 func (c *componentImpl) SetActive(active bool) error {
@@ -195,12 +218,54 @@ func (c *componentImpl) GetState() ([]byte, error) {
 
 // IAudioProcessor implementation
 func (c *componentImpl) SetBusArrangements(inputs, outputs []int64) error {
+	for direction, arrangements := range [][]int64{inputs, outputs} {
+		if len(arrangements) != int(c.GetBusCount(int32(bus.MediaTypeAudio), int32(direction))) {
+			return vst3.ErrInvalidArgument
+		}
+		for i, requested := range arrangements {
+			declared, err := c.GetBusArrangement(int32(direction), int32(i))
+			if err != nil || requested != declared {
+				return vst3.ErrInvalidArgument
+			}
+		}
+	}
 	return nil
 }
 
 func (c *componentImpl) GetBusArrangement(direction, index int32) (int64, error) {
-	// Return stereo by default
-	return int64(3), nil // Left + Right
+	buses := c.buses()
+	if buses == nil {
+		return 0, bus.ErrBusNotFound
+	}
+	info := buses.GetBusInfo(bus.MediaTypeAudio, bus.Direction(direction), index)
+	if info == nil {
+		return 0, bus.ErrBusNotFound
+	}
+	return speakerArrangement(info.ChannelCount), nil
+}
+
+// speakerArrangement maps a declared channel count to the fixed layout the
+// component advertises. ProcessAudio receives channels in the host's order.
+func speakerArrangement(channels int32) int64 {
+	// These masks match SpeakerArr in the VST3 interface header.
+	switch channels {
+	case 1:
+		return 1 << 19 // kMono
+	case 2:
+		return 0x03 // kStereo
+	case 4:
+		return 0x33 // k40Music (quad)
+	case 5:
+		return 0x37 // k50
+	case 6:
+		return 0x3f // k51
+	case 7:
+		return 0x637 // k70Music
+	case 8:
+		return 0x63f // k71Music
+	default:
+		return (int64(1) << channels) - 1
+	}
 }
 
 func (c *componentImpl) CanProcessSampleSize(symbolicSampleSize int32) error {
@@ -226,15 +291,40 @@ func (c *componentImpl) SetupProcessing(setup *vst3.ProcessSetup) error {
 	c.sampleRateBits.Store(math.Float64bits(setup.SampleRate))
 	if setup.MaxSamplesPerBlock > 0 {
 		c.maxBlockSize = setup.MaxSamplesPerBlock
-		// Recreate process context with new max block size
-		params := c.processor.GetParameters()
-		c.processCtx.Store(process.NewContext(int(c.maxBlockSize), params))
 	}
 
 	if err := c.processor.Initialize(setup.SampleRate, c.maxBlockSize); err != nil {
 		return fmt.Errorf("setup processing: initialize processor: %w", err)
 	}
+	if c.busConfig == nil {
+		c.busConfig = c.processor.GetBuses()
+	}
+	ctx := process.NewContext(int(c.maxBlockSize), c.processor.GetParameters())
+	if c.busConfig != nil {
+		ctx.Buses = process.NewMultiBusContext(ctx, c.busConfig)
+		var inChannels, outChannels int
+		ctx.Buses.InputBuses, inChannels = busBufferViews(c.busConfig, bus.DirectionInput)
+		ctx.Buses.OutputBuses, outChannels = busBufferViews(c.busConfig, bus.DirectionOutput)
+		ctx.Input = make([][]float32, 0, inChannels)
+		ctx.Output = make([][]float32, 0, outChannels)
+		c.chunkInput = make([][]float32, 0, inChannels)
+		c.chunkOutput = make([][]float32, 0, outChannels)
+		c.chunkInputBuses = make([]process.BusBuffers, len(ctx.Buses.InputBuses))
+		c.chunkOutputBuses = make([]process.BusBuffers, len(ctx.Buses.OutputBuses))
+	}
+	c.processCtx.Store(ctx)
 	return nil
+}
+
+func busBufferViews(buses *bus.Configuration, direction bus.Direction) ([]process.BusBuffers, int) {
+	views := make([]process.BusBuffers, buses.GetBusCount(bus.MediaTypeAudio, direction))
+	var channels int
+	for i := range views {
+		info := buses.GetBusInfo(bus.MediaTypeAudio, direction, int32(i))
+		views[i].BusInfo = info
+		channels += int(info.ChannelCount)
+	}
+	return views, channels
 }
 
 func (c *componentImpl) SetProcessing(state bool) error {
@@ -294,6 +384,14 @@ func (c *componentImpl) prepareProcessContext(ctx *process.Context) {
 	ctx.ClearAllEvents()
 	ctx.Input = ctx.Input[:0]
 	ctx.Output = ctx.Output[:0]
+	if ctx.Buses != nil {
+		for i := range ctx.Buses.InputBuses {
+			ctx.Buses.InputBuses[i].Channels = nil
+		}
+		for i := range ctx.Buses.OutputBuses {
+			ctx.Buses.OutputBuses[i].Channels = nil
+		}
+	}
 }
 
 func (c *componentImpl) updateTransport(processCtx *process.Context, ctx *C.struct_Steinberg_Vst_ProcessContext) {
@@ -344,25 +442,40 @@ func (c *componentImpl) updateTransport(processCtx *process.Context, ctx *C.stru
 }
 
 func (c *componentImpl) mapAudioBuffers(ctx *process.Context, processData *C.struct_Steinberg_Vst_ProcessData) {
+	if ctx.Buses == nil {
+		return
+	}
 	numSamples := int(processData.numSamples)
 
 	if processData.numInputs > 0 && processData.inputs != nil {
 		inputBuses := unsafe.Slice(processData.inputs, int(processData.numInputs))
-		c.appendAudioBuffers(&ctx.Input, inputBuses, numSamples)
+		ctx.Input = appendAudioBuffers(ctx.Input, ctx.Buses.InputBuses, inputBuses, numSamples)
 	}
 
 	if processData.numOutputs > 0 && processData.outputs != nil {
 		outputBuses := unsafe.Slice(processData.outputs, int(processData.numOutputs))
-		c.appendAudioBuffers(&ctx.Output, outputBuses, numSamples)
+		ctx.Output = appendAudioBuffers(ctx.Output, ctx.Buses.OutputBuses, outputBuses, numSamples)
 	}
 }
 
-func (c *componentImpl) appendAudioBuffers(dst *[][]float32, buses []C.struct_Steinberg_Vst_AudioBusBuffers, numSamples int) {
-	for i := range buses {
-		bus := &buses[i]
-		table := (**float32)(unsafe.Pointer(getChannelBuffers32(bus)))
-		*dst = appendBusChannels(*dst, table, int(bus.numChannels), numSamples)
+func appendAudioBuffers(dst [][]float32, views []process.BusBuffers, buses []C.struct_Steinberg_Vst_AudioBusBuffers, numSamples int) [][]float32 {
+	for i := range min(len(views), len(buses)) {
+		view, buffers := &views[i], &buses[i]
+		if !view.BusInfo.Active() || buffers.numChannels != C.int32_t(view.BusInfo.ChannelCount) {
+			continue
+		}
+		first := len(dst)
+		table := (**float32)(unsafe.Pointer(getChannelBuffers32(buffers)))
+		dst = appendBusChannels(dst, table, int(buffers.numChannels), numSamples)
+		if len(dst)-first != int(view.BusInfo.ChannelCount) {
+			// A missing channel in an active bus is malformed. Exclude the
+			// entire bus so later speakers cannot shift into its position.
+			dst = dst[:first]
+			continue
+		}
+		view.Channels = dst[first:len(dst):len(dst)]
 	}
+	return dst
 }
 
 // appendBusChannels maps one bus's channel pointer table onto Go slices that
@@ -642,14 +755,36 @@ func (c *componentImpl) processSampleAccurate(ctx *process.Context) {
 // pass of user DSP over it. The chunk slice headers live in reusable scratch so
 // the loop keeps ProcessAudio's zero-allocation promise.
 func (c *componentImpl) processChunk(ctx *process.Context, input, output [][]float32, start, end int) {
-	c.chunkInput = sliceChannels(c.chunkInput[:0], input, start, end)
-	c.chunkOutput = sliceChannels(c.chunkOutput[:0], output, start, end)
+	if buses := ctx.Buses; buses != nil {
+		fullInputBuses, fullOutputBuses := buses.InputBuses, buses.OutputBuses
+		c.chunkInput = sliceBusBuffers(c.chunkInputBuses, fullInputBuses, c.chunkInput[:0], start, end)
+		c.chunkOutput = sliceBusBuffers(c.chunkOutputBuses, fullOutputBuses, c.chunkOutput[:0], start, end)
+		buses.InputBuses, buses.OutputBuses = c.chunkInputBuses, c.chunkOutputBuses
+		defer func() {
+			buses.InputBuses, buses.OutputBuses = fullInputBuses, fullOutputBuses
+		}()
+	} else {
+		c.chunkInput = sliceChannels(c.chunkInput[:0], input, start, end)
+		c.chunkOutput = sliceChannels(c.chunkOutput[:0], output, start, end)
+	}
 	ctx.Input = c.chunkInput
 	ctx.Output = c.chunkOutput
 
 	c.publishInputEvents(ctx, int32(start), int32(end))
 
 	c.processor.ProcessAudio(ctx)
+}
+
+func sliceBusBuffers(dst, src []process.BusBuffers, channels [][]float32, start, end int) [][]float32 {
+	for i, view := range src {
+		first := len(channels)
+		channels = sliceChannels(channels, view.Channels, start, end)
+		dst[i] = process.BusBuffers{BusInfo: view.BusInfo}
+		if first != len(channels) {
+			dst[i].Channels = channels[first:len(channels):len(channels)]
+		}
+	}
+	return channels
 }
 
 // sliceChannels appends the [start, end) window of every channel in src to dst,

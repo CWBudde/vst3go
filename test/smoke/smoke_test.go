@@ -62,10 +62,11 @@ func testPluginLoadsAndAnswersHost(t *testing.T, multiClass bool) {
 		"-buildmode=c-shared",
 		"-o", lib,
 	}
+	ldflags := "-X main.runtimeSmoke=1"
 	if multiClass {
-		buildArgs = append(buildArgs, "-ldflags=-X main.multiClass=1")
+		ldflags += " -X main.multiClass=1"
 	}
-	run(t, root, nil, "go", append(buildArgs, "./test/smoke/plugin")...)
+	run(t, root, nil, "go", append(buildArgs, "-ldflags="+ldflags, "./test/smoke/plugin")...)
 
 	driver := filepath.Join(tmp, driverName)
 	args := []string{

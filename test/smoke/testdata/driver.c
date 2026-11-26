@@ -9,36 +9,7 @@ extern struct Steinberg_IPluginFactory* GetPluginFactory(void);
 #ifdef MULTI_CLASS
 enum { class_count = 2 };
 
-typedef struct {
-    struct Steinberg_IBStream stream;
-    unsigned char data[128];
-    Steinberg_int32 size;
-} StateStream;
-
-static Steinberg_tresult SMTG_STDMETHODCALLTYPE state_read(
-    void* self, void* buffer, Steinberg_int32 count, Steinberg_int32* read) {
-    StateStream* s = self;
-    *read = count < s->size ? count : s->size;
-    memcpy(buffer, s->data, *read);
-    return Steinberg_kResultOk;
-}
-
-static Steinberg_tresult SMTG_STDMETHODCALLTYPE state_write(
-    void* self, void* buffer, Steinberg_int32 count, Steinberg_int32* written) {
-    StateStream* s = self;
-    if (count < 0 || count > (Steinberg_int32)sizeof(s->data)) return Steinberg_kResultFalse;
-    memcpy(s->data, buffer, count);
-    *written = s->size = count;
-    return Steinberg_kResultOk;
-}
-
-static Steinberg_tresult SMTG_STDMETHODCALLTYPE state_tell(void* self, Steinberg_int64* pos) {
-    return Steinberg_kNotImplemented;  // one-shot non-seekable parameter state
-}
-
-static struct Steinberg_IBStreamVtbl state_vtbl = {
-    .read = state_read, .write = state_write, .tell = state_tell,
-};
+#include "state_stream.h"
 
 static int check_multiple_classes(struct Steinberg_IPluginFactory* f) {
     int fails = 0;
@@ -73,6 +44,7 @@ static int check_multiple_classes(struct Steinberg_IPluginFactory* f) {
         CHECK(e->lpVtbl->getState(e, &saved.stream) == Steinberg_kResultOk && saved.size > 0,
               "serialize first instance state");
         e->lpVtbl->setParamNormalized(e, 0, 0.75);
+        saved.cursor = 0;
         CHECK(e->lpVtbl->setState(e, &saved.stream) == Steinberg_kResultOk, "restore first instance state");
         CHECK(e->lpVtbl->getParamNormalized(e, 0) == 0.5, "first instance value restored");
         for (int i = 1; i < 3; i++) {
@@ -119,7 +91,8 @@ int main(void) {
 
     if (comp) {
         struct Steinberg_Vst_IComponent* c = (struct Steinberg_Vst_IComponent*)comp;
-        CHECK(c->lpVtbl->getBusCount(c, 0, 0) == 1, "getBusCount(audio,in) == 1");
+        CHECK(c->lpVtbl->initialize(c, NULL) == Steinberg_kResultOk, "initialize component");
+        CHECK(c->lpVtbl->getBusCount(c, 0, 0) == 2, "discovers main and sidechain inputs");
 
         // finding 1.6: must NOT claim a separate controller class
         Steinberg_TUID cid;
@@ -137,6 +110,7 @@ int main(void) {
             CHECK(pc == 1, "getParameterCount == 1 (not a mis-dispatched slot)");
             e->lpVtbl->release(e);
         }
+        c->lpVtbl->terminate(c);
         c->lpVtbl->release(c);
     }
 
@@ -167,22 +141,35 @@ int main(void) {
 
     // finding 1.1: two input buses (e.g. main + sidechain) must not panic
     {
-        void* comp2 = NULL;
-        f2->lpVtbl->createInstance(f2, ci.cid, Steinberg_Vst_IComponent_iid, &comp2);
+        struct Steinberg_Vst_IComponent* comp2 = NULL;
+        r = f2->lpVtbl->createInstance(f2, ci.cid, Steinberg_Vst_IComponent_iid, (void**)&comp2);
+        CHECK(r == Steinberg_kResultOk && comp2, "create sidechain component");
+        if (!comp2) return 1;
+        CHECK(comp2->lpVtbl->initialize(comp2, NULL) == Steinberg_kResultOk, "initialize sidechain component");
         struct Steinberg_Vst_IAudioProcessor* ap = NULL;
-        ((struct Steinberg_FUnknown*)comp2)->lpVtbl->queryInterface(
-            comp2, Steinberg_Vst_IAudioProcessor_iid, (void**)&ap);
+        comp2->lpVtbl->queryInterface(comp2, Steinberg_Vst_IAudioProcessor_iid, (void**)&ap);
         CHECK(ap != NULL, "QI(IAudioProcessor) succeeds");
+        if (!ap) return 1;
+
+        Steinberg_Vst_SpeakerArrangement inputs[] = {Steinberg_Vst_SpeakerArr_kStereo, Steinberg_Vst_SpeakerArr_kStereo};
+        Steinberg_Vst_SpeakerArrangement output = Steinberg_Vst_SpeakerArr_kStereo;
+        CHECK(ap->lpVtbl->setBusArrangements(ap, inputs, 2, &output, 1) == Steinberg_kResultOk,
+              "negotiate stereo main and sidechain buses");
+        CHECK(comp2->lpVtbl->activateBus(comp2, 0, 0, 0, 1) == Steinberg_kResultOk, "activate main input");
+        CHECK(comp2->lpVtbl->activateBus(comp2, 0, 1, 0, 1) == Steinberg_kResultOk, "activate main output");
+        CHECK(comp2->lpVtbl->activateBus(comp2, 0, 0, 1, 1) == Steinberg_kResultOk, "activate sidechain");
 
         struct Steinberg_Vst_ProcessSetup setup = {0, 0, 512, 48000.0};
-        ap->lpVtbl->setupProcessing(ap, &setup);
-        ap->lpVtbl->setProcessing(ap, 1);
+        CHECK(ap->lpVtbl->setupProcessing(ap, &setup) == Steinberg_kResultOk, "setup processing");
+        CHECK(comp2->lpVtbl->setActive(comp2, 1) == Steinberg_kResultOk, "activate component");
+        CHECK(ap->lpVtbl->setProcessing(ap, 1) == Steinberg_kResultOk, "start processing");
 
         static float inA[2][512], inB[2][512], outA[2][512];
         float *pinA[2] = {inA[0], inA[1]};
         float *pinB[2] = {inB[0], inB[1]};
         float *poutA[2] = {outA[0], outA[1]};
-        for (int i = 0; i < 512; i++) { inA[0][i] = 0.25f; inA[1][i] = 0.5f; }
+        inA[0][0] = 0.25f; inA[1][1] = 0.5f;
+        inB[0][2] = 0.75f; inB[1][3] = 1.0f;
 
         struct Steinberg_Vst_AudioBusBuffers ins[2] = {0};
         ins[0].numChannels = 2; ins[0].Steinberg_Vst_AudioBusBuffers_channelBuffers32 = pinA;
@@ -200,11 +187,27 @@ int main(void) {
 
         Steinberg_tresult pr = ap->lpVtbl->process(ap, &pd);
         CHECK(pr == Steinberg_kResultOk, "process() with 2 input buses returns kResultOk");
-        CHECK(outA[0][0] == 0.25f && outA[1][100] == 0.5f,
-              "process() with 2 input buses actually produced audio");
+        CHECK(outA[0][0] == 0.25f && outA[1][1] == 0.5f && outA[0][1] == 0 && outA[1][0] == 0,
+              "main impulses stay on their own channels");
+        CHECK(outA[0][2] == 0.75f && outA[1][3] == 1.0f && outA[0][3] == 0 && outA[1][2] == 0,
+              "sidechain impulses stay on their own channels");
 
+        CHECK(comp2->lpVtbl->activateBus(comp2, 0, 0, 1, 0) == Steinberg_kResultOk, "disconnect sidechain");
+        CHECK(ap->lpVtbl->process(ap, &pd) == Steinberg_kResultOk && outA[0][2] == 0 && outA[1][3] == 0,
+              "inactive sidechain buffer ignored");
+        pd.numInputs = 1;
+        CHECK(ap->lpVtbl->process(ap, &pd) == Steinberg_kResultOk && outA[0][0] == 0.25f && outA[1][1] == 0.5f,
+              "disconnected trailing bus can be omitted");
+        CHECK(comp2->lpVtbl->activateBus(comp2, 0, 0, 1, 1) == Steinberg_kResultOk, "reconnect sidechain");
+        pd.numInputs = 2;
+        CHECK(ap->lpVtbl->process(ap, &pd) == Steinberg_kResultOk && outA[0][2] == 0.75f && outA[1][3] == 1.0f,
+              "reconnected sidechain is routed to processor");
+
+        ap->lpVtbl->setProcessing(ap, 0);
+        comp2->lpVtbl->setActive(comp2, 0);
         ap->lpVtbl->release(ap);
-        ((struct Steinberg_FUnknown*)comp2)->lpVtbl->release(comp2);
+        comp2->lpVtbl->terminate(comp2);
+        comp2->lpVtbl->release(comp2);
     }
 
     f2->lpVtbl->release(f2);

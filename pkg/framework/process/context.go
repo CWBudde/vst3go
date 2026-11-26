@@ -160,9 +160,14 @@ func (t *TransportInfo) IsOnBeat(threshold float64) bool {
 
 // Context provides a clean API for audio processing with zero allocations
 type Context struct {
+	// Input and Output contain the flattened channels of active buses in host order.
 	Input      [][]float32
 	Output     [][]float32
 	SampleRate float64
+
+	// Buses provides channel views by host bus index. Inactive or omitted buses
+	// have no channels. It is populated by the plugin runtime during processing.
+	Buses *MultiBusContext
 
 	// Pre-allocated work buffers
 	workBuffer []float32

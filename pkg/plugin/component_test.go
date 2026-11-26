@@ -4,14 +4,13 @@ import (
 	"math"
 	"testing"
 
-	// The C bridge defines the helpers component.go calls; without it the test
-	// binary has nothing to link those symbols against.
-	_ "github.com/cwbudde/vst3go/pkg/plugin/cbridge"
-
 	"github.com/cwbudde/vst3go/pkg/framework/bus"
 	"github.com/cwbudde/vst3go/pkg/framework/param"
 	"github.com/cwbudde/vst3go/pkg/framework/process"
 	"github.com/cwbudde/vst3go/pkg/midi"
+	// The C bridge defines the helpers component.go calls; without it the test
+	// binary has nothing to link those symbols against.
+	_ "github.com/cwbudde/vst3go/pkg/plugin/cbridge"
 )
 
 func TestComponentRegistry(t *testing.T) {

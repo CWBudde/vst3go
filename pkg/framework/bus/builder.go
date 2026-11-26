@@ -140,10 +140,12 @@ func (b *Builder) With7_1Output(name string) *Builder {
 	return b.WithAudioOutput(name, 8)
 }
 
-// SetBusActive sets a specific bus as active/inactive
+// SetBusActive sets a bus's initial and default activation state.
 func (b *Builder) SetBusActive(mediaType MediaType, direction Direction, index int32, active bool) *Builder {
 	if err := b.config.SetBusActive(mediaType, direction, index, active); err != nil {
 		b.errors = append(b.errors, err)
+	} else {
+		b.config.findBus(mediaType, direction, index).defaultActive = active
 	}
 	return b
 }

@@ -313,7 +313,7 @@ there and reusable DSP in the sibling `algo-*` libraries.
 
 ### 6.2 Processing and host contracts
 
-- [ ] Exercise existing bus negotiation with optional sidechains, mono,
+- [x] Exercise existing bus negotiation with optional sidechains, mono,
       stereo, quad and 5.1 arrangements. Verify routing with channel-isolated
       impulses, sidechain disconnect/reconnect and inactive buses.
 - [ ] Verify latency and tail reporting for lookahead, FIR, convolution and
