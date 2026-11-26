@@ -471,6 +471,10 @@ parameters, programs, original editor references and audio comparisons in
   - [x] Confirm attribution and the original archive's redistribution terms.
   - [ ] Obtain the contributors' VST3 port authorization.
 - [ ] [Soul EQ](../vst3go-plugins/plugins/eq/soul-eq/README.md)
+  - [x] Match 281 release captures across the three listening-test modes,
+        rate setup orders and timed edits. Reopen edited Init slots in REAPER.
+  - [ ] Verify the original editor and its six snapshots, additional native
+        hosts and the exact same-value write in an audio-only parameter queue.
 - [ ] [Tiny-Q](../vst3go-plugins/plugins/eq/tiny-q/README.md)
   - [x] Compare 363 renders across the website release and two matching
         developer checkout builds. Restore the four editable Init slots.
