@@ -1125,7 +1125,13 @@ parameters, programs, original editor references and audio comparisons in
         Reopen settings and verify three latency orders in REAPER on Linux.
   - [ ] Verify the custom editor and live latency changes, and resolve asset
         redistribution provenance and host checks on other platforms.
-- [ ] [Dynamic Convolution Plugin](../vst3go-plugins/plugins/reverb/dynamic-convolution-plugin/README.md) — resolve the discontinued release and reference build.
+- [ ] [Dynamic Convolution Plugin](../vst3go-plugins/plugins/reverb/dynamic-convolution-plugin/README.md)
+  - [x] Identify the January 2005 ZIP, installer, and separate retained
+        profiler DLL. Match 246 original renders sample-exact, including
+        84 original profile imports, and verify four Linux REAPER recalls,
+        both SDK configurations, and Windows x64 cross-build.
+  - [ ] Resolve the discontinued release's distribution permissions and
+        verify the custom editor and native Windows and macOS hosts.
 - [ ] [Freeverb](../vst3go-plugins/plugins/reverb/freeverb/README.md)
 - [ ] [Plate Reverb](../vst3go-plugins/plugins/reverb/plate-reverb/README.md)
 - [ ] [StkReverb](../vst3go-plugins/plugins/reverb/stkreverb/README.md)
