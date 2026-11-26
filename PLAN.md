@@ -552,6 +552,10 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify other native hosts and the separate retained checkout build.
         The VST3 uses the displayed zero resonance at startup.
 - [ ] [Phase Rotator](../vst3go-plugins/plugins/filter/phase-rotator/README.md)
+  - [x] Match 240 audible captures and verify unity magnitude, group delay
+        and six timed controls. Reopen the edited stereo setting in REAPER.
+  - [ ] Verify the original editor, MIDI CC controls and other native hosts.
+        The published headless x64 replacing callback leaves buffers unchanged.
 - [ ] [QR-Filter](../vst3go-plugins/plugins/filter/qr-filter/README.md)
 - [ ] [Rubberfilter](../vst3go-plugins/plugins/filter/rubberfilter/README.md)
 - [ ] [Simple Linear Phase Filter](../vst3go-plugins/plugins/filter/simple-linear-phase-filter/README.md)
