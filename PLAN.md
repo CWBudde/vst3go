@@ -469,6 +469,9 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Obtain the contributors' VST3 port authorization.
 - [ ] [Soul EQ](../vst3go-plugins/plugins/eq/soul-eq/README.md)
 - [ ] [Tiny-Q](../vst3go-plugins/plugins/eq/tiny-q/README.md)
+  - [x] Compare 363 renders across the website release and two matching
+        developer checkout builds. Restore the four editable Init slots.
+  - [ ] Verify the native editor, its snapshots and other native hosts.
 - [ ] [UNIQUE EQ](../vst3go-plugins/plugins/eq/unique-eq/README.md)
 - [ ] [Valuable EQ](../vst3go-plugins/plugins/eq/valuable-eq/README.md)
   - [ ] Valueable
@@ -508,6 +511,9 @@ parameters, programs, original editor references and audio comparisons in
     - [ ] Verify original editor and additional native hosts.
   - [ ] Type II low-pass (source present, download contains only the license)
 - [ ] [Dual Linkwitz-Riley Filters](../vst3go-plugins/plugins/filter/dual-linkwitz-riley-filters/README.md)
+  - [x] Compare 78 release renders across the four modes and timed changes.
+        Verify both editable slots and reopen bandpass output in REAPER.
+  - [ ] Verify the original editor and remaining native hosts.
 - [ ] [Hum Removal](../vst3go-plugins/plugins/filter/hum-removal/README.md)
   - [x] Match 187 audible release traces, including fixed-rate capture,
         filter transitions and harmonic attenuation. Reopen the edited
@@ -533,8 +539,11 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Linear Phase Linkwitz-Riley HP
   - [ ] Linear Phase Linkwitz-Riley LP
 - [ ] [Simple Linkwitz-Riley Crossover](../vst3go-plugins/plugins/filter/simple-linkwitz-riley-crossover/README.md)
-  - [ ] LinkwitzRiley
-  - [ ] LinkwitzRileyStereo
+  - [x] Match the x86 LinkwitzRiley and LinkwitzRileyStereo across 162 renders.
+        Verify unity summation and reopen their two- and four-channel routes.
+  - [ ] Validate additional native hosts and recover an intact original
+        macOS binary. The archived x64 replacing and accumulating paths
+        leave the output buffers untouched.
 - [ ] [SimpleFilter](../vst3go-plugins/plugins/filter/simplefilter/README.md)
 - [ ] [Weighting Filter](../vst3go-plugins/plugins/filter/weighting-filter/README.md)
 
