@@ -326,7 +326,7 @@ there and reusable DSP in the sibling `algo-*` libraries.
 - [x] Exercise existing bus negotiation with optional sidechains, mono,
       stereo, quad and 5.1 arrangements. Verify routing with channel-isolated
       impulses, sidechain disconnect/reconnect and inactive buses.
-- [ ] Verify latency and tail reporting for lookahead, FIR, convolution and
+- [x] Verify latency and tail reporting for lookahead, FIR, convolution and
       feedback. Support host notification when latency changes, and check delay
       compensation across reconfiguration and preset restore.
   - [x] Exercise retained-handler latency notifications from the editor and
@@ -337,7 +337,8 @@ there and reusable DSP in the sibling `algo-*` libraries.
         16- and 258-sample settings with sample-exact compensation in REAPER.
   - [x] Measure 768-sample latency and 1023-sample tail on Linear Phase HP
         and LP. Check compensation after reopening at 48 and 96 kHz.
-  - [ ] Measure latency, tails and compensation with the convolution port.
+  - [x] Verify ConvoFXLite latency and tails and reopen compensated projects
+        with 64, 2048 and 65536 samples of delay in REAPER.
   - [x] Verify zero latency and no audio tail in Simple Feedback Compressor.
         Reopen settings and render the impulse at frame zero in REAPER.
 - [x] Check sample-offset MIDI and automation across block boundaries, bypass
@@ -595,6 +596,10 @@ parameters, programs, original editor references and audio comparisons in
 
 - [ ] [ConvoFX](../vst3go-plugins/plugins/reverb/convofx/README.md)
 - [ ] [ConvoFXLite](../vst3go-plugins/plugins/reverb/convofxlite/README.md)
+  - [x] Compare the ten local release IR pairs, finite settings and tails.
+        Reopen settings and verify three latency orders in REAPER on Linux.
+  - [ ] Verify the custom editor and live latency changes, and resolve asset
+        redistribution provenance and host checks on other platforms.
 - [ ] [Dynamic Convolution Plugin](../vst3go-plugins/plugins/reverb/dynamic-convolution-plugin/README.md) — resolve the discontinued release and reference build.
 - [ ] [Freeverb](../vst3go-plugins/plugins/reverb/freeverb/README.md)
 - [ ] [Plate Reverb](../vst3go-plugins/plugins/reverb/plate-reverb/README.md)
