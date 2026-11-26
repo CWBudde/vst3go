@@ -817,6 +817,14 @@ parameters, programs, original editor references and audio comparisons in
 #### Distortion
 
 - [ ] [2-Band Distortion](../vst3go-plugins/plugins/distortion/2-band-distortion/README.md)
+  - [x] Compare 522 original captures across both modern builds and the 2008
+        ZIP. Match modern renders within 5.97e−8 and the ZIP within 3.52e−6.
+        Verify 18 reopened REAPER sessions, including edited program slots and
+        the ZIP's factory silence versus explicit zero drive. Validate all
+        three classes and cross-build them for Windows x64.
+  - [ ] Compare the original editor and physical Windows and macOS hosts.
+        The published and retained standalone x64 copies left output untouched,
+        and four other x64 artifacts failed to load in Wine.
 - [ ] [Advanced Clipper](../vst3go-plugins/plugins/distortion/advanced-clipper/README.md)
 - [ ] [Amp Sim](../vst3go-plugins/plugins/distortion/amp-sim/README.md)
 - [ ] [Analogue Mojo](../vst3go-plugins/plugins/distortion/analogue-mojo/README.md)
