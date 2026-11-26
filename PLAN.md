@@ -598,6 +598,9 @@ parameters, programs, original editor references and audio comparisons in
 - [ ] [ModDelay](../vst3go-plugins/plugins/delay/moddelay/README.md)
 - [ ] [Party-Delay](../vst3go-plugins/plugins/delay/party-delay/README.md)
 - [ ] [Simple Sample Delay](../vst3go-plugins/plugins/delay/simple-sample-delay/README.md)
+  - [x] Compare delay, feedback and timed resize against 72 x86 renders.
+        Reopen the three editable Init slots and render exact taps in REAPER.
+  - [ ] Verify the original editor and other host platforms.
 - [ ] [StkEcho](../vst3go-plugins/plugins/delay/stkecho/README.md)
 - [ ] [VariableDelay](../vst3go-plugins/plugins/delay/variabledelay/README.md)
 
