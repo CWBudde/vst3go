@@ -937,7 +937,11 @@ parameters, programs, original editor references and audio comparisons in
   - [x] Port the 2003 Toadstunnel class. Match 48 undithered renders exactly
         and compare high-pass dither energy and timing in 24 cases. Verify
         four editable slots, queued changes, SDK and four REAPER reopens.
-  - [ ] Toadstunnel²
+  - [x] Port Toadstunnel². Verify all eleven routing modes, crossover,
+        oversampling, and 544 finite comparisons. Match three queued
+        automation renders and reopen four REAPER projects. Use valid
+        child depths where six original presets produced nonfinite audio.
+  - [ ] Confirm the six nonfinite factory recalls in a native Win32 host.
   - [ ] Verify the native editors, artwork permissions, and physical Windows
         and macOS hosts. The 2003 Wine original emits an integer sentinel
         at the start of dithered blocks. Compare this on native Win32.
