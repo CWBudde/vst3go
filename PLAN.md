@@ -641,6 +641,12 @@ parameters, programs, original editor references and audio comparisons in
 #### Dynamics
 
 - [ ] [Adhesive](../vst3go-plugins/plugins/dynamics/adhesive/README.md)
+  - [x] Match 108 release captures for compression, mix, clip, bypass and
+        the mono sidechain. Reopen six REAPER sessions with edited slots,
+        routed and disconnected auxiliary inputs.
+  - [ ] Verify the native editor, original sidechain edit timing and other
+        native hosts. The port selects the sidechain immediately and the
+        retained x64 DLL failed to load under Wine.
 - [ ] [Audiocation Compressor](../vst3go-plugins/plugins/dynamics/audiocation-compressor/README.md)
   - [ ] Mono compressor
   - [ ] Stereo compressor
