@@ -43,6 +43,10 @@ extern double GoEditControllerGetParamNormalized(uintptr_t component, uint32_t i
 extern Steinberg_tresult GoEditControllerSetParamNormalized(uintptr_t component, uint32_t id, double value);
 extern Steinberg_tresult GoEditControllerSetComponentHandler(uintptr_t component, void* handler);
 
+extern int32_t GoHasMIDIControllerMapping(uintptr_t component);
+extern Steinberg_tresult GoGetMIDIControllerAssignment(uintptr_t component, int32_t busIndex,
+    int16_t channel, int16_t controller, Steinberg_Vst_ParamID* id);
+
 // Go component lifecycle
 extern void GoReleaseComponent(uintptr_t component);
 

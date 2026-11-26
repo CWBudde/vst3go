@@ -818,9 +818,18 @@ func (c *componentImpl) applyParameterChanges(ctx *process.Context, changes []pr
 			}
 		}
 	}
+	automation, observes := c.processor.(AutomationParameterProcessor)
+	var parameters *param.Registry
+	if observes {
+		parameters = c.processor.GetParameters()
+	}
 	for _, change := range changes {
 		if c.programs == nil || change.ParamID != c.programs.list.ParameterID {
 			ctx.ApplyParameterChange(change)
+			if parameters != nil && !math.IsNaN(change.Value) && !math.IsInf(change.Value, 0) &&
+				parameters.Get(change.ParamID) != nil {
+				automation.AutomationParameterChanged(change.ParamID, min(max(change.Value, 0), 1))
+			}
 		}
 	}
 }

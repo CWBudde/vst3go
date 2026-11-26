@@ -178,6 +178,24 @@ type ControllerParameterProcessor interface {
 	ControllerParameterChanged(id uint32, normalized float64)
 }
 
+// MIDIControllerMapper maps an input event bus, MIDI channel and controller
+// number to an existing parameter. VST3 hosts deliver the normalized controller
+// value through that parameter's sample-offset automation queue. The mapping is
+// fixed for the instance and can be queried on the host's control thread.
+type MIDIControllerMapper interface {
+	Processor
+	MIDIControllerAssignment(busIndex int32, channel, controller int16) (parameterID uint32, ok bool)
+}
+
+// AutomationParameterProcessor receives valid sample-offset parameter writes
+// after the runtime stores the clamped normalized value and before it processes
+// the next samples. Repeated values and parameter-only flushes are delivered.
+// This runs on the audio thread. Avoid allocation, locking and host calls.
+type AutomationParameterProcessor interface {
+	Processor
+	AutomationParameterChanged(id uint32, normalized float64)
+}
+
 // StatefulProcessor extends Processor with custom state save/load hooks.
 //
 // Implement this only when parameter state is insufficient to restore runtime

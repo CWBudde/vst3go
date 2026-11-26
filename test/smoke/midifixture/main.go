@@ -16,6 +16,7 @@ import (
 const (
 	gainID = iota
 	bypassID
+	controllerID
 )
 
 const (
@@ -34,6 +35,16 @@ type processor struct {
 	frames         int
 	level          float32
 	unexpectedNote bool
+}
+
+func (*processor) MIDIControllerAssignment(busIndex int32, channel, controller int16) (uint32, bool) {
+	return controllerID, busIndex == 0 && channel == 3 && controller == 70
+}
+
+func (p *processor) AutomationParameterChanged(id uint32, normalized float64) {
+	if id == controllerID {
+		p.gain.SetNormalized(2 * normalized)
+	}
 }
 
 func (p *processor) ProcessEvent(event midi.Event) {
@@ -113,7 +124,8 @@ func (fixture) CreateProcessor() plugin.Processor {
 	base := fwplugin.NewBaseProcessor(buses)
 	gain := param.New(gainID, "Gain").Range(0, 1).Default(defaultGain).Build()
 	bypass := param.BypassParameter(bypassID, "Bypass").Build()
-	for _, p := range []*param.Parameter{gain, bypass} {
+	controller := param.New(controllerID, "CC 70").Hidden().Build()
+	for _, p := range []*param.Parameter{gain, bypass, controller} {
 		if err := base.GetParameters().Add(p); err != nil {
 			panic(err)
 		}

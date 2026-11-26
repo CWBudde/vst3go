@@ -28,6 +28,11 @@ typedef struct {
     Component* component;
 } EditControllerInterface;
 
+typedef struct {
+    Steinberg_Vst_IMidiMapping iface;
+    Component* component;
+} MIDIMappingInterface;
+
 // Component implementation that wraps Go component
 struct Component {
     // IComponent vtable pointer must be first for COM compatibility
@@ -36,6 +41,7 @@ struct Component {
     AudioProcessorInterface audioProcessor;
     // Edit controller interface
     EditControllerInterface editController;
+    MIDIMappingInterface midiMapping;
     ProgramInfoInterface programs;
     // Reference count. Atomic: hosts call addRef/release concurrently from the
     // audio thread, the UI thread and background scanner threads.
@@ -154,6 +160,34 @@ static struct Steinberg_Vst_IEditControllerVtbl editControllerVtbl = {
     controller_createView
 };
 
+static Steinberg_tresult SMTG_STDMETHODCALLTYPE midi_mapping_query(void* self, const Steinberg_TUID iid, void** obj) {
+    return component_queryInterface(((MIDIMappingInterface*)self)->component, iid, obj);
+}
+
+static Steinberg_uint32 SMTG_STDMETHODCALLTYPE midi_mapping_add_ref(void* self) {
+    return component_addRef(((MIDIMappingInterface*)self)->component);
+}
+
+static Steinberg_uint32 SMTG_STDMETHODCALLTYPE midi_mapping_release(void* self) {
+    return component_release(((MIDIMappingInterface*)self)->component);
+}
+
+static Steinberg_tresult SMTG_STDMETHODCALLTYPE midi_mapping_assignment(void* self, Steinberg_int32 busIndex,
+    Steinberg_int16 channel, Steinberg_Vst_CtrlNumber controller, Steinberg_Vst_ParamID* id) {
+    if (!id) {
+        return Steinberg_kInvalidArgument;
+    }
+    return GoGetMIDIControllerAssignment(((MIDIMappingInterface*)self)->component->goComponent,
+        busIndex, channel, controller, id);
+}
+
+static Steinberg_Vst_IMidiMappingVtbl midiMappingVtbl = {
+    .queryInterface = midi_mapping_query,
+    .addRef = midi_mapping_add_ref,
+    .release = midi_mapping_release,
+    .getMidiControllerAssignment = midi_mapping_assignment,
+};
+
 // Create a new component instance
 void* createComponent(uintptr_t goComponent) {
     DBG_LOG("createComponent: Creating component with Go handle %zu", (size_t)goComponent);
@@ -168,6 +202,8 @@ void* createComponent(uintptr_t goComponent) {
     component->audioProcessor.component = component;
     component->editController.lpVtbl = &editControllerVtbl;
     component->editController.component = component;
+    component->midiMapping.iface.lpVtbl = &midiMappingVtbl;
+    component->midiMapping.component = component;
     initProgramInfo(&component->programs, (Steinberg_FUnknown*)component, goComponent);
     component->refCount = 1;
     component->goComponent = goComponent;
@@ -207,6 +243,12 @@ static Steinberg_tresult SMTG_STDMETHODCALLTYPE component_queryInterface(void* t
     if (memcmp(iid, Steinberg_Vst_IUnitInfo_iid, sizeof(Steinberg_TUID)) == 0 &&
         GoFactoryProgramListCount(component->goComponent) != 0) {
         *obj = &component->programs.iface;
+        component_addRef(thisInterface);
+        return Steinberg_kResultOk;
+    }
+    if (memcmp(iid, Steinberg_Vst_IMidiMapping_iid, sizeof(Steinberg_TUID)) == 0 &&
+        GoHasMIDIControllerMapping(component->goComponent)) {
+        *obj = &component->midiMapping.iface;
         component_addRef(thisInterface);
         return Steinberg_kResultOk;
     }

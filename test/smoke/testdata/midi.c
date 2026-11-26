@@ -7,7 +7,7 @@ extern struct Steinberg_IPluginFactory* GetPluginFactory(void);
     fprintf(stderr, "line %d: %s\n", __LINE__, #condition); return 1; \
 } } while (0)
 
-enum { frames = 8, gain_id = 0, bypass_id = 1 };
+enum { frames = 8, gain_id = 0, bypass_id = 1, controller_id = 2 };
 
 typedef struct {
     Steinberg_Vst_IEventList iface;
@@ -163,6 +163,22 @@ int main(void) {
     REQUIRE(editor->lpVtbl->getParameterInfo(editor, bypass_id, &bypass_info) == Steinberg_kResultOk);
     REQUIRE(bypass_info.id == bypass_id && (bypass_info.flags & Steinberg_Vst_ParameterInfo_ParameterFlags_kIsBypass));
 
+    Steinberg_Vst_IMidiMapping* midi = NULL;
+    REQUIRE(editor->lpVtbl->queryInterface(editor, Steinberg_Vst_IMidiMapping_iid,
+            (void**)&midi) == Steinberg_kResultOk && midi);
+    Steinberg_Vst_ParamID mapped = 77;
+    REQUIRE(midi->lpVtbl->getMidiControllerAssignment(midi, 1, 3, 70, &mapped) == Steinberg_kResultFalse);
+    REQUIRE(midi->lpVtbl->getMidiControllerAssignment(midi, 0, 0, 70, &mapped) == Steinberg_kResultFalse);
+    REQUIRE(midi->lpVtbl->getMidiControllerAssignment(midi, 0, 3, 71, &mapped) == Steinberg_kResultFalse);
+    REQUIRE(mapped == 77);
+    REQUIRE(midi->lpVtbl->getMidiControllerAssignment(midi, 0, 3, 70, NULL) == Steinberg_kInvalidArgument);
+    REQUIRE(midi->lpVtbl->getMidiControllerAssignment(midi, 0, 3, 70, &mapped) == Steinberg_kResultOk);
+    REQUIRE(mapped == controller_id);
+    struct Steinberg_Vst_ParameterInfo mapped_info = {0};
+    REQUIRE(editor->lpVtbl->getParameterInfo(editor, controller_id, &mapped_info) == Steinberg_kResultOk);
+    REQUIRE(mapped_info.id == mapped && (mapped_info.flags & Steinberg_Vst_ParameterInfo_ParameterFlags_kIsHidden));
+    midi->lpVtbl->release(midi);
+
     REQUIRE(component->lpVtbl->getBusCount(component, Steinberg_Vst_MediaTypes_kEvent, Steinberg_Vst_BusDirections_kInput) == 1);
     REQUIRE(component->lpVtbl->activateBus(component, Steinberg_Vst_MediaTypes_kEvent, Steinberg_Vst_BusDirections_kInput, 0, 1) == Steinberg_kResultOk);
     REQUIRE(component->lpVtbl->getBusCount(component, Steinberg_Vst_MediaTypes_kEvent, Steinberg_Vst_BusDirections_kOutput) == 1);
@@ -216,6 +232,20 @@ int main(void) {
     REQUIRE(audio->lpVtbl->process(audio, &data) == Steinberg_kResultOk);
     REQUIRE(expect_block("next block and bypass", output, (float[]){0.5f, 0.5f, 1, 1, 1, 1.5f, 1.5f, 0.5f}, 40, 72, 1, 1));
     REQUIRE(expect_echo(&echo, bypass_notes, 3) == 0);
+
+    const Point controller_points[] = {{3, 0.125}, {6, 0.125}};
+    const Point gain_between_controller_points[] = {{5, 0.5}, {7, 0.5}};
+    Queue midi_queues[] = {
+        {{&queue_vtbl}, mapped, controller_points, 2},
+        {{&queue_vtbl}, gain_id, gain_between_controller_points, 2},
+    };
+    changes.queues = midi_queues;
+    changes.count = 2;
+    data.inputEvents = NULL;
+    data.outputEvents = NULL;
+    REQUIRE(audio->lpVtbl->process(audio, &data) == Steinberg_kResultOk);
+    REQUIRE(expect_block("mapped controller and repeated value", output,
+                         (float[]){0.5f, 0.5f, 0.5f, 0.25f, 0.25f, 0.5f, 0.25f, 0.5f}, 40, 72, 1, 1));
 
     const float dry_half[] = {0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f};
     data.inputEvents = NULL;

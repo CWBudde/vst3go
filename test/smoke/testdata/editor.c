@@ -398,6 +398,9 @@ int main(void) {
 
     Steinberg_Vst_IEditController* generic = create_controller(factory, 1);
     assert(generic->lpVtbl->createView(generic, Steinberg_Vst_ViewType_kEditor) == NULL);
+    Steinberg_Vst_IMidiMapping* midi = NULL;
+    assert(generic->lpVtbl->queryInterface(generic, Steinberg_Vst_IMidiMapping_iid, (void**)&midi) != Steinberg_kResultOk);
+    assert(midi == NULL);
     check_programs(factory, generic);
     generic->lpVtbl->release(generic);
     factory->lpVtbl->release(factory);
