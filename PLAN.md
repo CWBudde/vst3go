@@ -732,6 +732,12 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify the native editor, characteristic display and other host
         platforms. The port bounds gain and output at exponent overflow.
 - [ ] [Limiter](../vst3go-plugins/plugins/dynamics/limiter/README.md)
+  - [x] Match all 72 renders from the three audible retained binaries sample
+        for sample. Reopen the unassigned timing and explicit minimum timing
+        states and the edited Default program in REAPER.
+  - [ ] Verify an audible published x64 callback in another host and test
+        additional native VST3 hosts. The released x64 callbacks left the
+        float32 and float64 output buffers untouched under Wine.
 - [ ] [Lookahead Limiter](../vst3go-plugins/plugins/dynamics/lookahead-limiter/README.md)
   - [x] Match the measured audio and program values and verify saved delay
         and compensation in REAPER on Linux.
