@@ -430,8 +430,12 @@ parameters, programs, original editor references and audio comparisons in
           Verify the seven-mode, 19-selector pilot and variable-band state in REAPER.
     - [x] Match 2,106 renders through all nine modes and 39 selectors. Reopen
           a project from the earlier pilot and save the expanded controls.
-    - [ ] Finish the remaining slope selectors and original editor,
-          factory-bank distribution and remaining platforms.
+    - [x] Verify all 80 retained selectors across the nine modes. Match 4,308
+          finite captures and keep the 60 dB/oct lowpass finite in the two
+          British modes where the original returned NaNs. Reopen both the
+          earlier selector state and the newly edited slope in REAPER.
+    - [ ] Verify the original editor, authorize factory-bank distribution
+          and test additional native host platforms.
 - [ ] [Graphic EQ](../vst3go-plugins/plugins/eq/graphic-eq/README.md)
   - [x] Compare all 22 band controls and channel isolation across 207 audible
         release captures. Reopen the stereo program and edits in REAPER.
