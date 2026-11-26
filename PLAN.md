@@ -352,6 +352,8 @@ there and reusable DSP in the sibling `algo-*` libraries.
         caller advances each smoother once per sample frame.
   - [x] Send notes from the first event output bus to the host. Verify
         sample offsets across automation chunks and inactive bus handling.
+  - [x] Expose optional MIDI controller assignments and verify repeated
+        mapped parameter values at their sample offsets on Linux and Win64/Wine.
 - [x] Test the Sidechain Compressor with a loaded detector plugin in the
       original nested processing path, including reconfiguration and saved state.
   - [x] Forward host processing start and stop independently of activation so
@@ -574,7 +576,9 @@ parameters, programs, original editor references and audio comparisons in
     - [x] Compare all 22 windows, saved state, tail and compensation on Linux.
   - [ ] Linear Phase HP
     - [x] Compare both released HP binaries, all windows, state and compensation on Linux.
-  - [ ] LinearPhaseFilterFFT edition
+  - [x] Match 138 LinearPhaseFilterFFT split captures outside the original
+        uninitialized High startup. Verify live and reopened compensation
+        for the measured delay, which differs from the original 1024 report.
 - [ ] [Simple Linear Phase Linkwitz-Riley Filter](../vst3go-plugins/plugins/filter/simple-linear-phase-linkwitz-riley-filter/README.md)
   - [x] Match the HP and LP filter audio and reported latency across 846
         captures. Reopen eight compensated REAPER projects at 48 and 96 kHz.
