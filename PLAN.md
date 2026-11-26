@@ -826,6 +826,14 @@ parameters, programs, original editor references and audio comparisons in
         The published and retained standalone x64 copies left output untouched,
         and four other x64 artifacts failed to load in Wine.
 - [ ] [Advanced Clipper](../vst3go-plugins/plugins/distortion/advanced-clipper/README.md)
+  - [x] Match 432 audible captures from both Win32 releases within 5.97e−8.
+        Verify sample-offset automation and the 2008 fixed-rate filter
+        behavior using the float64 path from [algo-dsp PR #54](https://github.com/CWBudde/algo-dsp/pull/54).
+        Validate both VST3 classes and match five reopened REAPER projects
+        within 1.33e−19.
+  - [ ] Verify x64 audibility in an independent Windows host, the original
+        float64 callback and the original editor and graphics permissions.
+        The 144 x64 Wine captures were silent. Native VST3 host checks remain open.
 - [ ] [Amp Sim](../vst3go-plugins/plugins/distortion/amp-sim/README.md)
   - [x] Compare 378 renders from the audible Win32 archive and both installer
         builds. Verify all seven cabinets, stereo and summed routing, both
