@@ -1340,6 +1340,12 @@ parameters, programs, original editor references and audio comparisons in
 #### Analysis
 
 - [ ] [Barberpole Tuner](../vst3go-plugins/plugins/analysis/barberpole-tuner/README.md)
+  - [x] Match 384 published mono captures within 3.726e-9 and compare
+        the 256-column phase history. Verify the 274 × 90 X11 strip,
+        H-string gesture and two reopened REAPER beat magnitudes,
+        47 SDK checks and Windows x64 cross-build.
+  - [ ] Verify retained DLLs that timed out in Wine, native Windows
+        and macOS hosts, and the original textured editor and fonts.
 - [ ] [BetaMeta](../vst3go-plugins/plugins/analysis/betameta/README.md)
 - [ ] [StereoMeterVST](../vst3go-plugins/plugins/analysis/stereometervst/README.md)
 - [ ] [Third-Octave Analyser (VST-Plugin)](../vst3go-plugins/plugins/analysis/third-octave-analyser-vst-plugin/README.md)
