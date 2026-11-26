@@ -696,6 +696,12 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify the native editor and additional native hosts. The ports keep
         audio finite at the measured legacy ratio and makeup overflows.
 - [ ] [Lightweight Feedback Limiter](../vst3go-plugins/plugins/dynamics/lightweight-feedback-limiter/README.md)
+  - [x] Match 252 x86 captures from both distributions, including minimum
+        timing, auto-makeup, channel routing and timed edits. Reopen five
+        REAPER projects with all editable slots and the pinned feedback
+        timing from [algo-dsp PR #51](https://github.com/CWBudde/algo-dsp/pull/51).
+  - [ ] Verify the original editor, additional native hosts and permission
+        to redistribute original assets.
 - [ ] [Lightweight Multiband Compressor](../vst3go-plugins/plugins/dynamics/lightweight-multiband-compressor/README.md)
 - [ ] [Lightweight Soft Knee Compressor](../vst3go-plugins/plugins/dynamics/lightweight-soft-knee-compressor/README.md)
 - [ ] [Lightweight Soft Knee Gate](../vst3go-plugins/plugins/dynamics/lightweight-soft-knee-gate/README.md)
