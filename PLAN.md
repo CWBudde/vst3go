@@ -919,6 +919,13 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify the native editor, redistribution permissions, and physical
         Windows and macOS hosts.
 - [ ] [Scary](../vst3go-plugins/plugins/distortion/scary/README.md)
+  - [x] Match all 288 captures across the 2005 website, retained Betabugs
+        and retained Waveshaper classes. Verify cold settings, same-value
+        writes, live changes, rate handling and all four editable slots.
+  - [x] Verify nine reopened REAPER renders, SDK validation and the
+        Windows x64 cross-build.
+  - [ ] Compare the original editors and verify graphics permissions and
+        physical Windows and macOS VST3 hosts.
 - [ ] [TanhWaveshaper](../vst3go-plugins/plugins/distortion/tanhwaveshaper/README.md)
   - [x] Compare 396 captures per class for the audible 2009 stereo, retained
         stereo and Plugin Match mono editions. Verify curve selection,
