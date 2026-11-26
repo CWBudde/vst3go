@@ -338,7 +338,8 @@ there and reusable DSP in the sibling `algo-*` libraries.
   - [x] Measure 768-sample latency and 1023-sample tail on Linear Phase HP
         and LP. Check compensation after reopening at 48 and 96 kHz.
   - [ ] Measure latency, tails and compensation with the convolution port.
-  - [ ] Measure latency and decay with the feedback port.
+  - [x] Verify zero latency and no audio tail in Simple Feedback Compressor.
+        Reopen settings and render the impulse at frame zero in REAPER.
 - [x] Check sample-offset MIDI and automation across block boundaries, bypass
       and transport reset.
   - [x] Resolve the smoothing contract before a port relies on it. The DSP
@@ -375,7 +376,9 @@ there and reusable DSP in the sibling `algo-*` libraries.
         X11 editor, reopen its session, and compare the sidechain impulse render.
   - [x] Verify the EeeekU family with native editors and the Sidechain
         Compressor with a native VST2 detector in REAPER on Linux.
-  - [ ] Verify a published instrument and repeat supported platform checks.
+  - [x] Verify Simple Sine Synth as an instrument in REAPER on Linux. Check
+        its keyboard, voice timing, playback reopen and saved state.
+  - [ ] Repeat port validation on the remaining supported platforms.
 
 ## Phase 7: Faithful pcjv.de VST3 ports
 
@@ -512,6 +515,9 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Finish native detector selection, editor behavior and other host platforms.
 - [ ] [Simple Compressor](../vst3go-plugins/plugins/dynamics/simple-compressor/README.md)
 - [ ] [Simple Feedback Compressor](../vst3go-plugins/plugins/dynamics/simple-feedback-compressor/README.md)
+  - [x] Compare the audible 2010 edition across three sample rates and two
+        block sizes. Verify zero latency, tail and saved settings on Linux.
+  - [ ] Verify the custom editor and remaining host platforms.
 - [ ] [Simple Gate](../vst3go-plugins/plugins/dynamics/simple-gate/README.md)
 - [ ] [Simple Limiter](../vst3go-plugins/plugins/dynamics/simple-limiter/README.md)
 - [ ] [Smooth Multiband Compressor](../vst3go-plugins/plugins/dynamics/smooth-multiband-compressor/README.md)
@@ -631,6 +637,9 @@ parameters, programs, original editor references and audio comparisons in
 - [ ] [FunKEYS](../vst3go-plugins/plugins/synth/funkeys/README.md)
 - [ ] [Simple Sampler](../vst3go-plugins/plugins/synth/simple-sampler/README.md)
 - [ ] [Simple Sine Synth](../vst3go-plugins/plugins/synth/simple-sine-synth/README.md)
+  - [x] Measure both 2009 binary releases. Port the audible oscillator from
+        the retained Delphi source and verify MIDI, keyboard and state on Linux.
+  - [ ] Verify CC126 input mapping and native Windows and macOS editors.
 - [ ] [Vocoder](../vst3go-plugins/plugins/synth/vocoder/README.md)
 
 ### 7.5 Analysis, utilities, educational, hosting and other plugins
