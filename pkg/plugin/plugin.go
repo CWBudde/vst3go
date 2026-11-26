@@ -141,6 +141,16 @@ type ProcessingStateProcessor interface {
 	SetProcessing(processing bool) error
 }
 
+// TerminatingProcessor releases resources that must live across activation
+// cycles, such as a loaded detector module. Terminate runs on the host's
+// control thread during component termination or final release. It may run
+// after partial initialization. The runtime retries failures at final release
+// and invokes no further termination callbacks after success.
+type TerminatingProcessor interface {
+	Processor
+	Terminate() error
+}
+
 // LatencyChangeProcessor is an optional extension for processors that can
 // change their latency while a plug-in is in use. The runtime supplies one
 // notifier per instance before initialization. Call it on the host UI thread

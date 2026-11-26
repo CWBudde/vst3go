@@ -490,7 +490,10 @@ func GoReleaseComponent(componentID C.uintptr_t) {
 	}
 
 	if wrapper := unregisterComponent(id); wrapper != nil {
-		wrapper.releaseComponentHandler()
+		defer wrapper.releaseComponentHandler()
+		if err := wrapper.component.Terminate(); err != nil {
+			fmt.Fprintf(os.Stderr, "vst3go: terminate component on final release: %v\n", err)
+		}
 	}
 }
 
@@ -513,8 +516,8 @@ func GoComponentInitialize(componentID C.uintptr_t, context unsafe.Pointer) C.St
 }
 
 //export GoComponentTerminate
-func GoComponentTerminate(componentID C.uintptr_t) C.Steinberg_tresult {
-	defer recoverPanic("GoComponentTerminate")
+func GoComponentTerminate(componentID C.uintptr_t) (result C.Steinberg_tresult) {
+	defer recoverPanicResult("GoComponentTerminate", &result)
 
 	wrapper := getComponent(uintptr(componentID))
 	if wrapper == nil {

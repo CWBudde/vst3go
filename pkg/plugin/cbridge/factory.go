@@ -38,5 +38,8 @@ import "unsafe"
 //
 //export GetPluginFactory
 func GetPluginFactory() unsafe.Pointer {
+	if !prepareModule() {
+		return nil
+	}
 	return unsafe.Pointer(C.vst3goGetPluginFactory())
 }

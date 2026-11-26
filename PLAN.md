@@ -308,13 +308,15 @@ there and reusable DSP in the sibling `algo-*` libraries.
         scaling and generic-editor fallback in the C host fixture.
   - [x] Exercise native X11 attach, remove, reopen, resize and 2× scaling in
         REAPER 7.86.
+  - [x] Exercise HWND attach, remove, reopen and 1.5× scaling in Win64
+        REAPER 7.86 under Wine. Pin the Go DLL through host unload.
   - [ ] Exercise focus and keyboard in a real host and run the native Windows
         and macOS editor checks.
 - [x] Wire editor gestures through the retained component handler
       (begin, perform, end). Send host automation and preset changes back to the
       editor. Deliver meters and plots without locking or allocating on the audio
       thread. Exercise two open instances and close a view during playback.
-- [ ] Keep skins, fonts, knob strips, control layout and product-specific
+- [x] Keep skins, fonts, knob strips, control layout and product-specific
       drawing in the companion repo. Validate its editor with a real port.
 
 ### 6.2 Processing and host contracts
@@ -327,6 +329,8 @@ there and reusable DSP in the sibling `algo-*` libraries.
       compensation across reconfiguration and preset restore.
   - [x] Exercise retained-handler latency notifications from the editor and
         on processor-state restore in the C host fixture.
+  - [x] Verify sample-exact delay compensation after reopening a delay probe
+        at 48 and 96 kHz in REAPER 7.86.
   - [ ] Measure reported latency, tails and host compensation with the ports.
 - [x] Check sample-offset MIDI and automation across block boundaries, bypass
       and transport reset.
@@ -336,10 +340,11 @@ there and reusable DSP in the sibling `algo-*` libraries.
       original nested processing path, including reconfiguration and saved state.
   - [x] Forward host processing start and stop independently of activation so
         a nested detector can receive both lifecycle transitions.
+  - [x] Forward final component teardown to processors that own nested modules.
 
 ### 6.3 Programs, state and host validation
 
-- [ ] Support factory program enumeration and selection where the Delphi
+- [x] Support factory program enumeration and selection where the Delphi
       product supplies programs. Preserve parameter IDs, units, display curves and
       defaults. Round-trip processor and editor state in a saved host session.
   - [x] Verify root-unit program lists, selection, sample offsets and separate
@@ -348,7 +353,8 @@ there and reusable DSP in the sibling `algo-*` libraries.
         controls such as Electri-Q frequency and bandwidth.
   - [x] Save and reopen EeeekU factory programs and edited parameters in
         REAPER 7.86.
-  - [ ] Save and reopen editor-specific state in a real host session.
+  - [x] Reopen the EeeekU session in a fresh REAPER process and verify
+        independent selected-band editor state in the two live instances.
 - [ ] Validate the affected runtime interfaces using the C host smoke tests
       and Steinberg validator. Repeat in a real host with a family bundle,
       an instrument, a sidechain and a native editor before declaring coverage.
@@ -379,10 +385,14 @@ parameters, programs, original editor references and audio comparisons in
   - [x] Implement the source-defined Orfanidis mode on channel zero. The
         companion pins the tested revisions from [algo-dsp PR #43](https://github.com/CWBudde/algo-dsp/pull/43)
         and [PR #44](https://github.com/CWBudde/algo-dsp/pull/44).
-  - [ ] Verify complex response and harmonic behavior, and finish the editor
-        and supported host checks.
+  - [x] Verify RBJ complex response and harmonics at three rates and three
+        input levels. Verify Linux editor controls, 2× scaling and playback
+        reopen in REAPER.
+  - [ ] Finish the native Windows and macOS editor and supported host checks.
 - [ ] [Electri-Q](../vst3go-plugins/plugins/eq/electri-q/README.md)
   - [ ] Commercial edition
+    - [ ] Establish exact source correspondence and capture the final 1.8.8
+          release with an existing authorized license.
   - [ ] Posihfopit edition
 - [ ] [Graphic EQ](../vst3go-plugins/plugins/eq/graphic-eq/README.md)
 - [ ] [Noname EQ](../vst3go-plugins/plugins/eq/noname-eq/README.md)

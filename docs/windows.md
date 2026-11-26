@@ -75,24 +75,20 @@ Because the export mechanism has to be Go's on Windows and works equally well on
 ELF and Mach-O, all three platforms use it — which is why `bridge/bridge.c`
 carries no `#ifdef` for platform entry points at all.
 
-`test/smoke/exports_test.go` pins this by reading the real export table out of
+`test/smoke/exports_test.go` checks this by reading the real export table out of
 the built module (PE, ELF and Mach-O), including a Windows cross-build from any
 host with MinGW-w64 installed. It is the only thing standing between a
 refactor and a silently unloadable plug-in.
 
 ## Risks
 
-### The Go runtime cannot be unloaded
+### The module stays loaded until the process exits
 
-Go's `c-shared` runtime has no teardown path. Once a host has loaded the module,
-`FreeLibrary` does not return the process to a clean state, and a host that
-unloads and reloads modules — some do this during plug-in scanning — can crash
-or leak. `ExitDll` deliberately does almost nothing for this reason; it does not
-attempt to stop the runtime.
-
-Practical consequence: prefer hosts/scanners that load once. Treat
-"crashes during a rescan but not during use" as a symptom of this, not of the
-plug-in's DSP.
+Go's `c-shared` runtime can leave threads and a vectored exception handler
+active after the VST3 host releases the module. Both `InitDll` and
+`GetPluginFactory` pin the DLL before returning success, so the host can call
+`ExitDll` and `FreeLibrary` and then reopen the plug-in safely. The Windows
+C smoke test exercises both entry paths. [Go issue #32497](https://github.com/golang/go/issues/32497)
 
 ### One Go runtime per module
 
@@ -125,11 +121,9 @@ audio-priority scheduling class a native audio thread would ask for.
 ### File locking and the reload loop
 
 Windows locks a DLL while it is loaded. A build that writes over an installed
-plug-in fails with a sharing violation for as long as any DAW has it open —
-including a DAW sitting idle with the plug-in in a closed project, and including
-a background scanner process. The development loop is therefore
-build → close host → install → reopen host, rather than the
-build-over-the-top loop that works on Linux.
+plug-in can fail with a sharing violation until the DAW and any scanner
+processes that loaded it have exited. Build into a staging directory, close
+those processes, install the updated bundle and reopen the host.
 
 ### Path length
 
@@ -149,7 +143,7 @@ An unsigned, freshly built DLL appearing in a scanned directory is exactly the
 shape of thing endpoint protection quarantines. When a plug-in "disappears"
 after a build on Windows, check the quarantine before debugging the loader.
 
-## What is verified, and what is not
+## Verification
 
 CI covers, for Windows:
 
@@ -158,10 +152,14 @@ CI covers, for Windows:
 - a `-Werror` MinGW-w64 compile of the C bridge
 - the cross-built DLL's export table and import table, from the Linux runner
 
-Not covered:
+Win64 REAPER 7.86 under Wine scanned the pinned module, opened two native
+editor windows at 144 DPI, closed and reopened one editor and exited cleanly.
+The loader trace showed one module load and no access violations.
+
+Pending coverage:
 
 - Steinberg's `validator` on Windows (it runs on Linux only)
-- any real DAW on Windows
+- a DAW on native Windows
 - `windows/arm64`, which has a defined bundle layout but no CI build
 
 Downstream repos should read [validation.md](validation.md) for what they still

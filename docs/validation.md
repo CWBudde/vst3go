@@ -144,3 +144,9 @@ validator will not catch a host that calls things in an order it does not model.
 At minimum, in Reaper, Bitwig or Live: instantiate; automate a parameter and
 listen for dropouts; toggle bypass; save, close and reload the project; add a
 sidechain; and change the block size and sample rate while playing.
+
+In REAPER 7.86 on Linux, a stereo delay probe with a `LatencyChangeProcessor`
+reported 120 samples at 48 kHz and 720 samples at 96 kHz from saved delay
+settings of 2.5 and 7.5 ms. After reopening each project for rendering, the
+delayed right channel and dry left channel were identical in the 16-bit PCM
+output. The first impulse landed at frame 4800 and 9600 respectively.

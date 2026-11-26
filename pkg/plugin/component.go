@@ -47,6 +47,7 @@ type componentImpl struct {
 
 	maxBlockSize int32
 	active       bool
+	terminated   bool
 	mu           sync.Mutex
 	wrapper      *componentWrapper // Reference to wrapper for notifications
 
@@ -115,6 +116,20 @@ func (c *componentImpl) Initialize(_ interface{}) error {
 }
 
 func (c *componentImpl) Terminate() error {
+	processor, ok := c.processor.(TerminatingProcessor)
+	if !ok {
+		return nil
+	}
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if !c.terminated {
+		if err := processor.Terminate(); err != nil {
+			return err
+		}
+		c.terminated = true
+	}
 	return nil
 }
 
