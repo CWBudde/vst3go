@@ -354,6 +354,9 @@ there and reusable DSP in the sibling `algo-*` libraries.
         sample offsets across automation chunks and inactive bus handling.
   - [x] Expose optional MIDI controller assignments and verify repeated
         mapped parameter values at their sample offsets on Linux and Win64/Wine.
+  - [x] Reserve optional dense event output capacity before processing.
+        Verify Audio2Midi Trigger emits all 2,046 events in its busiest
+        tested block without allocating.
 - [x] Test the Sidechain Compressor with a loaded detector plugin in the
       original nested processing path, including reconfiguration and saved state.
   - [x] Forward host processing start and stop independently of activation so
@@ -1379,8 +1382,28 @@ parameters, programs, original editor references and audio comparisons in
 #### Utilities and MIDI
 
 - [ ] [Audio2Midi Trigger](../vst3go-plugins/plugins/utility/audio2midi-trigger/README.md)
+  - [x] Compare 98 original audio and MIDI cases. Preserve note-on and
+        note-off pairs at offset zero, including duplicate events, and
+        verify note and velocity recall in REAPER. Pass 47 SDK checks and
+        cross-build Windows x64.
+  - [ ] Verify native Windows and macOS hosts. The published Win64 VST2
+        callback left output untouched and emitted no events under Wine.
 - [ ] [Dither & Noiseshaper](../vst3go-plugins/plugins/utility/dither-noiseshaper/README.md)
+  - [x] Port the published IIR and retained Win32 IIR and FIR editions.
+        Verify 552 original captures, 12 sample-exact seeded sequences
+        and three sample-exact REAPER reopens. Pass 141 SDK checks and
+        cross-build Windows x64.
+  - [ ] Verify native Windows and macOS hosts and the retained Win64 FIR
+        no-write behavior outside Wine. Reconcile the recorded rounding
+        differences in the retained IIR binaries.
 - [ ] [PhaseAdjustment](../vst3go-plugins/plugins/utility/phaseadjustment/README.md)
+  - [x] Port the working retained Win32 edition with six editable slots
+        and measured latency of 1,152 samples. Match 84 reference captures
+        and five compensated REAPER reopens. Pass 47 SDK checks and
+        cross-build Windows x64.
+  - [ ] Recover the published Win64 and other retained DSP paths that
+        failed before the descriptor under Wine. Verify custom graphics
+        and native Windows and macOS hosts.
 - [ ] [VST Host Opcode Logger](../vst3go-plugins/plugins/utility/vst-host-opcode-logger/README.md)
   - [x] Identify the released DVOL and retained DVOl editions. Check
         108 original float32 buffers and three double callback probes,
@@ -1391,10 +1414,25 @@ parameters, programs, original editor references and audio comparisons in
         audio capture failure. Published and retained Win64 VST2
         buffers remain untouched. VST3 provides silent output.
 - [ ] [VST Pascal Script](../vst3go-plugins/plugins/utility/vst-pascal-script/README.md)
+  - [x] Compare 90 compiled-script captures across five original files.
+        Verify the Linux X11 chooser and compile controls and two
+        sample-exact REAPER reopens after moving the source. Pass
+        47 SDK checks and cross-build Windows x64.
+  - [ ] Verify broader Delphi PascalScript syntax, original edit widget
+        styling, original VST2 chunk import and native Windows and macOS.
+        VST3 recompiles saved source on recall. The original stayed dry
+        after chunk restore until recompilation.
 
 #### Hosting
 
 - [ ] [VST interfaced ASIO-Host](../vst3go-plugins/plugins/hosting/vst-interfaced-asio-host/README.md)
+  - [x] Identify five distributed editions. Verify the published Wine
+        editor, 45 latency cases and a software stereo exchange with
+        zero callback allocations.
+  - [ ] Establish a working native Windows driver and physical loopback
+        before registering a VST3 class. One retained driver rejects
+        buffer creation. The other starts in Wine without delivering
+        any callbacks.
 
 #### Other effects
 
@@ -1410,6 +1448,11 @@ parameters, programs, original editor references and audio comparisons in
 #### Games
 
 - [ ] [Tetris](../vst3go-plugins/plugins/game/tetris/README.md)
+  - [x] Identify the published source and both website archives. The
+        catalog identifies this as a clone of the existing game, and
+        `TetrisUnit.pas` credits its game core to Arnaud Celermajer.
+  - [ ] A faithful recreation of the existing Tetris game remains
+        outside the implementation scope. No VST3 game class is registered.
 
 ### 7.6 Acceptance for every published class
 
