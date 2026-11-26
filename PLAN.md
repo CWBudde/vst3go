@@ -780,6 +780,12 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Compare each original editor, including the retained editor's Attack
         update on opening, and verify the remaining native host platforms.
 - [ ] [Smooth Multiband Compressor](../vst3go-plugins/plugins/dynamics/smooth-multiband-compressor/README.md)
+  - [x] Match 114 Win32 captures within 5.97e−7, including queued crossover
+        edits, the Smooth mode from [algo-dsp PR #53](https://github.com/CWBudde/algo-dsp/pull/53),
+        Limit and the original frame-16 impulse peak with zero reported latency.
+        Validate the class and reopen four REAPER projects within 1.20e−7.
+  - [ ] Compare the original editor and its auto-makeup controls, verify Windows
+        and macOS hosts, and confirm permission to redistribute original assets.
 - [ ] [Soft Knee Feedback Compressor](../vst3go-plugins/plugins/dynamics/soft-knee-feedback-compressor/README.md)
 - [ ] [Soft Knee Feedback Limiter](../vst3go-plugins/plugins/dynamics/soft-knee-feedback-limiter/README.md)
   - [x] Compare the audible September 2008 ZIP and January 2010 SKLDM
