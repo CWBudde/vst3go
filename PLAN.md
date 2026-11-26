@@ -708,6 +708,11 @@ parameters, programs, original editor references and audio comparisons in
         REAPER projects with independently edited splits and band controls.
   - [ ] Verify the native editor, meters and additional host platforms.
 - [ ] [Lightweight Soft Knee Compressor](../vst3go-plugins/plugins/dynamics/lightweight-soft-knee-compressor/README.md)
+  - [x] Port three release editions and match 159 captures across the
+        detector timings, clip curves, stereo routing and editable programs.
+        Verify independent edits in a reopened REAPER project.
+  - [ ] Verify the original editor, characteristic plot and additional native
+        hosts. The published VST2 double callback left outputs untouched.
 - [ ] [Lightweight Soft Knee Gate](../vst3go-plugins/plugins/dynamics/lightweight-soft-knee-gate/README.md)
 - [ ] [Lightweight Soft Knee Limiter](../vst3go-plugins/plugins/dynamics/lightweight-soft-knee-limiter/README.md)
 - [ ] [Lightweight Upward Compressor](../vst3go-plugins/plugins/dynamics/lightweight-upward-compressor/README.md)
