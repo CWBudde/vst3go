@@ -1223,15 +1223,40 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Resolve the older retained Win32 host-setter behavior and verify
         physical Windows and macOS hosts.
 - [ ] [HRTF 3D](../vst3go-plugins/plugins/spatial/hrtf-3d/README.md)
+  - [x] Verify the 2007, 2009 and retained legacy classes against external
+        checksum-verified impulse sets. Match 67 original captures both
+        in-place and out-of-place within 3.726e-8. Reopen six Linux REAPER
+        projects, verify 64- and 512-sample compensation, pass 141 SDK
+        checks and cross-build Windows x64. Live direction changes use
+        [algo-dsp PR #64](https://github.com/CWBudde/algo-dsp/pull/64).
+  - [ ] Verify the later VSTPack Win32 and Win64 editions, which fail
+        during Wine entry, and native editors and hosts.
 - [ ] [PhaseBug](../vst3go-plugins/plugins/spatial/phasebug/README.md)
-  - [ ] PhaseBug
-  - [ ] PhaseBug Mono
+  - [x] Port the stereo and mono installer classes. Compare 84 installer
+        captures within 2.43e-7 and the 84 collection captures within
+        3.78e-5. Reopen eight Linux REAPER projects with 3,072-sample
+        compensation, pass 94 SDK checks and cross-build Windows x64.
+  - [ ] Verify the original 316 × 309 editor and ring interactions,
+        native Windows and macOS hosts, and old project migration.
 - [ ] [Quadrophonics](../vst3go-plugins/plugins/spatial/quadrophonics/README.md)
-  - [ ] SQ encoder
-  - [ ] SQ decoder
-  - [ ] QS encoder
-  - [ ] QS decoder
+  - [x] SQ encode and decode. Match 60 published references within
+        2.981e-7 and verify the 768-sample compensated quad/stereo routing.
+  - [x] QS encode and retained decode. Match 60 audible captures within
+        3.577e-7. Verify the encoder's 768-sample compensation and the
+        retained decoder's explicit zero-latency four-channel matrix.
+        Reopen all four classes in Linux REAPER, pass 188 SDK checks
+        and cross-build Windows x64.
+  - [ ] Verify native hosts, the static original editor and the alternate
+        retained SQ decoder. Both published QS decode callbacks leave all
+        probed output buffers untouched.
 - [ ] [Quadropolis](../vst3go-plugins/plugins/spatial/quadropolis/README.md)
+  - [x] Verify the published 2004 right-ear-only and 2010 binaural classes
+        using external checksum-verified HRTFs. Match 270 reference
+        captures within 5.018e-8 and verify 512-sample compensation in
+        both Linux REAPER reopens. Pass 94 SDK checks and cross-build
+        Windows x64.
+  - [ ] Verify native editors, physical ASIO and native hosts. Both retained
+        VSTPack binaries fail during ordinary Wine effOpen.
 - [ ] [Simple Crosstalk Cancellation](../vst3go-plugins/plugins/spatial/simple-crosstalk-cancellation/README.md)
 - [ ] [Spinbug](../vst3go-plugins/plugins/spatial/spinbug/README.md)
 - [ ] [Surround to Stereo](../vst3go-plugins/plugins/spatial/surround-to-stereo/README.md)
