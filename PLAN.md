@@ -424,7 +424,12 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify the custom editor, older program import and remaining hosts.
 - [ ] [Noname EQ](../vst3go-plugins/plugins/eq/noname-eq/README.md)
   - [ ] Original
+    - [x] Compare all eight filter types and both rate setup orders in 153
+          float32 stereo renders. Reopen an edited Init program in REAPER.
+    - [ ] Check the older binary, mono and float64 paths, and native editor.
   - [ ] Split and oversampled edition
+    - [x] Capture seven programs and the two EQ parameter groups in both
+          distinct split release binaries.
 - [ ] [Parametri-Q (lite)](../vst3go-plugins/plugins/eq/parametri-q-lite/README.md)
 - [ ] [ParametricEQ](../vst3go-plugins/plugins/eq/parametriceq/README.md)
 - [ ] [Posihfopit](../vst3go-plugins/plugins/eq/posihfopit/README.md)
