@@ -671,6 +671,11 @@ parameters, programs, original editor references and audio comparisons in
         wrapper leaves the gate detector silent, and the retained x64 DLL
         failed to load under Wine.
 - [ ] [Hard Knee Compressor](../vst3go-plugins/plugins/dynamics/hard-knee-compressor/README.md)
+  - [x] Match 72 x86 release captures, including independent stereo channels,
+        startup control values and the 0.01 ms attack. Verify sample-offset
+        edits and four reopened REAPER projects.
+  - [ ] Verify the original editor, retained Win64 audio, additional native
+        hosts and redistribution permission.
 - [ ] [LA4029](../vst3go-plugins/plugins/dynamics/la4029/README.md)
 - [ ] [Lightweight Dynamics](../vst3go-plugins/plugins/dynamics/lightweight-dynamics/README.md)
 - [ ] [Lightweight Feedback Compressor](../vst3go-plugins/plugins/dynamics/lightweight-feedback-compressor/README.md)
