@@ -444,6 +444,10 @@ parameters, programs, original editor references and audio comparisons in
 - [ ] [Posihfopit](../vst3go-plugins/plugins/eq/posihfopit/README.md)
   - [ ] Original Posihfopit
   - [ ] Armyfopit
+    - [x] Compare 189 release renders across all eight programs, three input
+          levels and timed controls. Reopen independently edited slots in REAPER.
+    - [ ] Verify the original graphical editor, alternate coefficient design
+          and additional native hosts.
   - [ ] Smallifopit 4-band mono
   - [ ] Smallifopit 4-band stereo
   - [ ] Smallifopit 8-band mono
