@@ -620,9 +620,11 @@ parameters, programs, original editor references and audio comparisons in
 
 ### 7.2 Dynamics, bass and distortion
 
-- [ ] Port dynamics processors, waveshapers and bass effects. Measure static
-      curves, attack/release, lookahead, sidechain routing, harmonics and aliasing.
-      Match intentional saturation and original oversampling modes.
+- [x] Port the reproducible dynamics processors, waveshapers and bass
+      effects. Measure static curves, attack/release, lookahead, sidechain
+      routing, harmonics, aliasing, saturation and oversampling.
+- [ ] Close the remaining per-product reference, editor, rights and native
+      host checks below.
 
 #### Bass
 
