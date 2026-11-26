@@ -726,6 +726,11 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify the native editor, retained Win64 provenance, additional hosts
         and redistribution permission for original assets.
 - [ ] [Lightweight Upward Compressor](../vst3go-plugins/plugins/dynamics/lightweight-upward-compressor/README.md)
+  - [x] Match 252 captures from the archive and Series releases. Verify both
+        clip curves, upward gain, latched makeup, all programs and four
+        reopened REAPER projects using the curve from [algo-dsp PR #52](https://github.com/CWBudde/algo-dsp/pull/52).
+  - [ ] Verify the native editor, characteristic display and other host
+        platforms. The port bounds gain and output at exponent overflow.
 - [ ] [Limiter](../vst3go-plugins/plugins/dynamics/limiter/README.md)
 - [ ] [Lookahead Limiter](../vst3go-plugins/plugins/dynamics/lookahead-limiter/README.md)
   - [x] Match the measured audio and program values and verify saved delay
