@@ -690,11 +690,11 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify the original editor, gain readout and additional native hosts.
         The published VST2 double callback left its output buffers untouched.
 - [ ] [Lightweight Feedback Compressor](../vst3go-plugins/plugins/dynamics/lightweight-feedback-compressor/README.md)
-  - [x] Match 144 finite comparisons for the 2010 archive and installer,
-        including feedback, channel linking, Auto MakeUp and timed edits.
-        Verify four reopened REAPER projects and edited program slots.
-  - [ ] Complete the two earlier editions and native editor and host checks.
-        The 2010 port bounds the extreme makeup setting to finite outputs.
+  - [x] Match 156 finite comparisons per class for the 2010 archive/installer,
+        September 2009 Series and March 2009 ZIP releases. Verify the different
+        clipping and adaptive feedback paths and reopen 12 REAPER projects.
+  - [ ] Verify the native editor and additional native hosts. The ports keep
+        audio finite at the measured legacy ratio and makeup overflows.
 - [ ] [Lightweight Feedback Limiter](../vst3go-plugins/plugins/dynamics/lightweight-feedback-limiter/README.md)
 - [ ] [Lightweight Multiband Compressor](../vst3go-plugins/plugins/dynamics/lightweight-multiband-compressor/README.md)
 - [ ] [Lightweight Soft Knee Compressor](../vst3go-plugins/plugins/dynamics/lightweight-soft-knee-compressor/README.md)
