@@ -165,6 +165,19 @@ type LatencyChangeProcessor interface {
 	SetLatencyChangeNotifier(notify func())
 }
 
+// ControllerParameterProcessor receives direct controller and native-editor
+// parameter writes after the runtime stores the clamped normalized value.
+// Repeated writes are delivered even when the value stays the same.
+//
+// This runs on the host UI thread and may allocate. It can run during
+// playback, so publish any state ProcessAudio uses without blocking that
+// thread. Sample-offset queues, program selectors, and state restoration use
+// their existing processing and state hooks.
+type ControllerParameterProcessor interface {
+	Processor
+	ControllerParameterChanged(id uint32, normalized float64)
+}
+
 // StatefulProcessor extends Processor with custom state save/load hooks.
 //
 // Implement this only when parameter state is insufficient to restore runtime

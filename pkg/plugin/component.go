@@ -723,7 +723,14 @@ func (c *componentImpl) SetParamNormalized(id uint32, value float64) error {
 		return c.programs.selectFromController(value)
 	}
 	if p, ok := c.processor.GetParameters().GetOK(id); ok {
+		if math.IsNaN(value) || math.IsInf(value, 0) {
+			return nil
+		}
+		value = min(max(value, 0), 1)
 		p.SetNormalized(value)
+		if controller, ok := c.processor.(ControllerParameterProcessor); ok {
+			controller.ControllerParameterChanged(id, value)
+		}
 		return nil
 	}
 	return vst3.ErrInvalidArgument

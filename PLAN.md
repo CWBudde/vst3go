@@ -331,6 +331,9 @@ there and reusable DSP in the sibling `algo-*` libraries.
       compensation across reconfiguration and preset restore.
   - [x] Exercise retained-handler latency notifications from the editor and
         on processor-state restore in the C host fixture.
+  - [x] Let processors react to direct controller and editor parameter
+        writes on the UI thread. Verify same-value writes and keep
+        sample-offset automation on its existing path.
   - [x] Verify sample-exact delay compensation after reopening a delay probe
         at 48 and 96 kHz in REAPER 7.86.
   - [x] Verify the Lookahead Limiter delay and tail. Reopen and render
@@ -473,6 +476,9 @@ parameters, programs, original editor references and audio comparisons in
         developer checkout builds. Restore the four editable Init slots.
   - [ ] Verify the native editor, its snapshots and other native hosts.
 - [ ] [UNIQUE EQ](../vst3go-plugins/plugins/eq/unique-eq/README.md)
+  - [x] Match 180 renders from both releases, including fractional Power
+        and Pad behavior. Reopen all seven controls and the editable Init slot.
+  - [ ] Verify the original editor and additional native hosts.
 - [ ] [Valuable EQ](../vst3go-plugins/plugins/eq/valuable-eq/README.md)
   - [ ] Valueable
   - [ ] Valueable Stereo
