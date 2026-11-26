@@ -684,6 +684,11 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify the original meters and native editors, additional host
         platforms, and permission to redistribute the original assets.
 - [ ] [Lightweight Dynamics](../vst3go-plugins/plugins/dynamics/lightweight-dynamics/README.md)
+  - [x] Match 48 x86 release renders through the gate, compressor, limiter
+        and Soft Clip paths, including the original right-only Soft Clip
+        detector and Auto MakeUp latch. Reopen edited programs in REAPER.
+  - [ ] Verify the original editor, gain readout and additional native hosts.
+        The published VST2 double callback left its output buffers untouched.
 - [ ] [Lightweight Feedback Compressor](../vst3go-plugins/plugins/dynamics/lightweight-feedback-compressor/README.md)
 - [ ] [Lightweight Feedback Limiter](../vst3go-plugins/plugins/dynamics/lightweight-feedback-limiter/README.md)
 - [ ] [Lightweight Multiband Compressor](../vst3go-plugins/plugins/dynamics/lightweight-multiband-compressor/README.md)
