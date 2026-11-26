@@ -1354,8 +1354,27 @@ parameters, programs, original editor references and audio comparisons in
         checks and a Windows x64 cross-build.
   - [ ] Verify original skins and native Windows and macOS meter views.
 - [ ] [StereoMeterVST](../vst3go-plugins/plugins/analysis/stereometervst/README.md)
+  - [x] Identify the website release and the misnamed retained
+        Surround to Stereo payload. Verify 252 stereo captures, visible
+        program settings, four plot directions and stretch in the
+        original editor. Reopen a Linux REAPER session with the
+        200 × 220 X11 plot, 47 SDK checks and Windows x64 build.
+  - [ ] Verify native Windows and macOS views, original pixel smoothing,
+        artwork, blend and alternate update modes.
 - [ ] [Third-Octave Analyser (VST-Plugin)](../vst3go-plugins/plugins/analysis/third-octave-analyser-vst-plugin/README.md)
+  - [x] Port the published and retained measurement paths and compare
+        90 captures. Published readouts match exactly. Retained Win64
+        matches within 0.00271 dB. Verify both Linux X11 views and saved
+        settings, 94 SDK checks and Windows x64 cross-build.
+  - [ ] Verify native live chart motion, Windows and macOS views, and
+        the retained Win32 floor and decay discrepancy.
 - [ ] [TunaBUG](../vst3go-plugins/plugins/analysis/tunabug/README.md)
+  - [x] Verify 90 exact audio passthrough cases and 96 original tuner
+        positions within two pixels. Exercise both custom controls and
+        the live 300 × 192 X11 needle in a reopened Linux REAPER session,
+        pass 47 SDK checks and cross-build Windows x64.
+  - [ ] Verify the 96 kHz low-string case that faults in Wine, native
+        Windows and macOS hosts, standalone ASIO and Winamp.
 
 #### Utilities and MIDI
 
