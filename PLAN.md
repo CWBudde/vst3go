@@ -1267,6 +1267,12 @@ parameters, programs, original editor references and audio comparisons in
 - [ ] [Spinbug](../vst3go-plugins/plugins/spatial/spinbug/README.md)
 - [ ] [Surround to Stereo](../vst3go-plugins/plugins/spatial/surround-to-stereo/README.md)
 - [ ] [Tina-Turner](../vst3go-plugins/plugins/spatial/tina-turner/README.md)
+  - [x] Identify the single-Angle 2005 installer. Match 252 original
+        replacements and accumulating captures within 4.553e-21. Verify
+        untouched silence and explicit 0° across three Linux REAPER
+        project reopens, 47 SDK checks and the Windows x64 cross-build.
+  - [ ] Verify the original 245 × 269 editor, native Windows and macOS
+        hosts, and the physical crossed rear-speaker wiring.
 
 #### Instruments and vocoders
 
