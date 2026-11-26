@@ -369,6 +369,8 @@ there and reusable DSP in the sibling `algo-*` libraries.
         REAPER 7.86.
   - [x] Reopen the EeeekU session in a fresh REAPER process and verify
         independent selected-band editor state in the two live instances.
+  - [x] Preserve editable factory slots in Graphic EQ, Noname EQ, Lookahead
+        Limiter and Simple Sample Delay. Switch and restore edits in REAPER.
 - [ ] Validate the affected runtime interfaces using the C host smoke tests
       and Steinberg validator. Repeat in a real host with a family bundle,
       an instrument, a sidechain and a native editor before declaring coverage.
@@ -417,7 +419,10 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Posihfopit edition
     - [x] Measure all 32 released programs and 64-band state restore.
           Compare 154 reference renders for the verified filter paths.
-    - [ ] Finish the remaining selectors, VST3 class, editor and host checks.
+    - [x] Match all 32 untouched factory programs in 192 additional renders.
+          Verify the seven-mode, 19-selector pilot and variable-band state in REAPER.
+    - [ ] Finish the remaining selectors and nonlinear modes, original editor,
+          factory-bank distribution and remaining platforms.
 - [ ] [Graphic EQ](../vst3go-plugins/plugins/eq/graphic-eq/README.md)
   - [x] Compare all 22 band controls and channel isolation across 207 audible
         release captures. Reopen the stereo program and edits in REAPER.
