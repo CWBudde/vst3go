@@ -904,6 +904,12 @@ parameters, programs, original editor references and audio comparisons in
         SDK validation, and the Windows x64 cross-build.
   - [ ] Verify physical Windows and macOS VST3 hosts.
 - [ ] [OpAmp](../vst3go-plugins/plugins/distortion/opamp/README.md)
+  - [x] Match all 96 Win32 Digital OpAmp Simulation traces bit for bit using
+        the saturation function from [algo-dsp PR #57](https://github.com/CWBudde/algo-dsp/pull/57).
+        Verify queued gain changes and both edited slots through the VST3 ABI,
+        four reopened REAPER renders, and SDK validation.
+  - [ ] Verify the original editor, graphics redistribution permissions and
+        physical Windows and macOS hosts.
 - [ ] [Oversampled Tanh](../vst3go-plugins/plugins/distortion/oversampled-tanh/README.md)
 - [ ] [Scary](../vst3go-plugins/plugins/distortion/scary/README.md)
 - [ ] [TanhWaveshaper](../vst3go-plugins/plugins/distortion/tanhwaveshaper/README.md)
