@@ -872,6 +872,13 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify the original editors and physical Windows and macOS hosts.
         The native VST3 runtime still exposes only float32 processing.
 - [ ] [Decimator](../vst3go-plugins/plugins/distortion/decimator/README.md)
+  - [x] Match all 120 comparable original renders bit for bit, including the
+        fractional hold phase, right-channel high-pass coupling, three
+        editable programs and six MIDI CC mappings at their queued sample offsets.
+        Validate the VST3 and reopen three repeatable REAPER projects.
+  - [ ] Compare the original editor and physical Windows and macOS hosts,
+        confirm graphics redistribution and support the measured original
+        float64 input path. REAPER's variable silent pre-roll affects hold phase.
 - [ ] [Dynamite](../vst3go-plugins/plugins/distortion/dynamite/README.md)
 - [ ] [Exciter](../vst3go-plugins/plugins/distortion/exciter/README.md)
 - [ ] [Hysteresis](../vst3go-plugins/plugins/distortion/hysteresis/README.md)
