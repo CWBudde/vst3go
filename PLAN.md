@@ -653,9 +653,19 @@ parameters, programs, original editor references and audio comparisons in
         native hosts. The port selects the sidechain immediately and the
         retained x64 DLL failed to load under Wine.
 - [ ] [Audiocation Compressor](../vst3go-plugins/plugins/dynamics/audiocation-compressor/README.md)
-  - [ ] Mono compressor
-  - [ ] Stereo compressor
+  - [x] Port the released DVL1 mono and DVL2 stereo classes. Match 196
+        transformer, detector, automation, finite expansion and rate-change
+        captures. Reopen both layouts and edited programs in REAPER.
+        Use the pinned DAV curve and timing from [algo-dsp PR #49](https://github.com/CWBudde/algo-dsp/pull/49).
+  - [ ] Check original graphics, meters, retained editions and additional
+        native hosts. The port underflows safely at extreme expansion.
 - [ ] [EnhancedGate](../vst3go-plugins/plugins/dynamics/enhancedgate/README.md)
+  - [x] Match all 114 x86 release captures bit for bit, including the +40 dB
+        startup gain, explicit +1 dB endpoint write and Power bypass. Reopen
+        and render six REAPER sessions with the endpoint state preserved.
+  - [ ] Verify the original editor and additional native hosts. The archived
+        wrapper leaves the gate detector silent, and the retained x64 DLL
+        failed to load under Wine.
 - [ ] [Hard Knee Compressor](../vst3go-plugins/plugins/dynamics/hard-knee-compressor/README.md)
 - [ ] [LA4029](../vst3go-plugins/plugins/dynamics/la4029/README.md)
 - [ ] [Lightweight Dynamics](../vst3go-plugins/plugins/dynamics/lightweight-dynamics/README.md)
