@@ -363,7 +363,12 @@ func (c *componentImpl) SetupProcessing(setup *vst3.ProcessSetup) error {
 		c.chunkOutputBuses = make([]process.BusBuffers, len(ctx.Buses.OutputBuses))
 		c.noteOutputBus = c.busConfig.GetBusInfo(bus.MediaTypeEvent, bus.DirectionOutput, 0)
 		if c.noteOutputBus != nil {
-			c.outputEvents = make([]midi.Event, 0, 128)
+			capacity := 128
+			if provider, ok := c.processor.(OutputEventCapacityProvider); ok {
+				capacity = max(capacity, provider.OutputEventCapacity(c.maxBlockSize))
+				ctx.ReserveOutputEvents(capacity)
+			}
+			c.outputEvents = make([]midi.Event, 0, capacity)
 		}
 	}
 	c.processCtx.Store(ctx)

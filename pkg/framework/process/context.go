@@ -15,10 +15,9 @@
 // them. A Context, or any slice obtained from one, must never be retained past
 // the end of ProcessAudio or handed to another goroutine.
 //
-// The two exceptions are owned by the runtime, not by plugin code:
-// [NewContext] runs on the control thread during setup, and the reset paths
-// the runtime invokes on deactivation run there too, while the audio thread is
-// stopped.
+// The exceptions are owned by the runtime, not by plugin code:
+// [NewContext], [Context.ReserveOutputEvents], and the reset paths run on the
+// control thread while the audio thread is stopped.
 //
 // Within ProcessAudio the whole surface is allocation-free: the parameter-change
 // buffer is sized from the block size at construction and coalesces on
@@ -441,6 +440,12 @@ func (c *Context) ApplyParameterChange(change ParameterChange) {
 // AddInputEvent adds a MIDI event to the input queue
 func (c *Context) AddInputEvent(event midi.Event) {
 	c.eventBuffer.AddInputEvent(event)
+}
+
+// ReserveOutputEvents ensures capacity for at least count queued output events.
+// The runtime calls it during setup, before publishing the context to the audio thread.
+func (c *Context) ReserveOutputEvents(count int) {
+	c.eventBuffer.ReserveOutputEvents(count)
 }
 
 // AddOutputEvent adds a MIDI event to the output queue

@@ -1,6 +1,7 @@
 package midi
 
 import (
+	"slices"
 	"sort"
 	"sync"
 )
@@ -232,6 +233,18 @@ func NewEventBuffer() *EventBuffer {
 // AddInputEvent queues an event received from the host.
 func (b *EventBuffer) AddInputEvent(event Event) {
 	b.inputQueue.Add(event)
+}
+
+// ReserveOutputEvents ensures capacity for at least count queued output events.
+// Call it before processing. It preserves any queued events.
+func (b *EventBuffer) ReserveOutputEvents(count int) {
+	q := b.outputQueue
+	q.mu.Lock()
+	defer q.mu.Unlock()
+
+	if count > cap(q.events) {
+		q.events = slices.Grow(q.events, count-len(q.events))
+	}
 }
 
 // AddOutputEvent queues an event to be sent back to the host.
