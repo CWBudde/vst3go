@@ -456,6 +456,11 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Low-pass mono and stereo
   - [ ] Frequency splitter
   - [ ] Butterworth²HP oversampled edition
+  - [x] Compare 509 release renders across nine VST3 classes. Verify mono
+        and stereo routing, split summation, oversampling and saved sessions
+        on Linux.
+  - [ ] Finish editor and platform checks, float64 processing and exact
+        live oversampler selector transitions.
 - [ ] [Chebyshev Filters](../vst3go-plugins/plugins/filter/chebyshev-filters/README.md)
   - [ ] Type I high-pass and low-pass, including mono editions
   - [ ] Type II high-pass
