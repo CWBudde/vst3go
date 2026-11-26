@@ -1274,6 +1274,14 @@ parameters, programs, original editor references and audio comparisons in
         on a native host and reproduce the original editor and native
         Windows and macOS host sessions.
 - [ ] [Surround to Stereo](../vst3go-plugins/plugins/spatial/surround-to-stereo/README.md)
+  - [x] Port the 2005 and 2006 six-input editions using five local
+        checksum-verified profiles. Match 134 unchanged release captures
+        and 32 profile comparisons within 1.491e-8. Verify 512-sample
+        compensation in three Linux REAPER reopens, 94 SDK checks and
+        the Windows x64 cross-build.
+  - [ ] Verify native host and editor behavior and custom HRTF import.
+        The 2006 original changes the displayed program while keeping
+        Setup 1 active. The port applies the selected local setup.
 - [ ] [Tina-Turner](../vst3go-plugins/plugins/spatial/tina-turner/README.md)
   - [x] Identify the single-Angle 2005 installer. Match 252 original
         replacements and accumulating captures within 4.553e-21. Verify
