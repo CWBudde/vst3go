@@ -1258,6 +1258,12 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify native editors, physical ASIO and native hosts. Both retained
         VSTPack binaries fail during ordinary Wine effOpen.
 - [ ] [Simple Crosstalk Cancellation](../vst3go-plugins/plugins/spatial/simple-crosstalk-cancellation/README.md)
+  - [x] Match 432 float32 captures from the published Win32 and retained
+        Win32 and Win64 DLLs within 4.173e-7. Verify 18 original double
+        captures against the widened float32 model, two editable programs,
+        four Linux REAPER reopens, 47 SDK checks and the Windows x64 build.
+  - [ ] Verify the original 665 × 281 editor and native Windows and macOS
+        hosts. The VST3 runtime exposes float32 audio.
 - [ ] [Spinbug](../vst3go-plugins/plugins/spatial/spinbug/README.md)
 - [ ] [Surround to Stereo](../vst3go-plugins/plugins/spatial/surround-to-stereo/README.md)
 - [ ] [Tina-Turner](../vst3go-plugins/plugins/spatial/tina-turner/README.md)
