@@ -416,6 +416,9 @@ parameters, programs, original editor references and audio comparisons in
           release with an existing authorized license.
   - [ ] Posihfopit edition
 - [ ] [Graphic EQ](../vst3go-plugins/plugins/eq/graphic-eq/README.md)
+  - [x] Compare all 22 band controls and channel isolation across 207 audible
+        release captures. Reopen the stereo program and edits in REAPER.
+  - [ ] Verify the custom editor, older program import and remaining hosts.
 - [ ] [Noname EQ](../vst3go-plugins/plugins/eq/noname-eq/README.md)
   - [ ] Original
   - [ ] Split and oversampled edition
