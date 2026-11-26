@@ -415,6 +415,9 @@ parameters, programs, original editor references and audio comparisons in
     - [ ] Establish exact source correspondence and capture the final 1.8.8
           release with an existing authorized license.
   - [ ] Posihfopit edition
+    - [x] Measure all 32 released programs and 64-band state restore.
+          Compare 154 reference renders for the verified filter paths.
+    - [ ] Finish the remaining selectors, VST3 class, editor and host checks.
 - [ ] [Graphic EQ](../vst3go-plugins/plugins/eq/graphic-eq/README.md)
   - [x] Compare all 22 band controls and channel isolation across 207 audible
         release captures. Reopen the stereo program and edits in REAPER.
@@ -570,6 +573,9 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Mono edition
   - [ ] Stereo edition
   - [ ] Quad edition
+  - [x] Compare all three VST3 classes to the audible x86 releases.
+        Verify quad routing, program state and independent controls in REAPER.
+  - [ ] Verify the native editors, the x64 release discrepancy and other hosts.
 - [ ] [Simple Chorus](../vst3go-plugins/plugins/modulation/simple-chorus/README.md)
 - [ ] [Spin Bug Lite](../vst3go-plugins/plugins/modulation/spin-bug-lite/README.md)
 - [ ] [StkChorus](../vst3go-plugins/plugins/modulation/stkchorus/README.md)
