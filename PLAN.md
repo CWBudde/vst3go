@@ -1441,6 +1441,19 @@ parameters, programs, original editor references and audio comparisons in
 
 #### Hosting
 
+- [ ] [Plugin Wrappers](../vst3go-plugins/plugins/hosting/plugin-wrappers/README.md):
+      the wrapper plugins produced by the VST Plugin Oversampler, Split Plugin
+      Creator and VST Plugin Merger (Delphi `Oversampler Template`,
+      `Split Template` and `Custom Wrapper`).
+  - [ ] Decide between creator-tool bundles that carry the child plugin in
+        `Contents/Resources` and runtime child selection. Decide whether
+        VST2 children are in scope.
+  - [ ] Generalise the Sidechain Compressor's nested detector host into a
+        shared hosting layer for VST3 children, including the child editor.
+  - [ ] Port the DAV IIR up/down-sampler (orders up to 16, Butterworth and
+        Chebyshev I characteristics) to algo-dsp. Port the 13 split modes.
+  - [ ] Compare a wrapped reference plugin against the original wrappers
+        under Wine and in REAPER.
 - [ ] [VST interfaced ASIO-Host](../vst3go-plugins/plugins/hosting/vst-interfaced-asio-host/PORT.md)
   - [x] Identify five distributed editions. Verify the published Wine
         editor, 45 latency cases and a software stereo exchange with
