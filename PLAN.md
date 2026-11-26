@@ -1482,7 +1482,14 @@ parameters, programs, original editor references and audio comparisons in
         and in a Win64 HWND fixture under Wine. Pass 47 SDK checks.
   - [ ] Verify the original artwork, HiDPI scaling and physical Windows
         and macOS DAWs.
-- [ ] [Sigma Delta](../vst3go-plugins/plugins/education/sigma-delta/README.md)
+- [ ] [Sigma Delta](../vst3go-plugins/plugins/education/sigma-delta/PORT.md)
+  - [x] Match all 62 published converter captures sample for sample,
+        including native calibration and dither. Verify three exact Linux
+        REAPER reopens, finite output and both editable Init slots through
+        framework state. Pass 47 SDK checks and cross-build Windows x64.
+  - [ ] Verify selection of the second identically named Init slot in
+        REAPER and native Windows and macOS DAWs. The retained DLL and
+        installer payload identify as Surround to Stereo.
 
 #### Games
 
