@@ -546,6 +546,10 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify audio-queue latency transitions, live FIR history, the
         original editors and additional native hosts.
 - [ ] [Linear Phase Frequency Crossover](../vst3go-plugins/plugins/filter/linear-phase-frequency-crossover/README.md)
+  - [x] Match 432 release renders, including timed cutoff edits. Reopen the
+        mono input and two output routes with 1024-sample PDC at 48 and 96 kHz.
+  - [ ] Verify the native editor and additional hosts. The 2009 release
+        reports zero latency for essentially the same response.
 - [ ] [MoogVST](../vst3go-plugins/plugins/filter/moogvst/README.md)
   - [x] Match 120 normal release renders and the six high-resonance cases
         with explicit controls. Reopen Init and driven settings in REAPER.
