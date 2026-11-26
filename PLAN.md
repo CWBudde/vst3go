@@ -1294,6 +1294,13 @@ parameters, programs, original editor references and audio comparisons in
 
 - [ ] [2-Oszillator Synth](../vst3go-plugins/plugins/synth/2-oszillator-synth/README.md)
 - [ ] [FunKEYS](../vst3go-plugins/plugins/synth/funkeys/README.md)
+  - [x] Identify the byte-identical website and retained archive. Port
+        the retained Wurley voice with local checksum-verified wavetables,
+        eight-voice stealing and sample-offset CC126. Verify the reopened
+        Linux REAPER MIDI render, 47 SDK checks and Windows x64 cross-build.
+  - [ ] Verify published audio parity and the original editor on native
+        hosts. Both Win32 callbacks raise a range exception at the second
+        output, including on the first silent block under Wine.
 - [ ] [Simple Sampler](../vst3go-plugins/plugins/synth/simple-sampler/README.md)
 - [ ] [Simple Sine Synth](../vst3go-plugins/plugins/synth/simple-sine-synth/README.md)
   - [x] Measure both 2009 binary releases. Port the audible oscillator from
