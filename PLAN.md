@@ -561,6 +561,9 @@ parameters, programs, original editor references and audio comparisons in
   - [ ] Verify the original editor, MIDI CC controls and other native hosts.
         The published headless x64 replacing callback leaves buffers unchanged.
 - [ ] [QR-Filter](../vst3go-plugins/plugins/filter/qr-filter/README.md)
+  - [x] Match 117 released stereo renders, including running Q and R edits.
+        Reopen independent damping and latched spacing in Linux REAPER.
+  - [ ] Verify the original custom editor and additional native hosts.
 - [ ] [Rubberfilter](../vst3go-plugins/plugins/filter/rubberfilter/README.md)
 - [ ] [Simple Linear Phase Filter](../vst3go-plugins/plugins/filter/simple-linear-phase-filter/README.md)
   - [ ] Linear Phase LP
