@@ -317,10 +317,11 @@ there and reusable DSP in the sibling `algo-*` libraries.
   - [x] pluginval (strictness 10, Linux, Xvfb) opened and automated the
         editor of every loadable class without a failure: 218 classes in 122
         bundles, including the 13 projects with custom X11 editors.
-  - [ ] Implement the macOS editor: an `NSView` child in the host's parent
-        view, with Cocoa event handling and Retina scaling. There is no darwin
-        view code yet, so on macOS every port falls back to the host's
-        generic editor (found by the 2026-11-26 stress test).
+  - [x] Implement the macOS `NSView` child in the host's parent view.
+        VST Host Opcode Logger and Simple Delay use the companion Cocoa
+        adapter and cross-link on arm64 and amd64. AppKit handles Retina
+        backing scale while the host uses logical points. Product coverage
+        and native evidence are tracked in Section 7.8.
   - [ ] Run the native Windows and macOS editor checks, including focus and
         keyboard interaction.
 - [x] Wire editor gestures through the retained component handler
@@ -1639,12 +1640,16 @@ linked in Sections 7.1–7.5 and the [companion catalog](../vst3go-plugins/CATAL
 
 | Platform | Current custom editor coverage | Remaining platform work |
 | --- | --- | --- |
-| Linux X11 | Ather, Barberpole Tuner, BetaMeta, Compander, EeeekU, Sigma Delta, Simple Sampler, Simple Sine Synth, StereoMeter, Third Octave Analyser, Tunabug, VST Host Opcode Logger, VST Pascal Script | Add missing editors and close original-UI gaps in existing editors. |
-| Windows HWND | Ather, Compander, EeeekU, Sigma Delta, Simple Sampler, Tunabug | Add missing editors and verify coverage on native Windows. Existing cross-build and Wine evidence is recorded by product. |
-| macOS Cocoa | All ports use the generic host panel. | Complete the `NSView` support in Section 6.1 and add the custom editors. |
+| Linux X11 | Ather, Barberpole Tuner, BetaMeta, Compander, EeeekU, Sigma Delta, Simple Delay, Simple Sampler, Simple Sine Synth, StereoMeter, Third Octave Analyser, Tunabug, VST Host Opcode Logger, VST Pascal Script | Add missing editors and close original-UI gaps in existing editors. |
+| Windows HWND | Ather, Compander, EeeekU, Sigma Delta, Simple Delay, Simple Sampler, Tunabug | Add missing editors and verify coverage on native Windows. Existing cross-build and Wine evidence is recorded by product. |
+| macOS Cocoa | Simple Delay and VST Host Opcode Logger, cross-built for arm64 and amd64. | Run the AppKit fixture and native DAW checks. Add the other custom editors. |
 
 #### 7.8.1 Original references and edition mapping
 
+- [x] Index retained Delphi entry points, editor forms and available binary
+      evidence against all 137 [catalog projects](../vst3go-plugins/docs/research/original-editors.md).
+      Release classification is still open for the 49 projects explicitly
+      flagged in the inventory. Capture and licensing gaps are tracked below.
 - [ ] Inventory every class and edition in its product notes. Identify the
       matching original binary, Delphi form and editor code, and record whether
       the original supplies a custom editor, uses the host panel, or lacks a
@@ -1666,13 +1671,16 @@ linked in Sections 7.1–7.5 and the [companion catalog](../vst3go-plugins/CATAL
         advanced drawing, including anti-aliased curves, gradients, layered
         graphics, and animated meters. Use simple drawing and bitmap blits
         for static layouts and controls that need only those primitives.
+  - [x] Add the reusable AppKit child attachment and timer. Cross-link both
+        VST Host Opcode Logger editions for arm64 and amd64 and add the
+        AppKit host fixture.
   - [ ] Exercise an `NSView` child in a macOS host. Verify attach, remove,
         reopen, keyboard routing and Retina drawing with VST Host Opcode
-        Logger before applying the adapter across products.
+        Logger and Simple Delay.
 
 #### 7.8.3 Product editors
 
-- [ ] Implement the missing custom editors and bring the existing 13 projects
+- [ ] Implement the missing custom editors and bring the original 13 projects
       up to parity. Match client dimensions, layout, original artwork, typography,
       colors, control states, meters, plots and animation. Match parameter
       gestures, labels and value formatting, menus, keyboard shortcuts,
@@ -1681,10 +1689,27 @@ linked in Sections 7.1–7.5 and the [companion catalog](../vst3go-plugins/CATAL
         EeeekU's colors, fonts and shapes, Sigma Delta's signal-flow artwork,
         Tunabug's scale and buttons, and BetaMeta's skins. Check each edition
         independently where the reference shows a distinct editor.
-  - [ ] Simple Delay. Capture the 301 × 195 x86 edition and port its four
-        scrollbars, value labels and inversion checkbox from the Delphi form.
-        Expose the x64 host-panel edition separately and retain the existing
-        port's working delay processor and state compatibility.
+  - [x] Compare the three published EeeekU editor variants and match the ZIP
+        stereo graph readouts and S-key randomization. Verify in Linux REAPER
+        and the Win64 HWND probe under Wine. Original artwork by Mully and
+        the earlier stereo form still need separate acceptance.
+  - [x] Reproduce Barberpole Tuner's brushed backdrop with agg-go. Compare
+        matched defaults from the original Win32 release with the Linux
+        view at 1× and 2×. Keep font and platform parity open.
+  - [ ] VST Host Opcode Logger. Compare the new AppKit controls and retained
+        form against both released editors. Restore the Windows custom view
+        and verify text rendering, log interaction and saving on each platform.
+  - [ ] Simple Delay editor parity.
+    - [x] Capture the 301 × 195 x86 edition and port its four scrollbars,
+          value labels and inversion checkbox from the Delphi form. Expose
+          the x64 host-panel edition separately and retain the working delay
+          processor and state compatibility.
+    - [x] Compare default and automated 1× client screenshots on Linux and
+          Windows under Wine. Verify the two editions in REAPER on Linux
+          at 1× and 2× and run the Win64 HWND probe.
+    - [ ] Close the initial wet thumb, typography and stock rendering
+          differences recorded in the [capture notes](../vst3go-plugins/plugins/delay/simple-sample-delay/testdata/reference/CAPTURE.md#editor-comparison).
+          Verify both editions in native Windows and macOS DAWs.
   - [ ] Verify original host-provided variants still expose their controls
         through the DAW panel and preserve their edition-specific behavior.
 
