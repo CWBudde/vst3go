@@ -1661,6 +1661,30 @@ matching form for each first port. The checklist and product notes track
 acceptance for each edition and platform, including known differences in
 the current editors.
 
+**Projects awaiting their first custom VST3 editor**
+
+These projects have original custom-editor evidence. The inventory identifies
+the editions to verify and records any reference or artwork gaps.
+
+| Area | Pending projects |
+| --- | --- |
+| EQ (8) | Electri-Q, Noname EQ, Parametri-Q (lite), Posihfopit, Pushtec 5+1A, Soul EQ, UNIQUE EQ, Valuable EQ |
+| Filter (5) | Bugpass, Lavaland, Linear Phase Butterworth, MoogVST, Rubberfilter |
+| Bass (3) | Bass Baron, Bass Extender, SubBoost |
+| Distortion (10) | 2-Band Distortion, Advanced Clipper, Amp Sim, Christortion, Dynamite, Exciter, Hysteresis, OpAmp, Scary, Tubster |
+| Dynamics (17) | Adhesive, Audiocation Compressor, Hard Knee Compressor, LA4029, Lightweight Dynamics, Lightweight Feedback Compressor, Lightweight Feedback Limiter, Lightweight Multiband Compressor, Lightweight Soft Knee Compressor, Lightweight Soft Knee Gate, Lightweight Soft Knee Limiter, Lightweight Upward Compressor, Lookahead Limiter, Multiband Compressor, Smooth Multiband Compressor, Soft Knee Feedback Compressor, Soft Knee Feedback Limiter |
+| Delay (2) | FeedBUG, Party-Delay |
+| Modulation (3) | Barberpole Flanger, ITA Phaser, Spin Bug Lite |
+| Pitch (3) | Granular Pitch Shifter, SoundTouch based Pitch Shifter, Split Harmonizer |
+| Reverb (5) | ConvoFX, ConvoFXLite, Dynamic Convolution Plugin, Freeverb, Plate Reverb |
+| Spectral (2) | Noise Reduction, Spectral Gate |
+| Spatial (10) | Digital Crosstalk Cancellator (DCC), DualWideBug, HRTF 3D, PhaseBug, Quadrophonics, Quadropolis, Simple Crosstalk Cancellation, Spinbug, Surround to Stereo, Tina-Turner |
+| Synth (3) | 2-Oszillator Synth, FunKEYS, Vocoder |
+| Education (1) | ChunkDemo |
+| Hosting (2) | Plugin Wrappers, VST interfaced ASIO-Host |
+| Misc (1) | Audio Amelioration |
+| Utility (1) | PhaseAdjustment |
+
 #### 7.8.1 Original references and edition mapping
 
 - [x] Index retained Delphi entry points, editor forms and available binary
@@ -1812,8 +1836,9 @@ the current editors.
           the bundle and AppKit fixture for both Mac architectures.
     - [ ] Close the font and scrollbar raster differences and run native
           DAW and Retina checks.
-    - [ ] Establish permission for the published 272 × 88 edition's rotary
-          artwork. Port the four controls and compare live dial states.
+    - [x] Match the published bitmap byte for byte to the licensed Delphi
+          source and its procedural KnobMan artwork.
+    - [ ] Port the published 272 × 88 form and compare all four dials.
   - [ ] Simple Compressor editor parity.
     - [x] Capture the Windows January 2010 and September 2008 forms and
           confirm the published 2011 x64 host-panel edition. Port the 2010
@@ -1949,10 +1974,11 @@ the current editors.
     - [x] Port the distinct 340 × 305 published Win32 and retained Win64
           forms to HWND with agg-go. Match all nine dial crops in 20
           states per edition. Verify each gesture, retained Range editing
-          beyond the host endpoint, scaling and reentrant host callbacks.
-    - [ ] Match text, outlines, brush texture, first-frame meters and
-          checkbox initialization on reopen. Compare the published Range
-          reset on attachment with the VST3's saved-gain behavior.
+          beyond the host endpoint, scaling, pre-attachment meter history
+          and reentrant host callbacks.
+    - [ ] Match text, outlines, brush texture and checkbox initialization on
+          reopen. Compare the published Range reset on attachment with the
+          VST3's saved-gain behavior.
     - [ ] Add X11 and Cocoa and verify matched HiDPI states and native DAWs.
   - [ ] ChunkDemo editor parity.
     - [ ] Match the published 285 × 123 panel, four Greek captions, dial
