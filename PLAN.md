@@ -713,8 +713,8 @@ parameters, programs, original editor references and audio comparisons in
         widths in 192 captures, including the linked detector, wet mix and
         live highpass changes. Reopen and render four REAPER projects.
         Use the two measured gain curves from [algo-dsp PR #50](https://github.com/CWBudde/algo-dsp/pull/50).
-  - [ ] Verify the original meters and native editors, additional host
-        platforms, and permission to redistribute the original assets.
+  - [ ] Finish Phase 7.8 editor parity and verify native hosts. The two
+        released forms and their original meters have been captured.
 - [ ] [Lightweight Dynamics](../vst3go-plugins/plugins/dynamics/lightweight-dynamics/testdata/reference/CAPTURE.md)
   - [x] Match 48 x86 release renders through the gate, compressor, limiter
         and Soft Clip paths, including the original right-only Soft Clip
@@ -2066,6 +2066,12 @@ the editions to verify and records any reference or artwork gaps.
     - [ ] Match the retained Windows caption shadows and X11 text, run
           the native AppKit fixture, and verify matched HiDPI rendering
           and native Windows and macOS DAW attachment and recall.
+  - [ ] LA4029 editor parity.
+    - [x] Capture both 338 × 323 Win32 releases. Verify the distinct dial
+          travel, Input/GR/Out meter modes and 5/50/500 ms speed menu.
+    - [ ] Establish permission for the shared TbT-derived layout and
+          artwork. Port both editions and verify live metering, gestures,
+          automation, scaling and reopening in native DAWs.
   - [ ] Lightweight Feedback Limiter editor parity.
     - [x] Port the shared 326 × 178 Windows form with its licensed dial
           strip and agg-go transfer graph. Match the dials, text and
