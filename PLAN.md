@@ -697,9 +697,10 @@ parameters, programs, original editor references and audio comparisons in
   - [x] Match all 114 x86 release captures bit for bit, including the +40 dB
         startup gain, explicit +1 dB endpoint write and Power bypass. Reopen
         and render six REAPER sessions with the endpoint state preserved.
-  - [ ] Verify the original editor and additional native hosts. The archived
-        wrapper leaves the gate detector silent, and the retained x64 DLL
-        failed to load under Wine.
+  - [x] Verify the retained Win64 DLL and both VST3 classes against all 114
+        audio cases with the editor closed.
+  - [ ] Finish Phase 7.8 editor parity and verify additional native hosts.
+        The archived wrapper leaves the gate detector silent.
 - [ ] [Hard Knee Compressor](../vst3go-plugins/plugins/dynamics/hard-knee-compressor/README.md)
   - [x] Match 72 x86 release captures, including independent stereo channels,
         startup control values and the 0.01 ms attack. Verify sample-offset
@@ -1067,7 +1068,8 @@ parameters, programs, original editor references and audio comparisons in
   - [x] Match 234 stereo renders exactly, including crossed routing,
         the held feedback tap, rate-order effects and live delay resize.
         Verify saved feedback clocks in REAPER and validate the VST3.
-  - [ ] Compare the original editor and native Windows and macOS hosts.
+  - [x] Match six additional stereo traces for the editor's envelope switch.
+  - [ ] Finish Phase 7.8 editor parity and verify native Windows and macOS hosts.
 - [ ] [FeedBUG](../vst3go-plugins/plugins/delay/feedbug/testdata/reference/CAPTURE.md)
   - [x] Compare 114 captures per class across the 2004, May 2005 and
         retained April 2005 editions. Verify cabinet morphing from the
@@ -1645,15 +1647,15 @@ linked in Sections 7.1–7.5 and the [companion catalog](../vst3go-plugins/CATAL
 
 | Platform | Current custom editor coverage | Remaining platform work |
 | --- | --- | --- |
-| Linux X11 | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Compander, EeeekU, Oversampled Tanh, Sigma Delta, Simple Compressor (January 2010), Simple Delay, Simple Gate, Simple Limiter (retained), Simple Linear Phase HP and LP, Simple Sampler, Simple Sine Synth, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG, VST Host Opcode Logger, VST Pascal Script | Add missing editors and close original-UI gaps in existing editors. |
-| Windows HWND | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Bugpass Lite, Butterworth Filters, Chebyshev Filters, Chebyshev Waveshaper, Compander, Decimator, Dither & Noiseshaper, Dual Linkwitz-Riley Filters, EeeekU, Flanger, Graphic EQ, Hum Removal, Oversampled Tanh, Phase-O-Matic, Phase Rotator, QR-Filter, Ring Modulator, Sidechain Compressor, Sigma Delta, Simple Chorus, Simple Compressor (January 2010), Simple Delay, Simple Feedback Compressor, Simple Gate, Simple Limiter (retained), Simple Linear Phase HP and LP, Simple Linear Phase Linkwitz-Riley HP and LP, Simple Sampler, Simple Sine Synth, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, Transient Bug (BugWars), TunaBUG, Variable Delay, Vibrato, VST Host Opcode Logger | Add missing editors and verify coverage on native Windows. Existing cross-build and Wine evidence is recorded by product. |
+| Linux X11 | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Compander, Decimator, EeeekU, Oversampled Tanh, Sigma Delta, Simple Compressor (January 2010), Simple Delay, Simple Gate, Simple Limiter (retained), Simple Linear Phase HP and LP, Simple Sampler, Simple Sine Synth, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG, VST Host Opcode Logger, VST Pascal Script | Add missing editors and close original-UI gaps in existing editors. |
+| Windows HWND | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Bugpass Lite, Butterworth Filters, Chebyshev Filters, Chebyshev Waveshaper, Compander, Decimator, Degrading Delay, Dither & Noiseshaper, Dual Linkwitz-Riley Filters, EeeekU, Enhanced Gate, Flanger, Graphic EQ, Hum Removal, Oversampled Tanh, Phase-O-Matic, Phase Rotator, QR-Filter, Ring Modulator, Sidechain Compressor, Sigma Delta, Simple Chorus, Simple Compressor (January 2010), Simple Delay, Simple Feedback Compressor, Simple Gate, Simple Limiter (retained), Simple Linear Phase HP and LP, Simple Linear Phase Linkwitz-Riley HP and LP, Simple Sampler, Simple Sine Synth, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, Transient Bug (BugWars), TunaBUG, Variable Delay, Vibrato, VST Host Opcode Logger | Add missing editors and verify coverage on native Windows. Existing cross-build and Wine evidence is recorded by product. |
 | macOS Cocoa | Barberpole Tuner, Bode Frequency Shifter, Compander, Oversampled Tanh, Sigma Delta, Simple Compressor (January 2010), Simple Delay, Simple Gate, Simple Limiter (retained), Simple Linear Phase HP and LP, Simple Sine Synth, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG and VST Host Opcode Logger, cross-built for arm64 and amd64. | Run the AppKit fixture and native DAW checks. Add the other custom editors. |
 
-Forty-six catalog projects have at least one native VST3 editor.
-X11 covers 25, HWND covers 45, and Cocoa covers 19. The
+Forty-eight catalog projects have at least one native VST3 editor.
+X11 covers 26, HWND covers 47, and Cocoa covers 19. The
 [original editor inventory](../vst3go-plugins/docs/research/original-editors.md)
 lists native platforms alongside the original evidence for all 137 projects.
-At least 78 projects have a custom editor flag or registration in the original
+At least 76 projects have a custom editor flag or registration in the original
 evidence and still await a first VST3 editor. Confirm the release and prioritize the
 matching form for each first port. The checklist and product notes track
 acceptance for each edition and platform, including known differences in
@@ -1913,8 +1915,12 @@ the current editors.
           six drags, both filters, About and reopen. Verify 200% sizing
           and host callback teardown under Wine. Verify pointer edits and
           saved-project reopen in Windows REAPER under Wine.
-    - [ ] Add X11 and Cocoa. Compare the original at a matched HiDPI scale
-          and verify host automation, focus and project reopen in native DAWs.
+    - [x] Port the X11 view with the shared renderer. Verify 23 paired
+          captures with identical artwork and native REAPER pointer edits
+          and saved-project recall on Linux.
+    - [ ] Match X11 typography, add Cocoa, compare matched HiDPI states
+          and verify host automation, focus and project reopen in native
+          Windows and macOS DAWs.
   - [ ] Variable Delay editor parity.
     - [x] Capture seven Windows references and port the 301 × 146 form to
           HWND. Verify all three scrollbars, 150% input, state recall and
@@ -1923,15 +1929,41 @@ the current editors.
           write. Verify the four headless references use the DAW panel.
     - [ ] Verify the archived macOS host-panel build.
     - [ ] Add X11 and Cocoa and verify matched HiDPI states and native DAWs.
+  - [ ] Degrading Delay editor parity.
+    - [x] Match all 15 states of the 201 × 99 HWND editor with the
+          original dials and agg-go, including gestures, checkbox and reopen.
+          Verify the envelope mode's audio and HWND teardown under Wine.
+    - [ ] Add X11 and Cocoa. Compare matched HiDPI captures and verify
+          the original checkbox workflow and project reopen in native DAWs.
   - [ ] Chebyshev Waveshaper editor parity.
     - [x] Port the 344 × 296 editor for both published Win32 releases and
           the retained Win32 and Win64 forms. Use the original 24-dial strip
-          and agg-go. Compare 100 screenshot pairs and verify the distinct
-          reset and wheel behavior, 150% scaling and reentrant host callbacks.
-    - [ ] Resolve label antialiasing and dial-edge raster differences.
+          and agg-go. Compare 100 screenshot pairs with 52 pixel-exact
+          retained frames. Verify reset, wheel, 150% sizing and reentrant
+          host callbacks.
+    - [ ] Match the published Win32 caption and opaque dial raster.
           Resolve the 2011 Win64 custom editor and the headless edition
           mappings after verifying their audio and lifecycle.
     - [ ] Add X11 and Cocoa and verify matched HiDPI states and native DAWs.
+  - [ ] Enhanced Gate editor parity.
+    - [x] Port the distinct 340 × 305 published Win32 and retained Win64
+          forms to HWND with agg-go. Match all nine dial crops in 20
+          states per edition. Verify each gesture, retained Range editing
+          beyond the host endpoint, scaling and reentrant host callbacks.
+    - [ ] Match text, outlines, brush texture, first-frame meters and
+          checkbox initialization on reopen. Compare the published Range
+          reset on attachment with the VST3's saved-gain behavior.
+    - [ ] Add X11 and Cocoa and verify matched HiDPI states and native DAWs.
+  - [ ] ChunkDemo editor parity.
+    - [ ] Match the published 285 × 123 panel, four Greek captions, dial
+          artwork and gestures. Verify editor edits and saved chunk recall.
+    - [ ] Map the retained editor editions, including their distinct dial
+          graphics, reset and wheel behavior. Add X11 and Cocoa.
+  - [ ] Hard Knee Compressor editor parity.
+    - [ ] Compare the January 2010 editor against the retained form. Port
+          the published controls to HWND with matched drag and recall tests.
+    - [ ] Resolve retained release mappings, add X11 and Cocoa, and verify
+          native DAW attachment and project reopen.
   - [ ] Phase-O-Matic editor parity.
     - [x] Port the published native-scrollbar and retained orange-slider
           383 × 301 forms to HWND. Compare 29 paired states and verify
