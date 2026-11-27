@@ -1642,15 +1642,15 @@ linked in Sections 7.1–7.5 and the [companion catalog](../vst3go-plugins/CATAL
 
 | Platform | Current custom editor coverage | Remaining platform work |
 | --- | --- | --- |
-| Linux X11 | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Compander, EeeekU, Oversampled Tanh, Sigma Delta, Simple Delay, Simple Gate, Simple Limiter (retained), Simple Sampler, Simple Sine Synth, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG, VST Host Opcode Logger, VST Pascal Script | Add missing editors and close original-UI gaps in existing editors. |
-| Windows HWND | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Butterworth Filters, Compander, Dither & Noiseshaper, EeeekU, Flanger, Oversampled Tanh, QR-Filter, Sidechain Compressor, Sigma Delta, Simple Chorus, Simple Compressor (January 2010), Simple Delay, Simple Gate, Simple Limiter (retained), Simple Sampler, Simple Sine Synth, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, Transient Bug (BugWars), TunaBUG, VST Host Opcode Logger | Add missing editors and verify coverage on native Windows. Existing cross-build and Wine evidence is recorded by product. |
-| macOS Cocoa | Barberpole Tuner, Bode Frequency Shifter, Compander, Oversampled Tanh, Sigma Delta, Simple Delay, Simple Gate, Simple Limiter (retained), Simple Sine Synth, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG and VST Host Opcode Logger, cross-built for arm64 and amd64. | Run the AppKit fixture and native DAW checks. Add the other custom editors. |
+| Linux X11 | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Compander, EeeekU, Oversampled Tanh, Sigma Delta, Simple Compressor (January 2010), Simple Delay, Simple Gate, Simple Limiter (retained), Simple Sampler, Simple Sine Synth, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG, VST Host Opcode Logger, VST Pascal Script | Add missing editors and close original-UI gaps in existing editors. |
+| Windows HWND | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Butterworth Filters, Chebyshev Filters, Compander, Dither & Noiseshaper, EeeekU, Flanger, Oversampled Tanh, QR-Filter, Ring Modulator, Sidechain Compressor, Sigma Delta, Simple Chorus, Simple Compressor (January 2010), Simple Delay, Simple Feedback Compressor, Simple Gate, Simple Limiter (retained), Simple Sampler, Simple Sine Synth, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, Transient Bug (BugWars), TunaBUG, VST Host Opcode Logger | Add missing editors and verify coverage on native Windows. Existing cross-build and Wine evidence is recorded by product. |
+| macOS Cocoa | Barberpole Tuner, Bode Frequency Shifter, Compander, Oversampled Tanh, Sigma Delta, Simple Compressor (January 2010), Simple Delay, Simple Gate, Simple Limiter (retained), Simple Sine Synth, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG and VST Host Opcode Logger, cross-built for arm64 and amd64. | Run the AppKit fixture and native DAW checks. Add the other custom editors. |
 
-Thirty-one catalog projects have at least one native VST3 editor.
-X11 covers 23, HWND covers 30, and Cocoa covers 17. The
+Thirty-four catalog projects have at least one native VST3 editor.
+X11 covers 24, HWND covers 33, and Cocoa covers 18. The
 [original editor inventory](../vst3go-plugins/docs/research/original-editors.md)
 lists native platforms alongside the original evidence for all 137 projects.
-Ninety-three projects have a custom editor flag or registration in the original
+Ninety projects have a custom editor flag or registration in the original
 evidence and still have no VST3 editor. Confirm the release and prioritize the
 matching form for each first port. The checklist and product notes track
 acceptance for each edition and platform, including known differences in
@@ -1835,8 +1835,25 @@ the current editors.
     - [ ] Confirm the retained Win64 GUI release provenance and the 2008
           and 2011 audio baselines. Port the 2008 form and preserve the
           2011 host panel when the matching classes are ready.
-    - [ ] Port the available forms to X11 and Cocoa and compare matched
-          HiDPI captures and native DAW behavior.
+    - [x] Port the January 2010 form to X11 with the shared captions,
+          attachment writes and Release state. Replay input and compare
+          1× captures, check up to 200% input and verify project recall
+          in Linux REAPER.
+    - [x] Add the January 2010 Cocoa form and cross-link the AppKit host
+          fixture for arm64 and x86_64.
+    - [ ] Match X11 text and scrollbar raster, pressed states and hold
+          behavior. Verify matched-scale rendering, input and recall in
+          native DAWs. Extend X11 and Cocoa to the 2008 edition when its
+          audio baseline and class are ready.
+  - [ ] Simple Feedback Compressor editor parity.
+    - [x] Open the 2010 Win32 archive and installer, September 2008 ZIP,
+          and retained Win64 forms. Port the 2010 344 × 150 form to HWND
+          using the original RG dial artwork. Verify the drag, modifier,
+          Attack floor, automation, state and 2× input in Wine.
+    - [ ] Match panel corners and compare the processor's response to the
+          original nested automation while the editor is open. Confirm the
+          2008 and retained Win64 audio baselines and port their form variants.
+    - [ ] Add X11 and Cocoa and verify original HiDPI and native DAW behavior.
   - [ ] Oversampled Tanh editor parity.
     - [x] Open all three 299 × 36 references and port the published and
           retained forms to HWND. Match every pixel in five 1× states and
@@ -1895,6 +1912,23 @@ the current editors.
           missing control and DPI states.
     - [ ] Add X11 and Cocoa for the custom editions and verify matched HiDPI
           captures, saved state, and native DAW interactions.
+  - [ ] Chebyshev Filters editor parity.
+    - [x] Capture all seven published 290 × 181 forms. Verify Windows
+          editors for the six available published classes and the two
+          retained LP classes, including gestures, inline fields, 150%
+          input and reopening.
+    - [ ] Match text and panel corners and reconcile the older fractional
+          order write with the stepped host parameter. Resolve the 2008
+          LP, retained mono LP and Type II LP reference and edition gaps.
+    - [ ] Add X11 and Cocoa and verify matched-scale captures and native DAWs.
+  - [ ] Ring Modulator editor parity.
+    - [x] Capture the released Win32 wrappers and both mono form sizes.
+          Port all four classes to HWND, compare the released dial art and
+          input, and verify project recall in Win64 REAPER under Wine.
+    - [ ] Match the bevel and background grain. Resolve the retained
+          alternate form and the published host-panel x64 edition's
+          audio reference.
+    - [ ] Add X11 and Cocoa and verify matched-scale captures and native DAWs.
   - [ ] Sidechain Compressor editor parity.
     - [x] Capture and port the published 449 × 318 editor to HWND, including
           the sliders, toggles, response plots and native detector picker.
