@@ -1643,7 +1643,7 @@ linked in Sections 7.1–7.5 and the [companion catalog](../vst3go-plugins/CATAL
 | Platform | Current custom editor coverage | Remaining platform work |
 | --- | --- | --- |
 | Linux X11 | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Compander, EeeekU, Sigma Delta, Simple Delay, Simple Gate, Simple Limiter (retained), Simple Sampler, Simple Sine Synth, StereoMeter, Stk Echo, Stk PitchShift, Third Octave Analyser, Tiny-Q, TunaBUG, VST Host Opcode Logger, VST Pascal Script | Add missing editors and close original-UI gaps in existing editors. |
-| Windows HWND | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Compander, EeeekU, Sigma Delta, Simple Delay, Simple Gate, Simple Limiter (retained), Simple Sampler, Simple Sine Synth, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG, VST Host Opcode Logger | Add missing editors and verify coverage on native Windows. Existing cross-build and Wine evidence is recorded by product. |
+| Windows HWND | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Compander, EeeekU, Sigma Delta, Simple Delay, Simple Gate, Simple Limiter (retained), Simple Sampler, Simple Sine Synth, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG, VST Host Opcode Logger | Add missing editors and verify coverage on native Windows. Existing cross-build and Wine evidence is recorded by product. |
 | macOS Cocoa | Barberpole Tuner, Bode Frequency Shifter, Compander, Sigma Delta, Simple Delay, Simple Gate, Simple Limiter (retained), Simple Sine Synth, Stk Echo, Stk PitchShift, Tiny-Q, TunaBUG and VST Host Opcode Logger, cross-built for arm64 and amd64. | Run the AppKit fixture and native DAW checks. Add the other custom editors. |
 
 Twenty-two catalog projects have at least one native VST3 editor. The
@@ -1689,6 +1689,8 @@ for each edition and platform is tracked below and in the product notes.
   - [x] Add the reusable AppKit child attachment and timer. Cross-link both
         VST Host Opcode Logger editions for arm64 and amd64 and add the
         AppKit host fixture.
+  - [x] Cross-build the documented Windows editor modules and check the
+        VST3 exports. Cross-link the Cocoa modules on arm64 and amd64.
   - [ ] Exercise an `NSView` child in a macOS host. Verify attach, remove,
         reopen, keyboard routing and Retina drawing with VST Host Opcode
         Logger and Simple Delay.
@@ -1847,6 +1849,13 @@ for each edition and platform is tracked below and in the product notes.
           caption, updated readouts and all client pixels in four states.
     - [ ] Port X11 and Cocoa. Compare HiDPI controls and verify both
           editions in native DAWs.
+  - [ ] StereoMeterVST editor parity.
+    - [x] Port the published 200 × 220 HWND meter, its four context menu
+          entries and live Blend trail. Check the traced point positions,
+          scaling and reopening under Wine.
+    - [ ] Establish permission for the original photographic backdrop.
+          Close raster differences, reconcile the X11 menu with the
+          published release, add Cocoa and verify native DAWs.
   - [ ] BetaMeta editor parity.
     - [x] Identify Meta White and Meta Old in the published DLL. Verify the
           Windows meter at 1× and 2×, including mode, levels and reopening.
