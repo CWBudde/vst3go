@@ -2001,14 +2001,15 @@ the editions to verify and records any reference or artwork gaps.
           Verify the envelope mode's audio and HWND teardown under Wine.
     - [x] Port the 201 × 99 X11 form with the shared renderer, dial
           recentering and original checkbox audio behavior. Match all 15
-          states outside label regions and verify 200% input, reattachment
-          and native Linux REAPER pointer edits and saved-project recall.
+          states pixel for pixel, including the captions. Verify 200% input,
+          reattachment, native Linux REAPER pointer edits and saved recall.
     - [x] Add the 201 × 99 point AppKit editor with the original artwork,
           backing-resolution agg-go rendering, cursor recentering and checkbox
           mode. Cross-link the module and AppKit fixture for arm64 and amd64.
-    - [ ] Match the X11 and Cocoa label raster. Run the native AppKit fixture,
-          including physical cursor movement, and verify matched HiDPI captures
-          and checkbox behavior and recall in native Windows and macOS DAWs.
+    - [ ] Run the native AppKit fixture and compare its full raster with the
+          original, including captions. Verify physical cursor movement,
+          matched HiDPI captures, checkbox behavior and recall in native
+          Windows and macOS DAWs.
   - [ ] Chebyshev Waveshaper editor parity.
     - [x] Port the 344 × 296 editor for both published Win32 releases and
           the retained Win32 and Win64 forms. Use the original 24-dial strip
