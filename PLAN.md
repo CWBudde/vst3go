@@ -1641,11 +1641,11 @@ linked in Sections 7.1–7.5 and the [companion catalog](../vst3go-plugins/CATAL
 
 | Platform | Current custom editor coverage | Remaining platform work |
 | --- | --- | --- |
-| Linux X11 | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Compander, EeeekU, Sigma Delta, Simple Delay, Simple Gate, Simple Limiter (retained), Simple Sampler, Simple Sine Synth, StereoMeter, Stk PitchShift, Third Octave Analyser, Tiny-Q, TunaBUG, VST Host Opcode Logger, VST Pascal Script | Add missing editors and close original-UI gaps in existing editors. |
-| Windows HWND | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Compander, EeeekU, Sigma Delta, Simple Delay, Simple Gate, Simple Limiter (retained), Simple Sampler, Simple Sine Synth, Stk Echo, Stk PitchShift, Tiny-Q, TunaBUG, VST Host Opcode Logger | Add missing editors and verify coverage on native Windows. Existing cross-build and Wine evidence is recorded by product. |
+| Linux X11 | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Compander, EeeekU, Sigma Delta, Simple Delay, Simple Gate, Simple Limiter (retained), Simple Sampler, Simple Sine Synth, StereoMeter, Stk Echo, Stk PitchShift, Third Octave Analyser, Tiny-Q, TunaBUG, VST Host Opcode Logger, VST Pascal Script | Add missing editors and close original-UI gaps in existing editors. |
+| Windows HWND | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Compander, EeeekU, Sigma Delta, Simple Delay, Simple Gate, Simple Limiter (retained), Simple Sampler, Simple Sine Synth, Stk Chorus, Stk Echo, Stk PitchShift, Tiny-Q, TunaBUG, VST Host Opcode Logger | Add missing editors and verify coverage on native Windows. Existing cross-build and Wine evidence is recorded by product. |
 | macOS Cocoa | Barberpole Tuner, Bode Frequency Shifter, Compander, Sigma Delta, Simple Delay, Simple Gate, Simple Limiter (retained), Simple Sine Synth, Tiny-Q, TunaBUG and VST Host Opcode Logger, cross-built for arm64 and amd64. | Run the AppKit fixture and native DAW checks. Add the other custom editors. |
 
-Twenty catalog projects have at least one native VST3 editor. Use the
+Twenty-one catalog projects have at least one native VST3 editor. Use the
 [original editor inventory](../vst3go-plugins/docs/research/original-editors.md)
 to find the remaining first editor ports and headless editions. Acceptance
 for each edition and platform is tracked below and in the product notes.
@@ -1654,8 +1654,9 @@ for each edition and platform is tracked below and in the product notes.
 
 - [x] Index retained Delphi entry points, editor forms and available binary
       evidence against all 137 [catalog projects](../vst3go-plugins/docs/research/original-editors.md).
-      Each project has an editor classification for at least one matched
-      binary. The inventory lists remaining edition, capture and licensing gaps.
+      Each project has an editor classification based on a matched binary or
+      retained source. The inventory lists remaining edition, capture and
+      licensing gaps.
 - [x] Recover editor flags for 14 project families from existing hash-checked
       binary captures. Record which editions advertise a custom editor, which
       use the host panel, and which still need an opened client capture.
@@ -1821,7 +1822,15 @@ for each edition and platform is tracked below and in the product notes.
     - [x] Port both 289 × 47 originals to HWND. Verify the edition-specific
           captions and attachment limit and match all client pixels for
           startup, host writes, an arrow edit and reopening.
-    - [ ] Port Linux and Cocoa. Compare HiDPI controls and verify both
+    - [x] Port both editions to X11 and verify native pointer and key edits,
+          reopening in Linux REAPER and scaling up to 2×.
+    - [ ] Port Cocoa, match the X11 raster and verify HiDPI captures and
+          native Windows and macOS DAWs.
+  - [ ] Stk Chorus editor parity.
+    - [x] Port the two original 289 × 78 forms to HWND. Verify the original
+          Long preset depth change on attach, the distinct captions, and
+          all 22,542 client pixels in four states per edition under Wine.
+    - [ ] Port X11 and Cocoa. Compare HiDPI controls and verify both
           editions in native DAWs.
   - [ ] BetaMeta editor parity.
     - [x] Identify Meta White and Meta Old in the published DLL. Verify the
