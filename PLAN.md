@@ -1649,12 +1649,12 @@ linked in Sections 7.1–7.5 and the [companion catalog](../vst3go-plugins/CATAL
 
 | Platform | Current custom editor coverage | Remaining platform work |
 | --- | --- | --- |
-| Linux X11 | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Compander, Decimator, EeeekU, Oversampled Tanh, Sigma Delta, Simple Compressor (January 2010), Simple Delay, Simple Gate, Simple Limiter, Simple Linear Phase HP and LP, Simple Sampler, Simple Sine Synth, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG, Variable Delay, VST Host Opcode Logger, VST Pascal Script | Add missing editors and close original-UI gaps in existing editors. |
+| Linux X11 | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Compander, Decimator, EeeekU, Hard Knee Compressor, Oversampled Tanh, Sigma Delta, Simple Compressor (January 2010), Simple Delay, Simple Gate, Simple Limiter, Simple Linear Phase HP and LP, Simple Sampler, Simple Sine Synth, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG, Variable Delay, VST Host Opcode Logger, VST Pascal Script | Add missing editors and close original-UI gaps in existing editors. |
 | Windows HWND | Ather, Barberpole Tuner, Bass Baron, Bass Extender, BetaMeta, Bode Frequency Shifter, Bugpass Lite, Butterworth Filters, Chebyshev Filters, Chebyshev Waveshaper, ChunkDemo, Compander, Decimator, Degrading Delay, Dither & Noiseshaper, Dual Linkwitz-Riley Filters, EeeekU, Enhanced Gate, Flanger, Graphic EQ, Hard Knee Compressor, Hum Removal, Lightweight Soft Knee Gate, Lookahead Limiter, Oversampled Tanh, Phase-O-Matic, Phase Rotator, QR-Filter, Ring Modulator, Sidechain Compressor, Sigma Delta, Simple Chorus, Simple Compressor (January 2010), Simple Delay, Simple Feedback Compressor, Simple Gate, Simple Limiter, Simple Linear Phase HP and LP, Simple Linear Phase Linkwitz-Riley HP and LP, Simple Sampler, Simple Sine Synth, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, Transient Bug (BugWars), TunaBUG, Variable Delay, Vibrato, VST Host Opcode Logger | Add missing editors and verify coverage on native Windows. Existing cross-build and Wine evidence is recorded by product. |
 | macOS Cocoa | Barberpole Tuner, Bode Frequency Shifter, Compander, Decimator, Oversampled Tanh, Sigma Delta, Simple Compressor (January 2010), Simple Delay, Simple Gate, Simple Limiter, Simple Linear Phase HP and LP, Simple Sine Synth, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG and VST Host Opcode Logger, cross-built for arm64 and amd64. | Run the AppKit fixture and native DAW checks. Add the other custom editors. |
 
 Fifty-four catalog projects have at least one native VST3 editor.
-X11 covers 27, HWND covers 53, and Cocoa covers 20. The
+X11 covers 28, HWND covers 53, and Cocoa covers 20. The
 [original editor inventory](../vst3go-plugins/docs/research/original-editors.md)
 lists native platforms alongside the original evidence for all 137 projects.
 At least 70 projects have a custom editor flag or registration in the original
@@ -2025,12 +2025,16 @@ the editions to verify and records any reference or artwork gaps.
           the published and retained Win64 editor openings. Add X11 and
           Cocoa and verify matched HiDPI states and native DAWs.
   - [ ] Hard Knee Compressor editor parity.
-    - [x] Port the two 272 × 88 HWND editors using the original artwork and
-          agg-go. Match all 14 published frames and all retained dial crops.
+    - [x] Port the two 272 × 88 HWND editors using the original dial
+          strips. Match all 14 published frames and all retained dial crops.
           Verify gestures, reentrant callbacks, 125% and 200% input, the
           Attack setting on attach and retained Threshold behavior on recall.
-    - [ ] Match the retained caption shadows, add X11 and Cocoa, and verify
-          matched HiDPI rendering and native DAW attachment and recall.
+    - [x] Port both editions to X11 with the shared dial and gesture code.
+          Match pixels outside text in 28 paired captures. Verify pointer
+          edits and saved-project recall in native Linux REAPER.
+    - [ ] Match the retained Windows caption shadows and X11 text, add
+          Cocoa and verify matched HiDPI rendering and native Windows and
+          macOS DAW attachment and recall.
   - [ ] Lightweight Soft Knee Gate editor parity.
     - [x] Port all three published 253 × 178 Windows forms with the
           licensed dial strip and an agg-go transfer graph. Match the
