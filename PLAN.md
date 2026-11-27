@@ -319,8 +319,9 @@ there and reusable DSP in the sibling `algo-*` libraries.
         bundles, including the 13 projects with custom X11 editors.
   - [x] Implement the macOS `NSView` child in the host's parent view.
         Barberpole Tuner, Bode Frequency Shifter, Compander, Sigma Delta,
-        Simple Delay, Simple Gate, Simple Limiter, Simple Sine Synth, Tiny-Q,
-        TunaBUG and VST Host Opcode Logger cross-link on arm64 and amd64.
+        Simple Delay, Simple Gate, Simple Limiter, Simple Sine Synth, Stk
+        Echo, Stk PitchShift, Tiny-Q, TunaBUG and VST Host Opcode Logger
+        cross-link on arm64 and amd64.
         AppKit handles Retina backing scale while the host uses logical points.
         Product coverage and native evidence are tracked in Section 7.8.
   - [ ] Run the native Windows and macOS editor checks, including focus and
@@ -1642,12 +1643,13 @@ linked in Sections 7.1–7.5 and the [companion catalog](../vst3go-plugins/CATAL
 | Platform | Current custom editor coverage | Remaining platform work |
 | --- | --- | --- |
 | Linux X11 | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Compander, EeeekU, Sigma Delta, Simple Delay, Simple Gate, Simple Limiter (retained), Simple Sampler, Simple Sine Synth, StereoMeter, Stk Echo, Stk PitchShift, Third Octave Analyser, Tiny-Q, TunaBUG, VST Host Opcode Logger, VST Pascal Script | Add missing editors and close original-UI gaps in existing editors. |
-| Windows HWND | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Compander, EeeekU, Sigma Delta, Simple Delay, Simple Gate, Simple Limiter (retained), Simple Sampler, Simple Sine Synth, Stk Chorus, Stk Echo, Stk PitchShift, Tiny-Q, TunaBUG, VST Host Opcode Logger | Add missing editors and verify coverage on native Windows. Existing cross-build and Wine evidence is recorded by product. |
-| macOS Cocoa | Barberpole Tuner, Bode Frequency Shifter, Compander, Sigma Delta, Simple Delay, Simple Gate, Simple Limiter (retained), Simple Sine Synth, Tiny-Q, TunaBUG and VST Host Opcode Logger, cross-built for arm64 and amd64. | Run the AppKit fixture and native DAW checks. Add the other custom editors. |
+| Windows HWND | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Compander, EeeekU, Sigma Delta, Simple Delay, Simple Gate, Simple Limiter (retained), Simple Sampler, Simple Sine Synth, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Tiny-Q, TunaBUG, VST Host Opcode Logger | Add missing editors and verify coverage on native Windows. Existing cross-build and Wine evidence is recorded by product. |
+| macOS Cocoa | Barberpole Tuner, Bode Frequency Shifter, Compander, Sigma Delta, Simple Delay, Simple Gate, Simple Limiter (retained), Simple Sine Synth, Stk Echo, Stk PitchShift, Tiny-Q, TunaBUG and VST Host Opcode Logger, cross-built for arm64 and amd64. | Run the AppKit fixture and native DAW checks. Add the other custom editors. |
 
-Twenty-one catalog projects have at least one native VST3 editor. Use the
+Twenty-two catalog projects have at least one native VST3 editor. The
 [original editor inventory](../vst3go-plugins/docs/research/original-editors.md)
-to find the remaining first editor ports and headless editions. Acceptance
+lists native platforms alongside the original evidence for all 137 projects.
+Its coverage column identifies the remaining first editor ports. Acceptance
 for each edition and platform is tracked below and in the product notes.
 
 #### 7.8.1 Original references and edition mapping
@@ -1816,20 +1818,30 @@ for each edition and platform is tracked below and in the product notes.
           client pixels per state at startup, automation, arrow and reopen.
     - [x] Port both forms to X11. Verify mouse, keys, thumb dragging,
           125% and 200%, and clicks after reopening in Linux REAPER.
-    - [ ] Port Cocoa, match the X11 raster and verify matched HiDPI
-          captures and native Windows and macOS DAW operation.
+    - [x] Port both forms to Cocoa using the shared scrollbar geometry.
+          Cross-link an AppKit fixture and module for both architectures.
+    - [ ] Match the X11 raster and verify AppKit rendering, matched
+          HiDPI captures and native Windows and macOS DAW operation.
   - [ ] Stk Echo editor parity.
     - [x] Port both 289 × 47 originals to HWND. Verify the edition-specific
           captions and attachment limit and match all client pixels for
           startup, host writes, an arrow edit and reopening.
     - [x] Port both editions to X11 and verify native pointer and key edits,
           reopening in Linux REAPER and scaling up to 2×.
-    - [ ] Port Cocoa, match the X11 raster and verify HiDPI captures and
-          native Windows and macOS DAWs.
+    - [x] Port both forms to Cocoa and cross-link the fixture and module
+          on arm64 and amd64.
+    - [ ] Match the X11 raster and verify AppKit rendering, matched
+          HiDPI captures and native Windows and macOS DAW operation.
   - [ ] Stk Chorus editor parity.
     - [x] Port the two original 289 × 78 forms to HWND. Verify the original
           Long preset depth change on attach, the distinct captions, and
           all 22,542 client pixels in four states per edition under Wine.
+    - [ ] Port X11 and Cocoa. Compare HiDPI controls and verify both
+          editions in native DAWs.
+  - [ ] Stk Reverb editor parity.
+    - [x] Port both HWND forms with the original 289 × 27 drawn client
+          and the retained 289 × 32 reported size. Match the cold
+          caption, updated readouts and all client pixels in four states.
     - [ ] Port X11 and Cocoa. Compare HiDPI controls and verify both
           editions in native DAWs.
   - [ ] BetaMeta editor parity.
