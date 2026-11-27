@@ -1643,7 +1643,7 @@ linked in Sections 7.1–7.5 and the [companion catalog](../vst3go-plugins/CATAL
 | Platform | Current custom editor coverage | Remaining platform work |
 | --- | --- | --- |
 | Linux X11 | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Compander, EeeekU, Sigma Delta, Simple Delay, Simple Gate, Simple Limiter (retained), Simple Sampler, Simple Sine Synth, StereoMeter, Stk Echo, Stk PitchShift, Third Octave Analyser, Tiny-Q, TunaBUG, VST Host Opcode Logger, VST Pascal Script | Add missing editors and close original-UI gaps in existing editors. |
-| Windows HWND | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Compander, EeeekU, Sigma Delta, Simple Delay, Simple Gate, Simple Limiter (retained), Simple Sampler, Simple Sine Synth, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Tiny-Q, TunaBUG, VST Host Opcode Logger | Add missing editors and verify coverage on native Windows. Existing cross-build and Wine evidence is recorded by product. |
+| Windows HWND | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Compander, EeeekU, Sigma Delta, Simple Delay, Simple Gate, Simple Limiter (retained), Simple Sampler, Simple Sine Synth, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG, VST Host Opcode Logger | Add missing editors and verify coverage on native Windows. Existing cross-build and Wine evidence is recorded by product. |
 | macOS Cocoa | Barberpole Tuner, Bode Frequency Shifter, Compander, Sigma Delta, Simple Delay, Simple Gate, Simple Limiter (retained), Simple Sine Synth, Stk Echo, Stk PitchShift, Tiny-Q, TunaBUG and VST Host Opcode Logger, cross-built for arm64 and amd64. | Run the AppKit fixture and native DAW checks. Add the other custom editors. |
 
 Twenty-two catalog projects have at least one native VST3 editor. The
@@ -1790,8 +1790,11 @@ for each edition and platform is tracked below and in the product notes.
     - [x] Capture the published and both retained 342 × 234 originals. Reproduce
           the red and blue 32-band charts, radio and spin controls on X11.
           Verify both VST3 classes in Linux REAPER at 1× and 2×.
-    - [ ] Match chart, stock controls and text pixels. Capture matched live
-          meter states in a DAW, add HWND and Cocoa, and verify native hosts.
+    - [x] Port both forms to HWND. Match the chart pixels in the tested
+          original states and verify live meter updates, gestures and
+          reopening at 1× and 2× under Wine.
+    - [ ] Add Cocoa, close X11 raster and Windows Fullscale Gain text
+          differences, and verify native DAW rendering and live meters.
   - [ ] Compander editor parity.
     - [x] Verify the original 611 × 226 form with both modes, including the
           released mouse and reopen behavior. Redraw the compressor and
