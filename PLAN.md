@@ -1651,10 +1651,10 @@ linked in Sections 7.1–7.5 and the [companion catalog](../vst3go-plugins/CATAL
 | --- | --- | --- |
 | Linux X11 | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Compander, Decimator, EeeekU, Hard Knee Compressor, Oversampled Tanh, Sigma Delta, Simple Compressor (January 2010), Simple Sample Delay, Simple Gate, Simple Limiter, Simple Linear Phase HP and LP, Simple Sampler, Simple Sine Synth, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG, Variable Delay, Vibrato, VST Host Opcode Logger, VST Pascal Script | Add missing editors and close original-UI gaps in existing editors. |
 | Windows HWND | Ather, Barberpole Tuner, Bass Baron, Bass Extender, BetaMeta, Bode Frequency Shifter, Bugpass Lite, Butterworth Filters, Chebyshev Filters, Chebyshev Waveshaper, ChunkDemo, Compander, Decimator, Degrading Delay, Dither & Noiseshaper, Dual Linkwitz-Riley Filters, EeeekU, Enhanced Gate, Flanger, Graphic EQ, Hard Knee Compressor, Hum Removal, Lightweight Soft Knee Compressor, Lightweight Soft Knee Gate, Lightweight Soft Knee Limiter, Lookahead Limiter, Oversampled Tanh, Party-Delay, Phase-O-Matic, Phase Rotator, QR-Filter, Ring Modulator, Sidechain Compressor, Sigma Delta, Simple Chorus, Simple Compressor (January 2010), Simple Sample Delay, Simple Feedback Compressor, Simple Gate, Simple Limiter, Simple Linear Phase HP and LP, Simple Linear Phase Linkwitz-Riley HP and LP, Simple Sampler, Simple Sine Synth, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, SubBoost, Third Octave Analyser, Tiny-Q, Transient Bug (BugWars), TunaBUG, Variable Delay, Vibrato, VST Host Opcode Logger | Add missing editors and verify coverage on native Windows. Existing cross-build and Wine evidence is recorded by product. |
-| macOS Cocoa | Barberpole Tuner, Bode Frequency Shifter, Compander, Decimator, Hard Knee Compressor, Oversampled Tanh, Sigma Delta, Simple Compressor (January 2010), Simple Sample Delay, Simple Gate, Simple Limiter, Simple Linear Phase HP and LP, Simple Sine Synth, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG, Vibrato and VST Host Opcode Logger, cross-built for arm64 and amd64. | Run the AppKit fixture and native DAW checks. Add the other custom editors. |
+| macOS Cocoa | Barberpole Tuner, Bode Frequency Shifter, Compander, Decimator, Hard Knee Compressor, Oversampled Tanh, Sigma Delta, Simple Compressor (January 2010), Simple Sample Delay, Simple Gate, Simple Limiter, Simple Linear Phase HP and LP, Simple Sine Synth, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG, Variable Delay, Vibrato and VST Host Opcode Logger, cross-built for arm64 and amd64. | Run the AppKit fixture and native DAW checks. Add the other custom editors. |
 
 Fifty-eight catalog projects have at least one native VST3 editor.
-X11 covers 29, HWND covers 57, and Cocoa covers 22. The
+X11 covers 29, HWND covers 57, and Cocoa covers 23. The
 [original editor inventory](../vst3go-plugins/docs/research/original-editors.md)
 lists native platforms alongside the original evidence for all 137 projects.
 At least 66 projects have a custom editor flag or registration in the original
@@ -1969,9 +1969,12 @@ the editions to verify and records any reference or artwork gaps.
     - [x] Port the 301 × 146 form to X11 and verify keyboard input, scrollbar
           tracking, 2× sizing and host callbacks. Verify pointer edits and
           saved-project recall in native Linux REAPER.
-    - [ ] Match X11 caption, arrow and focus rendering. Add the Cocoa editor,
-          verify the archived macOS host-panel build and compare HiDPI states
-          and native Windows and macOS DAW behavior.
+    - [x] Port the 301 × 146-point Cocoa editor with the shared scrollbars.
+          Cross-link the VST3 and AppKit fixture on arm64 and x86-64 and
+          reproduce all 14 prior X11 fixture images byte for byte.
+    - [ ] Match X11 caption, arrow and focus rendering. Run the native Cocoa
+          fixture, verify the archived macOS host-panel build and compare
+          matched HiDPI states and native Windows and macOS DAW behavior.
   - [ ] Party-Delay editor parity.
     - [x] Port the published 222 × 358 editor to HWND using native controls
           and an agg-go frequency-shift dial. Compare 12 original frames,
