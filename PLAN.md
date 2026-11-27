@@ -661,15 +661,15 @@ parameters, programs, original editor references and audio comparisons in
         float64, live algorithm and response changes, lowcut and program recall.
         Reopen independently edited programs in REAPER. The port uses the
         pinned DAV soft-knee gain from [algo-dsp PR #48](https://github.com/CWBudde/algo-dsp/pull/48).
-  - [ ] Resolve the published x86 callback fault and verify the native editor
-        and other host platforms.
+  - [ ] Resolve the published x86 callback fault, finish editor parity in
+        Phase 7.8 and verify other host platforms.
 - [ ] [Bass Extender](../vst3go-plugins/plugins/bass/bass-extender/README.md)
   - [x] Match the divider, crossover, detector and sample-offset edits against
         360 audible x86 captures. Validate and reopen four REAPER projects,
         including mid-only routing and independently edited program slots.
-  - [ ] Verify the x64 callback, which left outputs untouched under Wine, and
-        test the original editor and additional native hosts. Reconcile the
-        original zero tail report with the measured sustained shaped output.
+  - [ ] Verify the x64 callback, which left outputs untouched under Wine.
+        Finish editor parity in Phase 7.8 and verify additional hosts.
+        Reconcile the original zero tail with the measured shaped output.
 - [ ] [SubBoost](../vst3go-plugins/plugins/bass/subboost/README.md)
   - [x] Match 102 published Win32 renders and compare 102 retained Win32
         renders. Verify sample-offset edits, effective Tune and Order zero
@@ -1650,14 +1650,14 @@ linked in Sections 7.1–7.5 and the [companion catalog](../vst3go-plugins/CATAL
 | Platform | Current custom editor coverage | Remaining platform work |
 | --- | --- | --- |
 | Linux X11 | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Compander, Decimator, EeeekU, Oversampled Tanh, Sigma Delta, Simple Compressor (January 2010), Simple Delay, Simple Gate, Simple Limiter, Simple Linear Phase HP and LP, Simple Sampler, Simple Sine Synth, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG, Variable Delay, VST Host Opcode Logger, VST Pascal Script | Add missing editors and close original-UI gaps in existing editors. |
-| Windows HWND | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Bugpass Lite, Butterworth Filters, Chebyshev Filters, Chebyshev Waveshaper, ChunkDemo, Compander, Decimator, Degrading Delay, Dither & Noiseshaper, Dual Linkwitz-Riley Filters, EeeekU, Enhanced Gate, Flanger, Graphic EQ, Hard Knee Compressor, Hum Removal, Lightweight Soft Knee Gate, Lookahead Limiter, Oversampled Tanh, Phase-O-Matic, Phase Rotator, QR-Filter, Ring Modulator, Sidechain Compressor, Sigma Delta, Simple Chorus, Simple Compressor (January 2010), Simple Delay, Simple Feedback Compressor, Simple Gate, Simple Limiter, Simple Linear Phase HP and LP, Simple Linear Phase Linkwitz-Riley HP and LP, Simple Sampler, Simple Sine Synth, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, Transient Bug (BugWars), TunaBUG, Variable Delay, Vibrato, VST Host Opcode Logger | Add missing editors and verify coverage on native Windows. Existing cross-build and Wine evidence is recorded by product. |
+| Windows HWND | Ather, Barberpole Tuner, Bass Baron, Bass Extender, BetaMeta, Bode Frequency Shifter, Bugpass Lite, Butterworth Filters, Chebyshev Filters, Chebyshev Waveshaper, ChunkDemo, Compander, Decimator, Degrading Delay, Dither & Noiseshaper, Dual Linkwitz-Riley Filters, EeeekU, Enhanced Gate, Flanger, Graphic EQ, Hard Knee Compressor, Hum Removal, Lightweight Soft Knee Gate, Lookahead Limiter, Oversampled Tanh, Phase-O-Matic, Phase Rotator, QR-Filter, Ring Modulator, Sidechain Compressor, Sigma Delta, Simple Chorus, Simple Compressor (January 2010), Simple Delay, Simple Feedback Compressor, Simple Gate, Simple Limiter, Simple Linear Phase HP and LP, Simple Linear Phase Linkwitz-Riley HP and LP, Simple Sampler, Simple Sine Synth, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, Transient Bug (BugWars), TunaBUG, Variable Delay, Vibrato, VST Host Opcode Logger | Add missing editors and verify coverage on native Windows. Existing cross-build and Wine evidence is recorded by product. |
 | macOS Cocoa | Barberpole Tuner, Bode Frequency Shifter, Compander, Decimator, Oversampled Tanh, Sigma Delta, Simple Compressor (January 2010), Simple Delay, Simple Gate, Simple Limiter, Simple Linear Phase HP and LP, Simple Sine Synth, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG and VST Host Opcode Logger, cross-built for arm64 and amd64. | Run the AppKit fixture and native DAW checks. Add the other custom editors. |
 
-Fifty-two catalog projects have at least one native VST3 editor.
-X11 covers 27, HWND covers 51, and Cocoa covers 20. The
+Fifty-four catalog projects have at least one native VST3 editor.
+X11 covers 27, HWND covers 53, and Cocoa covers 20. The
 [original editor inventory](../vst3go-plugins/docs/research/original-editors.md)
 lists native platforms alongside the original evidence for all 137 projects.
-At least 72 projects have a custom editor flag or registration in the original
+At least 70 projects have a custom editor flag or registration in the original
 evidence and still await a first VST3 editor. Confirm the release and prioritize the
 matching form for each first port. The checklist and product notes track
 acceptance for each edition and platform, including known differences in
@@ -1672,7 +1672,7 @@ the editions to verify and records any reference or artwork gaps.
 | --- | --- |
 | EQ (8) | Electri-Q, Noname EQ, Parametri-Q (lite), Posihfopit, Pushtec 5+1A, Soul EQ, UNIQUE EQ, Valuable EQ |
 | Filter (5) | Bugpass, Lavaland, Linear Phase Butterworth, MoogVST, Rubberfilter |
-| Bass (3) | Bass Baron, Bass Extender, SubBoost |
+| Bass (1) | SubBoost |
 | Distortion (10) | 2-Band Distortion, Advanced Clipper, Amp Sim, Christortion, Dynamite, Exciter, Hysteresis, OpAmp, Scary, Tubster |
 | Dynamics (14) | Adhesive, Audiocation Compressor, LA4029, Lightweight Dynamics, Lightweight Feedback Compressor, Lightweight Feedback Limiter, Lightweight Multiband Compressor, Lightweight Soft Knee Compressor, Lightweight Soft Knee Limiter, Lightweight Upward Compressor, Multiband Compressor, Smooth Multiband Compressor, Soft Knee Feedback Compressor, Soft Knee Feedback Limiter |
 | Delay (2) | FeedBUG, Party-Delay |
@@ -2007,6 +2007,23 @@ the editions to verify and records any reference or artwork gaps.
     - [ ] Verify the retained Win32 blend with a 32-bit VST3 and match the
           remaining two-level RGB difference in the amd64 comparison.
           Add X11 and Cocoa and verify native DAWs.
+  - [ ] Bass Baron editor parity.
+    - [x] Port the original 476 × 413 form to Windows using agg-go and
+          the licensed artwork. Compare 72 frames from four releases
+          and verify fine gestures, both selector menus, host automation,
+          project state, 125% and 200% sizing and reentrant callbacks.
+    - [ ] Match the text, title glow, edges and background raster.
+          Resolve the reopen clamp and local overflow positions for
+          Response, levels and algorithms. Add X11 and Cocoa and verify
+          matched HiDPI states and native DAWs.
+  - [ ] Bass Extender editor parity.
+    - [x] Port the 543 × 287 ten-dial form to HWND with agg-go. Verify
+          all ten drags, Shift, wheel, host writes, program recall and 2×
+          sizing. Compare eight states with the published Win32 original.
+    - [ ] Match the remaining raster and verify the original clamp and
+          attach writebacks. Resolve retained Win32 frequency reset and
+          the published and retained Win64 editor openings. Add X11 and
+          Cocoa and verify matched HiDPI states and native DAWs.
   - [ ] Hard Knee Compressor editor parity.
     - [x] Port the two 272 × 88 HWND editors using the original artwork and
           agg-go. Match all 14 published frames and all retained dial crops.
