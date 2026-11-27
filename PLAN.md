@@ -1665,39 +1665,25 @@ linked in Sections 7.1–7.5 and the [companion catalog](../vst3go-plugins/CATAL
 | --- | --- | --- |
 | Linux X11 | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Compander, Decimator, Degrading Delay, EeeekU, Hard Knee Compressor, Oversampled Tanh, Sigma Delta, Simple Compressor (January 2010), Simple Sample Delay, Simple Gate, Simple Limiter, Simple Linear Phase HP and LP, Simple Sampler, Simple Sine Synth, Soft Knee Feedback Limiter, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG, Variable Delay, Vibrato, VST Host Opcode Logger, VST Pascal Script | Add missing editors and close original-UI gaps in existing editors. |
 | Windows HWND | Ather, Barberpole Tuner, Bass Baron, Bass Extender, BetaMeta, Bode Frequency Shifter, Bugpass Lite, Butterworth Filters, Chebyshev Filters, Chebyshev Waveshaper, ChunkDemo, Compander, Decimator, Degrading Delay, Dither & Noiseshaper, Dual Linkwitz-Riley Filters, EeeekU, Enhanced Gate, Flanger, Graphic EQ, Hard Knee Compressor, Hum Removal, Lightweight Dynamics, Lightweight Feedback Compressor, Lightweight Feedback Limiter, Lightweight Multiband Compressor, Lightweight Soft Knee Compressor, Lightweight Soft Knee Gate, Lightweight Soft Knee Limiter, Lightweight Upward Compressor, Lookahead Limiter, Oversampled Tanh, Party-Delay, Phase-O-Matic, Phase Rotator, QR-Filter, Ring Modulator, Sidechain Compressor, Sigma Delta, Simple Chorus, Simple Compressor (January 2010), Simple Sample Delay, Simple Feedback Compressor, Simple Gate, Simple Limiter, Simple Linear Phase HP and LP, Simple Linear Phase Linkwitz-Riley HP and LP, Simple Sampler, Simple Sine Synth, Soft Knee Feedback Compressor, Soft Knee Feedback Limiter, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, SubBoost, Third Octave Analyser, Tiny-Q, Transient Bug (BugWars), TunaBUG, Variable Delay, Vibrato, VST Host Opcode Logger | Add missing editors and verify coverage on native Windows. Existing cross-build and Wine evidence is recorded by product. |
-| macOS Cocoa | Barberpole Tuner, Bode Frequency Shifter, Compander, Decimator, Degrading Delay, Hard Knee Compressor, Oversampled Tanh, Sigma Delta, Simple Compressor (January 2010), Simple Sample Delay, Simple Gate, Simple Limiter, Simple Linear Phase HP and LP, Simple Sine Synth, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG, Variable Delay, Vibrato and VST Host Opcode Logger, cross-built for arm64 and amd64. | Run the AppKit fixture and native DAW checks. Add the other custom editors. |
+| macOS Cocoa | Barberpole Tuner, Bode Frequency Shifter, Compander, Decimator, Degrading Delay, Hard Knee Compressor, Oversampled Tanh, Sigma Delta, Simple Compressor (January 2010), Simple Sample Delay, Simple Gate, Simple Limiter, Simple Linear Phase HP and LP, Simple Sine Synth, Soft Knee Feedback Limiter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG, Variable Delay, Vibrato and VST Host Opcode Logger, cross-built for arm64 and amd64. | Run the AppKit fixture and native DAW checks. Add the other custom editors. |
 
 Sixty-five catalog projects have at least one native VST3 editor.
-X11 covers 31, HWND covers 64, and Cocoa covers 24. The
+X11 covers 31, HWND covers 64, and Cocoa covers 25. The
 [original editor inventory](../vst3go-plugins/docs/research/original-editors.md)
 lists native platforms alongside the original evidence for all 137 projects.
 At least 59 projects have a custom editor flag or registration in the original
-evidence and still await a first VST3 editor. Confirm the release and prioritize the
-matching form for each first port. The checklist and product notes track
-acceptance for each edition and platform, including known differences in
-the current editors.
+evidence and still await a first VST3 editor.
 
-**Projects awaiting their first custom VST3 editor**
+Progress is tracked per project:
 
-These projects have original custom-editor evidence. The inventory identifies
-the editions to verify and records any reference or artwork gaps.
+- 7.8.3 lists the 13 editors that existed before 7.8 started.
+- 7.8.4 lists the editors first ported during 7.8. A product moves there
+  from 7.8.5 when its first platform view lands.
+- 7.8.5 lists the projects that still await their first editor.
+- 7.8.6 lists the projects and editions that keep the host panel.
 
-| Area | Pending projects |
-| --- | --- |
-| EQ (8) | Electri-Q, Noname EQ, Parametri-Q (lite), Posihfopit, Pushtec 5+1A, Soul EQ, UNIQUE EQ, Valuable EQ |
-| Filter (5) | Bugpass, Lavaland, Linear Phase Butterworth, MoogVST, Rubberfilter |
-| Distortion (10) | 2-Band Distortion, Advanced Clipper, Amp Sim, Christortion, Dynamite, Exciter, Hysteresis, OpAmp, Scary, Tubster |
-| Dynamics (5) | Adhesive, Audiocation Compressor, LA4029, Multiband Compressor, Smooth Multiband Compressor |
-| Delay (1) | FeedBUG |
-| Modulation (3) | Barberpole Flanger, ITA Phaser, Spin Bug Lite |
-| Pitch (3) | Granular Pitch Shifter, SoundTouch based Pitch Shifter, Split Harmonizer |
-| Reverb (5) | ConvoFX, ConvoFXLite, Dynamic Convolution Plugin, Freeverb, Plate Reverb |
-| Spectral (2) | Noise Reduction, Spectral Gate |
-| Spatial (10) | Digital Crosstalk Cancellator (DCC), DualWideBug, HRTF 3D, PhaseBug, Quadrophonics, Quadropolis, Simple Crosstalk Cancellation, Spinbug, Surround to Stereo, Tina-Turner |
-| Synth (3) | 2-Oszillator Synth, FunKEYS, Vocoder |
-| Hosting (2) | Plugin Wrappers, VST interfaced ASIO-Host |
-| Misc (1) | Audio Amelioration |
-| Utility (1) | PhaseAdjustment |
+A product checkbox stays open until every edition matches the original on
+all three platforms. The product notes record the detailed differences.
 
 #### 7.8.1 Original references and edition mapping
 
@@ -1722,6 +1708,10 @@ the editions to verify and records any reference or artwork gaps.
         incomplete forms and unresolved permissions on the affected editions.
         Reproduce proprietary designs with the owner's permission and distribute
         original assets only where redistribution is authorized.
+- [ ] Confirm the classification of Toadstunnel and Hysteresis. The
+      Toadstunnel² split release has a custom editor; check its graphics and
+      the regular release separately. All six captured Hysteresis DLLs
+      (`RLAY`) clear the editor bit although a 422 × 331 form is retained.
 
 #### 7.8.2 Native view support and drawing
 
@@ -1742,21 +1732,30 @@ the editions to verify and records any reference or artwork gaps.
         reopen, keyboard routing and Retina drawing with VST Host Opcode
         Logger and Simple Delay.
 
-#### 7.8.3 Product editors
+#### 7.8.3 Parity for the editors that predate 7.8
 
-- [ ] Implement the missing custom editors and bring the existing ports
-      up to parity. Match client dimensions, layout, original artwork, typography,
-      colors, control states, meters, plots and animation. Match parameter
-      gestures, labels and value formatting, menus, keyboard shortcuts,
-      dialogs, and preset and session recall.
+Thirteen projects had a custom editor when 7.8 started: Ather, Barberpole
+Tuner, BetaMeta, Compander, EeeekU, Sigma Delta, Simple Sampler, Simple
+Sine Synth, StereoMeterVST, Third-Octave Analyser, TunaBUG, VST Host Opcode
+Logger and VST Pascal Script.
+
+- [ ] Bring the 13 earlier editors up to parity. Match client dimensions,
+      layout, original artwork, typography, colors, control states, meters,
+      plots and animation. Match parameter gestures, labels and value
+      formatting, menus, keyboard shortcuts, dialogs, and preset and session
+      recall.
   - [ ] Close the documented visual gaps in the existing editors, including
         EeeekU's colors, fonts and shapes, Sigma Delta's signal-flow artwork,
         Tunabug's scale and buttons, and BetaMeta's skins. Check each edition
         independently where the reference shows a distinct editor.
-  - [x] Compare the three published EeeekU editor variants and match the ZIP
-        stereo graph readouts and S-key randomization. Verify in Linux REAPER
-        and the Win64 HWND probe under Wine. Original artwork by Mully and
-        the earlier stereo form still need separate acceptance.
+  - [ ] EeeekU editor parity.
+    - [x] Compare the three published EeeekU editor variants and match the ZIP
+          stereo graph readouts and S-key randomization. Verify in Linux REAPER
+          and the Win64 HWND probe under Wine. Original artwork by Mully and
+          the earlier stereo form still need separate acceptance.
+    - [ ] Close the color, font and shape differences and accept the Mully
+          artwork and the earlier stereo form separately. Add Cocoa and
+          verify the Windows and macOS views in native DAWs.
   - [ ] Ather editor parity.
     - [x] Identify the 277 × 185 installer and retained forms and the
           300 × 200 ZIP form. Verify the four existing X11 views in Linux REAPER.
@@ -1792,6 +1791,66 @@ the editions to verify and records any reference or artwork gaps.
           Reset Automatic Updates and the memo on attach as in the originals.
     - [ ] Match the native control and memo rendering. Verify the Windows
           and macOS views in native DAWs and record the VST3 trace differences.
+  - [ ] Sigma Delta editor parity.
+    - [x] Redraw the published signal path using agg-go and verify the branch
+          states, numeric and hover readouts, and editor gestures on X11 and
+          HWND. Re-run the original audio comparisons and REAPER state replay.
+    - [x] Cross-link the Cocoa editor for arm64 and amd64. Render the AGG
+          diagram into a 2× backing buffer when AppKit reports Retina scale.
+    - [ ] Close logo permission, typography and HiDPI gaps and exercise the
+          Cocoa and HWND views in native DAWs.
+  - [ ] Simple Sine Synth editor parity.
+    - [x] Match both published 503 × 73 keyboards at rest, held and released
+          on X11 and Win64 under Wine. Verify 2× drawing and playback in
+          REAPER and Windows attach and reopen in REAPER under Wine.
+    - [x] Add the Cocoa editor and cross-link both architectures. Match all
+          pixels of the shared keyboard painter offscreen at 1× and 2×.
+    - [ ] Compare hover and additional key combinations. Verify AppKit
+          rendering and exercise the Windows and macOS views in native DAWs.
+  - [ ] Third-Octave Analyser editor parity.
+    - [x] Capture the published and both retained 342 × 234 originals. Reproduce
+          the red and blue 32-band charts, radio and spin controls on X11.
+          Verify both VST3 classes in Linux REAPER at 1× and 2×.
+    - [x] Port both forms to HWND. Match the chart pixels in the tested
+          original states and verify live meter updates, gestures and
+          reopening at 1× and 2× under Wine.
+    - [x] Add both Cocoa forms and cross-link the module and AppKit
+          fixture on arm64 and amd64. Recheck all ten Windows captures
+          after sharing the chart layout code.
+    - [ ] Run the AppKit fixture and verify native DAW rendering and live
+          meters. Close X11 and Cocoa raster and Windows gain text gaps.
+  - [ ] Compander editor parity.
+    - [x] Verify the original 611 × 226 form with both modes, including the
+          released mouse and reopen behavior. Redraw the compressor and
+          expander plots in agg-go and cross-link the Cocoa editor.
+    - [x] Apply the shared original form to X11 and HWND. Verify the
+          original pointer behavior and matched states at 1×, and verify
+          scaled input up to 2×.
+    - [ ] Close the remaining text and curve raster differences and run
+          native Windows and macOS DAW checks.
+  - [ ] StereoMeterVST editor parity.
+    - [x] Port the published 200 × 220 HWND meter, its four context menu
+          entries and live Blend trail. Check the traced point positions,
+          scaling and reopening under Wine.
+    - [ ] Establish permission for the original photographic backdrop.
+          Close raster differences, reconcile the X11 menu with the
+          published release, add Cocoa and verify native DAWs.
+  - [ ] BetaMeta editor parity.
+    - [x] Identify Meta White and Meta Old in the published DLL. Verify the
+          Windows meter at 1× and 2×, including mode, levels and reopening.
+    - [ ] Resolve skin and lettering permission, match style switching and
+          add Cocoa. Verify the Windows and Mac views in native DAWs.
+  - [ ] TunaBUG editor parity.
+    - [x] Verify the published tuning states. Match selected-string re-click
+          behavior and cross-link the new Cocoa tuner on both architectures.
+    - [ ] Resolve artwork and lettering permission, match the original scale
+          and buttons, and verify in native Windows and macOS DAWs.
+
+#### 7.8.4 Editors added during 7.8
+
+- [ ] Bring the editors first ported during 7.8 up to parity, using the
+      criteria in 7.8.3. Add the missing X11 and Cocoa views where only
+      the Windows editor exists.
   - [ ] Simple Sample Delay editor parity.
     - [x] Capture the 301 × 195 x86 edition and port its four scrollbars,
           value labels and inversion checkbox from the Delphi form. Expose
@@ -1806,14 +1865,6 @@ the editions to verify and records any reference or artwork gaps.
     - [ ] Close the typography and stock rendering
           differences recorded in the [capture notes](../vst3go-plugins/plugins/delay/simple-sample-delay/testdata/reference/CAPTURE.md#editor-comparison).
           Verify both editions in native Windows and macOS DAWs.
-  - [ ] Sigma Delta editor parity.
-    - [x] Redraw the published signal path using agg-go and verify the branch
-          states, numeric and hover readouts, and editor gestures on X11 and
-          HWND. Re-run the original audio comparisons and REAPER state replay.
-    - [x] Cross-link the Cocoa editor for arm64 and amd64. Render the AGG
-          diagram into a 2× backing buffer when AppKit reports Retina scale.
-    - [ ] Close logo permission, typography and HiDPI gaps and exercise the
-          Cocoa and HWND views in native DAWs.
   - [ ] Tiny-Q editor parity.
     - [x] Verify the 131 × 35 June release and 131 × 33 September builds.
           Port the June X11 editor, band controls, response and stereo meter.
@@ -1824,14 +1875,6 @@ the editions to verify and records any reference or artwork gaps.
     - [ ] Match the September layouts, context menus, snapshots and Alt
           gestures, close the June raster differences and verify Windows
           and macOS DAWs.
-  - [ ] Simple Sine Synth editor parity.
-    - [x] Match both published 503 × 73 keyboards at rest, held and released
-          on X11 and Win64 under Wine. Verify 2× drawing and playback in
-          REAPER and Windows attach and reopen in REAPER under Wine.
-    - [x] Add the Cocoa editor and cross-link both architectures. Match all
-          pixels of the shared keyboard painter offscreen at 1× and 2×.
-    - [ ] Compare hover and additional key combinations. Verify AppKit
-          rendering and exercise the Windows and macOS views in native DAWs.
   - [ ] Simple Gate editor parity.
     - [x] Verify and port both published 252 × 46 GUI editions on Windows.
           Match the 2008 startup display and preserve the separate x64 host
@@ -2000,15 +2043,6 @@ the editions to verify and records any reference or artwork gaps.
           compatibility. Verify the retained Win32 and Win64 editor
           references, which raise exceptions under Wine, and add X11
           and Cocoa and native DAW checks.
-  - [ ] FeedBUG editor parity.
-    - [x] Capture the September 2004 302 × 227 form and the May, April
-          and February 2005 298 × 223 form. Match all 13 frames between
-          the three later binaries. Record the two Distance mappings,
-          the hidden early Gain widgets and the X/Y drag and recall.
-    - [ ] Establish permission for the original BetabugsAudio background,
-          dials and X/Y graphics. Resolve the retained February DSP and class.
-    - [ ] Port verified editions with the authorized artwork and verify
-          control edits, host automation and reopen on each platform.
   - [ ] Degrading Delay editor parity.
     - [x] Match all 15 states of the 201 × 99 HWND editor with the
           original dials and agg-go, including gestures, checkbox and reopen.
@@ -2092,18 +2126,6 @@ the editions to verify and records any reference or artwork gaps.
     - [ ] Match the retained Windows caption shadows and X11 text, run
           the native AppKit fixture, and verify matched HiDPI rendering
           and native Windows and macOS DAW attachment and recall.
-  - [ ] Adhesive editor parity.
-    - [x] Compare 22 captured states of both 382 × 322 published forms.
-          Verify control values, original gain-reduction meter and reopening.
-    - [ ] Establish permission for the Cytomic-derived controls and meter.
-          Verify the retained Win64 form and port matching views with the
-          authorized design, then check scaling and native DAW behavior.
-  - [ ] LA4029 editor parity.
-    - [x] Capture both 338 × 323 Win32 releases. Verify the distinct dial
-          travel, Input/GR/Out meter modes and 5/50/500 ms speed menu.
-    - [ ] Establish permission for the shared TbT-derived layout and
-          artwork. Port both editions and verify live metering, gestures,
-          automation, scaling and reopening in native DAWs.
   - [ ] Lightweight Dynamics editor parity.
     - [x] Port the 473 × 422 published HWND form with its original licensed
           dial strip and agg-go plot. Match all 15 dial faces in 35 states
@@ -2173,20 +2195,6 @@ the editions to verify and records any reference or artwork gaps.
           attachment writebacks against VST3 saved-state preservation.
           Resolve the retained Win64 load failure. Add X11 and Cocoa
           and verify matched HiDPI states and native DAWs.
-  - [ ] Multiband Compressor editor parity.
-    - [x] Capture 29 published 775 × 307 states. Verify 15 band dials,
-          two crossover scrollbars, the display-only Master Gain and 13
-          live meters. Record the retained Win64 load error.
-    - [ ] Establish permission for the C3-derived layout and Slim Slow Slider
-          dial artwork. Resolve the retained Win64 form, port the authorized
-          designs and verify host automation, HiDPI and native DAW recall.
-  - [ ] Smooth Multiband Compressor editor parity.
-    - [x] Capture 14 original 800 × 402 states. Verify the 21 dials,
-          Shift-linked thresholds, switches, bypass, static transfer
-          plots during processing and pixel-exact reopening.
-    - [ ] Establish permission for the Scott Kane graphics. Port the
-          authorized design and verify gestures, automation, scaling and
-          recall on supported platforms.
   - [ ] Soft Knee Feedback Compressor editor parity.
     - [x] Port the 402 × 128 January and 323 × 128 October ZIP HWND
           editors with the original licensed artwork. Match all 34 captures
@@ -2205,10 +2213,13 @@ the editions to verify and records any reference or artwork gaps.
           mapping. Match all 34 captures outside captions. Verify 125% and
           200% input, resize refusal, reentrant attachment and independent
           pointer edits and project recall in native Linux REAPER.
+    - [x] Port both 318 × 101 point Cocoa forms with the shared renderer
+          and release gestures. Cross-link both architectures and the
+          AppKit gesture, automation, state and reattachment fixture.
     - [ ] Match captions on X11 and the September HWND. Verify the retained
-          Win64 form and resolve the SKFBLimiter prototype. Add Cocoa,
-          compare HiDPI states and verify attachment, automation and
-          recall in native Windows and macOS DAWs.
+          Win64 form and resolve the SKFBLimiter prototype. Run the native
+          AppKit fixture, compare HiDPI states and verify attachment,
+          automation and recall in native Windows and macOS DAWs.
   - [ ] Lookahead Limiter editor parity.
     - [x] Port the 297 × 123 Windows form with agg-go. Match the three dial
           faces and value captions in all five paired captures. Verify typed
@@ -2351,27 +2362,6 @@ the editions to verify and records any reference or artwork gaps.
           thumb reset with saved Attack in Win64 REAPER under Wine.
     - [ ] Match the original endpoint behavior, add HiDPI, X11 and Cocoa
           support, and verify the other original variants and native DAWs.
-  - [ ] Third-Octave Analyser editor parity.
-    - [x] Capture the published and both retained 342 × 234 originals. Reproduce
-          the red and blue 32-band charts, radio and spin controls on X11.
-          Verify both VST3 classes in Linux REAPER at 1× and 2×.
-    - [x] Port both forms to HWND. Match the chart pixels in the tested
-          original states and verify live meter updates, gestures and
-          reopening at 1× and 2× under Wine.
-    - [x] Add both Cocoa forms and cross-link the module and AppKit
-          fixture on arm64 and amd64. Recheck all ten Windows captures
-          after sharing the chart layout code.
-    - [ ] Run the AppKit fixture and verify native DAW rendering and live
-          meters. Close X11 and Cocoa raster and Windows gain text gaps.
-  - [ ] Compander editor parity.
-    - [x] Verify the original 611 × 226 form with both modes, including the
-          released mouse and reopen behavior. Redraw the compressor and
-          expander plots in agg-go and cross-link the Cocoa editor.
-    - [x] Apply the shared original form to X11 and HWND. Verify the
-          original pointer behavior and matched states at 1×, and verify
-          scaled input up to 2×.
-    - [ ] Close the remaining text and curve raster differences and run
-          native Windows and macOS DAW checks.
   - [ ] Bode Frequency Shifter editor parity.
     - [x] Compare the published light and retained dark 223 × 129 forms.
           Port both to HWND using agg-go and expose the original headless
@@ -2423,29 +2413,258 @@ the editions to verify and records any reference or artwork gaps.
           heights. Cross-link the modules and AppKit fixture on both architectures.
     - [ ] Run the AppKit fixture, match X11 fonts and scrollbar artwork,
           and compare HiDPI states in native Windows and macOS DAWs.
-  - [ ] StereoMeterVST editor parity.
-    - [x] Port the published 200 × 220 HWND meter, its four context menu
-          entries and live Blend trail. Check the traced point positions,
-          scaling and reopening under Wine.
-    - [ ] Establish permission for the original photographic backdrop.
-          Close raster differences, reconcile the X11 menu with the
-          published release, add Cocoa and verify native DAWs.
-  - [ ] BetaMeta editor parity.
-    - [x] Identify Meta White and Meta Old in the published DLL. Verify the
-          Windows meter at 1× and 2×, including mode, levels and reopening.
-    - [ ] Resolve skin and lettering permission, match style switching and
-          add Cocoa. Verify the Windows and Mac views in native DAWs.
-  - [ ] TunaBUG editor parity.
-    - [x] Verify the published tuning states. Match selected-string re-click
-          behavior and cross-link the new Cocoa tuner on both architectures.
-    - [ ] Resolve artwork and lettering permission, match the original scale
-          and buttons, and verify in native Windows and macOS DAWs.
-  - [ ] Verify original host-provided variants still expose their controls
-        through the DAW panel and preserve their edition-specific behavior.
-    - [x] Confirm all four Audio2Midi Trigger binaries use the host panel.
-          Verify the VST3 returns no plug-in view and exposes its parameters.
 
-#### 7.8.4 Editor acceptance
+#### 7.8.5 Projects awaiting their first editor
+
+These projects have original custom-editor evidence but no VST3 editor yet.
+Each item covers the first port to HWND, X11 and Cocoa. When work starts,
+split the item into per-platform steps and move it to 7.8.4. Sizes are the
+original client sizes from the
+[editor inventory](../vst3go-plugins/docs/research/original-editors.md).
+
+**EQ (8)**
+
+- [ ] [Electri-Q](../vst3go-plugins/plugins/eq/electri-q/README.md): port the
+      619 × 300 editor and its 307 × 180 overview. The Win32 Posihfopit
+      edition (`AXEQ`) advertises the editor; capture the commercial edition.
+      Needs the factory bank from 7.7.
+- [ ] [Noname EQ](../vst3go-plugins/plugins/eq/noname-eq/README.md): port the
+      718 × 381 editor and the 718 × 286 splitter form of the published
+      `Nona`, `SNEQ` and `SNo2` editions.
+- [ ] [Parametri-Q (lite)](../vst3go-plugins/plugins/eq/parametri-q-lite/README.md):
+      port the 794 × 348 editor of the three Win32 Lite downloads. Keep the
+      Win64 Parametric EQ edition on the host panel.
+- [ ] [Posihfopit](../vst3go-plugins/plugins/eq/posihfopit/README.md): port the
+      598 × 282 Posihfopit, 400 × 188 Armyfopit and 332 × 143 Smallifopit
+      editors and the 408 × 227 overview for every shell ID.
+- [ ] [Pushtec 5+1A](../vst3go-plugins/plugins/eq/pushtec-5-1a/README.md):
+      capture a release of the retained 653 × 262 form. Settle the joint
+      credit and licensing terms for the editor and assets before porting.
+- [ ] [Soul EQ](../vst3go-plugins/plugins/eq/soul-eq/README.md): port the
+      718 × 369 editor of the published `TestEQ.dll` and resolve the separate
+      retained 718 × 381 Soul EQ build.
+- [ ] [UNIQUE EQ](../vst3go-plugins/plugins/eq/unique-eq/README.md): port the
+      captured 360 × 154 editor.
+- [ ] [Valuable EQ](../vst3go-plugins/plugins/eq/valuable-eq/README.md): port the
+      359 × 395 mono (`VT63`) and 489 × 382 stereo (`VTST`) editors. Needs
+      the sampled data and its licensing from 7.7.
+
+**Filter (5)**
+
+- [ ] [Bugpass](../vst3go-plugins/plugins/filter/bugpass/README.md): port the
+      300 × 167 editor of both Win32 downloads (`BugP`, `0x411`) next to the
+      Lite editor in the same bundle.
+- [ ] [Lavaland](../vst3go-plugins/plugins/filter/lavaland/README.md): port the
+      302 × 195 editor of the matching `Lava` ZIP members.
+- [ ] [Linear Phase Butterworth](../vst3go-plugins/plugins/filter/linear-phase-butterworth/README.md):
+      locate the Delphi project and capture the HP and LP editors of the
+      November 2009 installer before porting them.
+- [ ] [MoogVST](../vst3go-plugins/plugins/filter/moogvst/README.md): port the
+      297 × 104 editor of the published `Moog` build and check the distinct
+      retained `NoEf` build.
+- [ ] [Rubberfilter](../vst3go-plugins/plugins/filter/rubberfilter/README.md):
+      capture and port the editors of both published Win32 builds (`Rubb`).
+
+**Distortion (10)**
+
+- [ ] [2-Band Distortion](../vst3go-plugins/plugins/distortion/2-band-distortion/README.md):
+      port the 319 × 129 editor of the 2011 Win32 archive and installer and
+      the 2008 ZIP. Keep the Win64 and headless references on the host panel.
+- [ ] [Advanced Clipper](../vst3go-plugins/plugins/distortion/advanced-clipper/README.md):
+      port the 217 × 293 editor. Compare the 2008 Win32 and 2011 Win32 and
+      Win64 artwork and geometry separately.
+- [ ] [Amp Sim](../vst3go-plugins/plugins/distortion/amp-sim/README.md): port
+      the 376 × 171 Win32 editor. The January 2011 Win64 edition keeps the
+      host panel.
+- [ ] [Christortion](../vst3go-plugins/plugins/distortion/christortion/README.md):
+      identify and capture the editor of the four published builds and the
+      retained Win64 DLL, then port it.
+- [ ] [Dynamite](../vst3go-plugins/plugins/distortion/dynamite/README.md): port
+      the 497 × 219 editor of both retained Win32 DLLs (`DYNA`). The
+      encrypted website archives remain open.
+- [ ] [Exciter](../vst3go-plugins/plugins/distortion/exciter/README.md): port the
+      319 × 129 editor of the captured DLLs.
+- [ ] [Hysteresis](../vst3go-plugins/plugins/distortion/hysteresis/README.md):
+      confirm a release that opens the retained 422 × 331 form (see 7.8.1)
+      before porting it. Otherwise move the project to 7.8.6.
+- [ ] [OpAmp](../vst3go-plugins/plugins/distortion/opamp/README.md): port the
+      269 × 120 editor of the published original.
+- [ ] [Scary](../vst3go-plugins/plugins/distortion/scary/README.md): port the
+      300 × 200 editor of both Win32 releases.
+- [ ] [Tubster](../vst3go-plugins/plugins/distortion/tubster/README.md): port the
+      143 × 292 editor compiled into the published Harmonics.dll. The
+      original applies parameter edits reliably only while it is open.
+
+**Dynamics (5)**
+
+- [ ] Adhesive editor parity.
+  - [x] Compare 22 captured states of both 382 × 322 published forms.
+        Verify control values, original gain-reduction meter and reopening.
+  - [ ] Establish permission for the Cytomic-derived controls and meter.
+        Verify the retained Win64 form and port matching views with the
+        authorized design, then check scaling and native DAW behavior.
+- [ ] [Audiocation Compressor](../vst3go-plugins/plugins/dynamics/audiocation-compressor/README.md):
+      port the 860 × 186 mono and stereo installer editors.
+- [ ] LA4029 editor parity.
+  - [x] Capture both 338 × 323 Win32 releases. Verify the distinct dial
+        travel, Input/GR/Out meter modes and 5/50/500 ms speed menu.
+  - [ ] Establish permission for the shared TbT-derived layout and
+        artwork. Port both editions and verify live metering, gestures,
+        automation, scaling and reopening in native DAWs.
+- [ ] Multiband Compressor editor parity.
+  - [x] Capture 29 published 775 × 307 states. Verify 15 band dials,
+        two crossover scrollbars, the display-only Master Gain and 13
+        live meters. Record the retained Win64 load error.
+  - [ ] Establish permission for the C3-derived layout and Slim Slow Slider
+        dial artwork. Resolve the retained Win64 form, port the authorized
+        designs and verify host automation, HiDPI and native DAW recall.
+- [ ] Smooth Multiband Compressor editor parity.
+  - [x] Capture 14 original 800 × 402 states. Verify the 21 dials,
+        Shift-linked thresholds, switches, bypass, static transfer
+        plots during processing and pixel-exact reopening.
+  - [ ] Establish permission for the Scott Kane graphics. Port the
+        authorized design and verify gestures, automation, scaling and
+        recall on supported platforms.
+
+**Delay (1)**
+
+- [ ] FeedBUG editor parity.
+  - [x] Capture the September 2004 302 × 227 form and the May, April
+        and February 2005 298 × 223 form. Match all 13 frames between
+        the three later binaries. Record the two Distance mappings,
+        the hidden early Gain widgets and the X/Y drag and recall.
+  - [ ] Establish permission for the original BetabugsAudio background,
+        dials and X/Y graphics. Resolve the retained February DSP and class.
+  - [ ] Port verified editions with the authorized artwork and verify
+        control edits, host automation and reopen on each platform.
+
+**Modulation (3)**
+
+- [ ] [Barberpole Flanger](../vst3go-plugins/plugins/modulation/barberpole-flanger/README.md):
+      capture the released editor's interaction and port the retained
+      247 × 115 form.
+- [ ] [ITA Phaser](../vst3go-plugins/plugins/modulation/ita-phaser/README.md):
+      locate the form source of the June 2005 PhaserVST.dll editor and settle
+      the ITA graphics permission before porting it.
+- [ ] [Spin Bug Lite](../vst3go-plugins/plugins/modulation/spin-bug-lite/README.md):
+      port the 317 × 190 editor of the December 2009 Win32 release. The
+      January 2011 Win64 edition keeps the host panel.
+
+**Pitch (3)**
+
+- [ ] [Granular Pitch Shifter](../vst3go-plugins/plugins/pitch/granular-pitch-shifter/README.md):
+      port the 277 × 93 editor of the January 2010 Win32 release (`Chor`).
+- [ ] [SoundTouch based Pitch Shifter](../vst3go-plugins/plugins/pitch/soundtouch-based-pitch-shifter/README.md):
+      port the 129 × 128 editor. Needs its data from 7.7.
+- [ ] [Split Harmonizer](../vst3go-plugins/plugins/pitch/split-harmonizer/README.md):
+      port the 325 × 267 and 414 × 267 editors. Needs its data and the
+      `soundtouch141` build decision from 7.7.
+
+**Reverb (5)**
+
+- [ ] [ConvoFX](../vst3go-plugins/plugins/reverb/convofx/README.md): capture the
+      released artwork and interactions and port the 242 × 128 editor. Needs
+      the impulse-response data from 7.7.
+- [ ] [ConvoFXLite](../vst3go-plugins/plugins/reverb/convofxlite/README.md): port
+      the 242 × 128 editor of the published `ConvoFXLite.dll`. Needs the
+      impulse-response data from 7.7.
+- [ ] [Dynamic Convolution Plugin](../vst3go-plugins/plugins/reverb/dynamic-convolution-plugin/README.md):
+      port the 524 × 366 editor of the January 2005 ITA installer DLL,
+      including `.dyn` profile loading.
+- [ ] [Freeverb](../vst3go-plugins/plugins/reverb/freeverb/README.md): port the
+      353 × 120 editor of the 2009 releases and the retained GUI build. The
+      2007 and October 2008 releases keep the host panel.
+- [ ] [Plate Reverb](../vst3go-plugins/plugins/reverb/plate-reverb/README.md):
+      port the 454 × 120 editor.
+
+**Spectral (2)**
+
+- [ ] [Noise Reduction](../vst3go-plugins/plugins/spectral/noise-reduction/README.md):
+      port the 348 × 147 editor of the published and retained Win32 and Win64
+      builds (`Fsng`).
+- [ ] [Spectral Gate](../vst3go-plugins/plugins/spectral/spectral-gate/README.md):
+      port the 431 × 123 editor of the October 2009 original.
+
+**Spatial (10)**
+
+- [ ] [Digital Crosstalk Cancellator (DCC)](../vst3go-plugins/plugins/spatial/digital-crosstalk-cancellator-dcc/README.md):
+      port the 368 × 150 editor. Compare both release descriptors and the
+      independent Left and Right controls.
+- [ ] [DualWideBug](../vst3go-plugins/plugins/spatial/dualwidebug/README.md):
+      port the 206 × 320 editor of both originals.
+- [ ] [HRTF 3D](../vst3go-plugins/plugins/spatial/hrtf-3d/README.md): port the
+      307 × 284 editor and check the remaining editions and assets. Needs the
+      HRTF data from 7.7.
+- [ ] [PhaseBug](../vst3go-plugins/plugins/spatial/phasebug/README.md): port the
+      316 × 309 editor of the four captured originals.
+- [ ] [Quadrophonics](../vst3go-plugins/plugins/spatial/quadrophonics/README.md):
+      port the 374 × 79 editor of all six matrices.
+- [ ] [Quadropolis](../vst3go-plugins/plugins/spatial/quadropolis/README.md):
+      port the 137 × 137 (2004, `QuaD`) and 192 × 192 (2010, `Quad`) editors.
+      Needs its data from 7.7.
+- [ ] [Simple Crosstalk Cancellation](../vst3go-plugins/plugins/spatial/simple-crosstalk-cancellation/README.md):
+      verify the artwork rights and port the 665 × 281 editor and its
+      interaction.
+- [ ] [Spinbug](../vst3go-plugins/plugins/spatial/spinbug/README.md): port the
+      454 × 237 editor.
+- [ ] [Surround to Stereo](../vst3go-plugins/plugins/spatial/surround-to-stereo/README.md):
+      port the 300 × 240 dialog of each edition and compare their layouts
+      separately. Needs its data from 7.7.
+- [ ] [Tina-Turner](../vst3go-plugins/plugins/spatial/tina-turner/README.md):
+      port the 245 × 269 editor.
+
+**Synth (3)**
+
+- [ ] [2-Oszillator Synth](../vst3go-plugins/plugins/synth/2-oszillator-synth/README.md):
+      port the 498 × 189 editor.
+- [ ] [FunKEYS](../vst3go-plugins/plugins/synth/funkeys/README.md): port the
+      300 × 225 editor. Needs its data from 7.7.
+- [ ] [Vocoder](../vst3go-plugins/plugins/synth/vocoder/README.md): port the
+      262 × 142 published editor and compare the retained Win32 and Win64
+      editions.
+
+**Hosting (2)**
+
+- [ ] [Plugin Wrappers](../vst3go-plugins/plugins/hosting/plugin-wrappers/README.md):
+      identify each generated DLL and its input plug-ins, then port the
+      template views. Merger tools generate user-designed layouts.
+- [ ] [VST interfaced ASIO-Host](../vst3go-plugins/plugins/hosting/vst-interfaced-asio-host/README.md):
+      port the 332 × 236 ASIOVST editor. Check the driver-dependent controls
+      and generated wrappers separately.
+
+**Misc and utility (2)**
+
+- [ ] [Audio Amelioration](../vst3go-plugins/plugins/misc/audio-amelioration/README.md):
+      port the 291 × 302 editor.
+- [ ] [PhaseAdjustment](../vst3go-plugins/plugins/utility/phaseadjustment/README.md):
+      get the later Win32 and Win64 editor builds past their initialization
+      fault under Wine and port the 192 × 192 form. The early Win32 edition
+      has no custom editor.
+
+#### 7.8.6 Host-panel editions
+
+- [ ] Verify original host-provided variants still expose their controls
+      through the DAW panel and preserve their edition-specific behavior.
+  - [x] Confirm all four Audio2Midi Trigger binaries use the host panel.
+        Verify the VST3 returns no plug-in view and exposes its parameters.
+  - [ ] Confirm the projects whose originals all use the host panel. The
+        VST3 returns no plug-in view and exposes every parameter.
+    - [ ] [ParametricEQ](../vst3go-plugins/plugins/eq/parametriceq/README.md)
+    - [ ] [Linear Phase Frequency Crossover](../vst3go-plugins/plugins/filter/linear-phase-frequency-crossover/README.md)
+    - [ ] [Simple Linkwitz-Riley Crossover](../vst3go-plugins/plugins/filter/simple-linkwitz-riley-crossover/README.md)
+    - [ ] [SimpleFilter](../vst3go-plugins/plugins/filter/simplefilter/README.md)
+    - [ ] [Weighting Filter](../vst3go-plugins/plugins/filter/weighting-filter/README.md)
+    - [ ] [Analogue Mojo](../vst3go-plugins/plugins/distortion/analogue-mojo/README.md)
+    - [ ] [TanhWaveshaper](../vst3go-plugins/plugins/distortion/tanhwaveshaper/README.md)
+    - [ ] [Limiter](../vst3go-plugins/plugins/dynamics/limiter/README.md)
+    - [ ] [ModDelay](../vst3go-plugins/plugins/delay/moddelay/README.md):
+          resolve the retained Win32 and Win64 editor builds first.
+    - [ ] [Headphone Mix](../vst3go-plugins/plugins/spatial/headphone-mix/README.md)
+  - [ ] Keep the host-panel editions of projects with a custom editor, such
+        as the x64 builds of Simple Gate, Simple Sample Delay and Graphic EQ,
+        on the DAW panel. The product items in 7.8.4 track each one.
+
+#### 7.8.7 Editor acceptance
 
 - [ ] Record acceptance for each class and platform. Compare the plugin-drawn
       area against the original at the same size, preset and control state.
