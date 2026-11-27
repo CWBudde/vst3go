@@ -760,8 +760,8 @@ parameters, programs, original editor references and audio comparisons in
   - [x] Match 252 captures from the archive and Series releases. Verify both
         clip curves, upward gain, latched makeup, all programs and four
         reopened REAPER projects using the curve from [algo-dsp PR #52](https://github.com/CWBudde/algo-dsp/pull/52).
-  - [ ] Verify the native editor, characteristic display and other host
-        platforms. The port bounds gain and output at exponent overflow.
+  - [ ] Finish editor parity in Phase 7.8 and verify other host platforms.
+        The port bounds gain and output at exponent overflow.
 - [ ] [Limiter](../vst3go-plugins/plugins/dynamics/limiter/testdata/reference/CAPTURE.md)
   - [x] Match all 72 renders from the three audible retained binaries sample
         for sample. Reopen the unassigned timing and explicit minimum timing
@@ -1649,14 +1649,14 @@ linked in Sections 7.1–7.5 and the [companion catalog](../vst3go-plugins/CATAL
 | Platform | Current custom editor coverage | Remaining platform work |
 | --- | --- | --- |
 | Linux X11 | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Compander, Decimator, EeeekU, Hard Knee Compressor, Oversampled Tanh, Sigma Delta, Simple Compressor (January 2010), Simple Sample Delay, Simple Gate, Simple Limiter, Simple Linear Phase HP and LP, Simple Sampler, Simple Sine Synth, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG, Variable Delay, Vibrato, VST Host Opcode Logger, VST Pascal Script | Add missing editors and close original-UI gaps in existing editors. |
-| Windows HWND | Ather, Barberpole Tuner, Bass Baron, Bass Extender, BetaMeta, Bode Frequency Shifter, Bugpass Lite, Butterworth Filters, Chebyshev Filters, Chebyshev Waveshaper, ChunkDemo, Compander, Decimator, Degrading Delay, Dither & Noiseshaper, Dual Linkwitz-Riley Filters, EeeekU, Enhanced Gate, Flanger, Graphic EQ, Hard Knee Compressor, Hum Removal, Lightweight Feedback Limiter, Lightweight Soft Knee Compressor, Lightweight Soft Knee Gate, Lightweight Soft Knee Limiter, Lookahead Limiter, Oversampled Tanh, Party-Delay, Phase-O-Matic, Phase Rotator, QR-Filter, Ring Modulator, Sidechain Compressor, Sigma Delta, Simple Chorus, Simple Compressor (January 2010), Simple Sample Delay, Simple Feedback Compressor, Simple Gate, Simple Limiter, Simple Linear Phase HP and LP, Simple Linear Phase Linkwitz-Riley HP and LP, Simple Sampler, Simple Sine Synth, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, SubBoost, Third Octave Analyser, Tiny-Q, Transient Bug (BugWars), TunaBUG, Variable Delay, Vibrato, VST Host Opcode Logger | Add missing editors and verify coverage on native Windows. Existing cross-build and Wine evidence is recorded by product. |
+| Windows HWND | Ather, Barberpole Tuner, Bass Baron, Bass Extender, BetaMeta, Bode Frequency Shifter, Bugpass Lite, Butterworth Filters, Chebyshev Filters, Chebyshev Waveshaper, ChunkDemo, Compander, Decimator, Degrading Delay, Dither & Noiseshaper, Dual Linkwitz-Riley Filters, EeeekU, Enhanced Gate, Flanger, Graphic EQ, Hard Knee Compressor, Hum Removal, Lightweight Feedback Limiter, Lightweight Soft Knee Compressor, Lightweight Soft Knee Gate, Lightweight Soft Knee Limiter, Lightweight Upward Compressor, Lookahead Limiter, Oversampled Tanh, Party-Delay, Phase-O-Matic, Phase Rotator, QR-Filter, Ring Modulator, Sidechain Compressor, Sigma Delta, Simple Chorus, Simple Compressor (January 2010), Simple Sample Delay, Simple Feedback Compressor, Simple Gate, Simple Limiter, Simple Linear Phase HP and LP, Simple Linear Phase Linkwitz-Riley HP and LP, Simple Sampler, Simple Sine Synth, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, SubBoost, Third Octave Analyser, Tiny-Q, Transient Bug (BugWars), TunaBUG, Variable Delay, Vibrato, VST Host Opcode Logger | Add missing editors and verify coverage on native Windows. Existing cross-build and Wine evidence is recorded by product. |
 | macOS Cocoa | Barberpole Tuner, Bode Frequency Shifter, Compander, Decimator, Hard Knee Compressor, Oversampled Tanh, Sigma Delta, Simple Compressor (January 2010), Simple Sample Delay, Simple Gate, Simple Limiter, Simple Linear Phase HP and LP, Simple Sine Synth, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG, Variable Delay, Vibrato and VST Host Opcode Logger, cross-built for arm64 and amd64. | Run the AppKit fixture and native DAW checks. Add the other custom editors. |
 
-Fifty-nine catalog projects have at least one native VST3 editor.
-X11 covers 29, HWND covers 58, and Cocoa covers 23. The
+Sixty catalog projects have at least one native VST3 editor.
+X11 covers 29, HWND covers 59, and Cocoa covers 23. The
 [original editor inventory](../vst3go-plugins/docs/research/original-editors.md)
 lists native platforms alongside the original evidence for all 137 projects.
-At least 65 projects have a custom editor flag or registration in the original
+At least 64 projects have a custom editor flag or registration in the original
 evidence and still await a first VST3 editor. Confirm the release and prioritize the
 matching form for each first port. The checklist and product notes track
 acceptance for each edition and platform, including known differences in
@@ -1672,7 +1672,7 @@ the editions to verify and records any reference or artwork gaps.
 | EQ (8) | Electri-Q, Noname EQ, Parametri-Q (lite), Posihfopit, Pushtec 5+1A, Soul EQ, UNIQUE EQ, Valuable EQ |
 | Filter (5) | Bugpass, Lavaland, Linear Phase Butterworth, MoogVST, Rubberfilter |
 | Distortion (10) | 2-Band Distortion, Advanced Clipper, Amp Sim, Christortion, Dynamite, Exciter, Hysteresis, OpAmp, Scary, Tubster |
-| Dynamics (11) | Adhesive, Audiocation Compressor, LA4029, Lightweight Dynamics, Lightweight Feedback Compressor, Lightweight Multiband Compressor, Lightweight Upward Compressor, Multiband Compressor, Smooth Multiband Compressor, Soft Knee Feedback Compressor, Soft Knee Feedback Limiter |
+| Dynamics (10) | Adhesive, Audiocation Compressor, LA4029, Lightweight Dynamics, Lightweight Feedback Compressor, Lightweight Multiband Compressor, Multiband Compressor, Smooth Multiband Compressor, Soft Knee Feedback Compressor, Soft Knee Feedback Limiter |
 | Delay (1) | FeedBUG |
 | Modulation (3) | Barberpole Flanger, ITA Phaser, Spin Bug Lite |
 | Pitch (3) | Granular Pitch Shifter, SoundTouch based Pitch Shifter, Split Harmonizer |
@@ -2100,6 +2100,16 @@ the editions to verify and records any reference or artwork gaps.
           caption at the dial minimum against the Series presentation.
           Resolve the retained Win64 load error. Add X11 and Cocoa and
           verify matched HiDPI states and native DAWs.
+  - [ ] Lightweight Upward Compressor editor parity.
+    - [x] Port both 329 × 178 Windows editions with their original dial
+          strip and agg-go graph. Match all dial and caption pixels in
+          52 paired frames. Verify the retained Win32 form's exact match
+          to the archive and pointer edits and reopen for both VST3
+          classes in Windows REAPER under Wine.
+    - [ ] Match the remaining graph and LED edges and verify original
+          attachment writebacks against VST3 saved-state preservation.
+          Resolve the retained Win64 load failure. Add X11 and Cocoa
+          and verify matched HiDPI states and native DAWs.
   - [ ] Lookahead Limiter editor parity.
     - [x] Port the 297 × 123 Windows form with agg-go. Match the three dial
           faces and value captions in all five paired captures. Verify typed
