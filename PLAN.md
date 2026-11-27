@@ -329,6 +329,8 @@ there and reusable DSP in the sibling `algo-*` libraries.
       thread. Exercise two open instances and close a view during playback.
 - [x] Keep skins, fonts, knob strips, control layout and product-specific
       drawing in the companion repo. Validate its editor with a real port.
+- [ ] Use the native view support to deliver the per-class
+      [original editor parity work](#78-original-editor-parity).
 
 ### 6.2 Processing and host contracts
 
@@ -1569,6 +1571,8 @@ parameters, programs, original editor references and audio comparisons in
         editors, programs, host versions and original pixel dimensions.
   - [ ] Complete the remaining native Windows and macOS editor comparisons
         and hardware-dependent checks listed by product.
+  - [ ] Close the [original editor parity checklist](#78-original-editor-parity)
+        for every applicable class and edition.
 - [x] Document known unresolved source identity, original assets, reference
       binaries or differences before marking the corresponding port complete.
 
@@ -1625,6 +1629,74 @@ Re-run with `vst3go-plugins/scripts/stress.sh`.
       refusing, so this is low priority. Chunk Demo also refuses the low rate.
 - [ ] Add the stress run to CI: the validator and pluginval for every project
       on Linux (Xvfb), and macOS without GUI tests until the Cocoa editor lands.
+
+### 7.8 Original editor parity
+
+Match the look and behavior of the original editor for every cataloged plugin
+class and edition. Keep the DAW's generic parameter panel for editions whose
+original used a host-provided UI. Track the work in the per-product notes
+linked in Sections 7.1–7.5 and the [companion catalog](../vst3go-plugins/CATALOG.md).
+
+| Platform | Current custom editor coverage | Remaining platform work |
+| --- | --- | --- |
+| Linux X11 | Ather, Barberpole Tuner, BetaMeta, Compander, EeeekU, Sigma Delta, Simple Sampler, Simple Sine Synth, StereoMeter, Third Octave Analyser, Tunabug, VST Host Opcode Logger, VST Pascal Script | Add missing editors and close original-UI gaps in existing editors. |
+| Windows HWND | Ather, Compander, EeeekU, Sigma Delta, Simple Sampler, Tunabug | Add missing editors and verify coverage on native Windows. Existing cross-build and Wine evidence is recorded by product. |
+| macOS Cocoa | All ports use the generic host panel. | Complete the `NSView` support in Section 6.1 and add the custom editors. |
+
+#### 7.8.1 Original references and edition mapping
+
+- [ ] Inventory every class and edition in its product notes. Identify the
+      matching original binary, Delphi form and editor code, and record whether
+      the original supplies a custom editor, uses the host panel, or lacks a
+      usable reference. Capture the original at its default size and matched
+      settings, including alternate pages, dialogs and distinct release skins.
+  - [ ] Record the owner or applicable permission for original UI designs and
+        assets, including third-party artwork and fonts. Track missing binaries,
+        incomplete forms and unresolved permissions on the affected editions.
+        Reproduce proprietary designs with the owner's permission and distribute
+        original assets only where redistribution is authorized.
+
+#### 7.8.2 Native view support and drawing
+
+- [ ] Complete native editor support on Linux, Windows and macOS using the
+      existing `IPlugView` bridge. Keep native embedding and input handling in
+      the platform adapters and each editor's layout, drawing and assets in
+      `vst3go-plugins`.
+  - [ ] Use [agg-go](https://github.com/CWBudde/agg_go) in the companion for
+        advanced drawing, including anti-aliased curves, gradients, layered
+        graphics, and animated meters. Use simple drawing and bitmap blits
+        for static layouts and controls that need only those primitives.
+  - [ ] Exercise an `NSView` child in a macOS host. Verify attach, remove,
+        reopen, keyboard routing and Retina drawing with VST Host Opcode
+        Logger before applying the adapter across products.
+
+#### 7.8.3 Product editors
+
+- [ ] Implement the missing custom editors and bring the existing 13 projects
+      up to parity. Match client dimensions, layout, original artwork, typography,
+      colors, control states, meters, plots and animation. Match parameter
+      gestures, labels and value formatting, menus, keyboard shortcuts,
+      dialogs, and preset and session recall.
+  - [ ] Close the documented visual gaps in the existing editors, including
+        EeeekU's colors, fonts and shapes, Sigma Delta's signal-flow artwork,
+        Tunabug's scale and buttons, and BetaMeta's skins. Check each edition
+        independently where the reference shows a distinct editor.
+  - [ ] Simple Delay. Capture the 301 × 195 x86 edition and port its four
+        scrollbars, value labels and inversion checkbox from the Delphi form.
+        Expose the x64 host-panel edition separately and retain the existing
+        port's working delay processor and state compatibility.
+  - [ ] Verify original host-provided variants still expose their controls
+        through the DAW panel and preserve their edition-specific behavior.
+
+#### 7.8.4 Editor acceptance
+
+- [ ] Record acceptance for each class and platform. Compare the plugin-drawn
+      area against the original at the same size, preset and control state.
+      Compare screenshots at 1× and supported HiDPI scales and replay inputs
+      that exercise control states, meters and plots. Exercise each editor in
+      a native DAW, including focus, resizing where supported, host automation,
+      preset changes, and closing and reopening a saved project. Keep the
+      per-class checkbox open for any outstanding difference or reference gap.
 
 ## Phase 8: Release Readiness
 
