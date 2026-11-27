@@ -683,9 +683,11 @@ parameters, programs, original editor references and audio comparisons in
   - [x] Match 108 release captures for compression, mix, clip, bypass and
         the mono sidechain. Reopen six REAPER sessions with edited slots,
         routed and disconnected auxiliary inputs.
-  - [ ] Verify the native editor, original sidechain edit timing and other
-        native hosts. The port selects the sidechain immediately and the
-        retained x64 DLL failed to load under Wine.
+  - [x] Capture both released 382 × 322 editors and verify their
+        controls, sidechain switch and live gain-reduction meter.
+  - [ ] Finish Phase 7.8 and verify original sidechain edit timing and native
+        hosts. The port selects the sidechain immediately and the retained
+        x64 DLL failed to load under Wine.
 - [ ] [Audiocation Compressor](../vst3go-plugins/plugins/dynamics/audiocation-compressor/testdata/reference/CAPTURE.md)
   - [x] Port the released DVL1 mono and DVL2 stereo classes. Match 196
         transformer, detector, automation, finite expansion and rate-change
@@ -784,8 +786,10 @@ parameters, programs, original editor references and audio comparisons in
   - [x] Match 132 original x86 captures for the linked three-band paths,
         startup aliases, crossover and dynamics edits. Reopen six REAPER
         projects, including the untouched and edited high crossover settings.
-  - [ ] Verify the original editor, retained Win64 callback and additional
-        native hosts. The retained x64 DLL failed to load under Wine.
+  - [x] Capture the 775 × 307 original editor and verify both crossover
+        scrollbars, the 15 band dials and 13 live meters.
+  - [ ] Finish Phase 7.8 and verify the retained Win64 callback and
+        additional hosts. The retained x64 DLL failed to load under Wine.
 - [ ] [Sidechain Compressor](../vst3go-plugins/plugins/dynamics/sidechain-compressor/README.md)
   - [x] Compare all 13 released programs and the loaded detector path.
         Validate the Linux class and restore the nested state in REAPER.
@@ -822,8 +826,9 @@ parameters, programs, original editor references and audio comparisons in
         edits, the Smooth mode from [algo-dsp PR #53](https://github.com/CWBudde/algo-dsp/pull/53),
         Limit and the original frame-16 impulse peak with zero reported latency.
         Validate the class and reopen four REAPER projects within 1.20e−7.
-  - [ ] Compare the original editor and its auto-makeup controls, verify Windows
-        and macOS hosts, and confirm permission to redistribute original assets.
+  - [x] Capture the 800 × 402 original editor and verify linking, switches,
+        bypass, unchanged plots during processing and pixel-exact reopening.
+  - [ ] Finish Phase 7.8 and verify Windows and macOS hosts.
 - [ ] [Soft Knee Feedback Compressor](../vst3go-plugins/plugins/dynamics/soft-knee-feedback-compressor/testdata/reference/CAPTURE.md)
   - [x] Port both releases and compare 180 original captures. The 2010 class
         matches within 4.77e−7. The 2008 ZIP matches 74 renders within 1.20e−7.
@@ -2087,6 +2092,12 @@ the editions to verify and records any reference or artwork gaps.
     - [ ] Match the retained Windows caption shadows and X11 text, run
           the native AppKit fixture, and verify matched HiDPI rendering
           and native Windows and macOS DAW attachment and recall.
+  - [ ] Adhesive editor parity.
+    - [x] Compare 22 captured states of both 382 × 322 published forms.
+          Verify control values, original gain-reduction meter and reopening.
+    - [ ] Establish permission for the Cytomic-derived controls and meter.
+          Verify the retained Win64 form and port matching views with the
+          authorized design, then check scaling and native DAW behavior.
   - [ ] LA4029 editor parity.
     - [x] Capture both 338 × 323 Win32 releases. Verify the distinct dial
           travel, Input/GR/Out meter modes and 5/50/500 ms speed menu.
@@ -2162,6 +2173,20 @@ the editions to verify and records any reference or artwork gaps.
           attachment writebacks against VST3 saved-state preservation.
           Resolve the retained Win64 load failure. Add X11 and Cocoa
           and verify matched HiDPI states and native DAWs.
+  - [ ] Multiband Compressor editor parity.
+    - [x] Capture 29 published 775 × 307 states. Verify 15 band dials,
+          two crossover scrollbars, the display-only Master Gain and 13
+          live meters. Record the retained Win64 load error.
+    - [ ] Establish permission for the C3-derived layout and Slim Slow Slider
+          dial artwork. Resolve the retained Win64 form, port the authorized
+          designs and verify host automation, HiDPI and native DAW recall.
+  - [ ] Smooth Multiband Compressor editor parity.
+    - [x] Capture 14 original 800 × 402 states. Verify the 21 dials,
+          Shift-linked thresholds, switches, bypass, static transfer
+          plots during processing and pixel-exact reopening.
+    - [ ] Establish permission for the Scott Kane graphics. Port the
+          authorized design and verify gestures, automation, scaling and
+          recall on supported platforms.
   - [ ] Soft Knee Feedback Compressor editor parity.
     - [x] Port the 402 × 128 January and 323 × 128 October ZIP HWND
           editors with the original licensed artwork. Match all 34 captures
