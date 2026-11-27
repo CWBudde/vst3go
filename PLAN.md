@@ -1090,7 +1090,7 @@ parameters, programs, original editor references and audio comparisons in
         values, four reopened REAPER projects and SDK validation.
         Use the shared shifter from [algo-dsp PR #60](https://github.com/CWBudde/algo-dsp/pull/60).
   - [ ] Resolve the variable and nonfinite original Bode captures and
-        verify the original editor, artwork permissions and native hosts.
+        finish Phase 7.8 editor parity and verify native hosts.
 - [ ] [Simple Sample Delay](../vst3go-plugins/plugins/delay/simple-sample-delay/README.md)
   - [x] Compare delay, feedback and timed resize against 72 x86 renders.
         Reopen the three editable Init slots and render exact taps in REAPER.
@@ -1649,15 +1649,15 @@ linked in Sections 7.1–7.5 and the [companion catalog](../vst3go-plugins/CATAL
 
 | Platform | Current custom editor coverage | Remaining platform work |
 | --- | --- | --- |
-| Linux X11 | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Compander, Decimator, EeeekU, Hard Knee Compressor, Oversampled Tanh, Sigma Delta, Simple Compressor (January 2010), Simple Delay, Simple Gate, Simple Limiter, Simple Linear Phase HP and LP, Simple Sampler, Simple Sine Synth, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG, Variable Delay, VST Host Opcode Logger, VST Pascal Script | Add missing editors and close original-UI gaps in existing editors. |
-| Windows HWND | Ather, Barberpole Tuner, Bass Baron, Bass Extender, BetaMeta, Bode Frequency Shifter, Bugpass Lite, Butterworth Filters, Chebyshev Filters, Chebyshev Waveshaper, ChunkDemo, Compander, Decimator, Degrading Delay, Dither & Noiseshaper, Dual Linkwitz-Riley Filters, EeeekU, Enhanced Gate, Flanger, Graphic EQ, Hard Knee Compressor, Hum Removal, Lightweight Soft Knee Gate, Lookahead Limiter, Oversampled Tanh, Phase-O-Matic, Phase Rotator, QR-Filter, Ring Modulator, Sidechain Compressor, Sigma Delta, Simple Chorus, Simple Compressor (January 2010), Simple Delay, Simple Feedback Compressor, Simple Gate, Simple Limiter, Simple Linear Phase HP and LP, Simple Linear Phase Linkwitz-Riley HP and LP, Simple Sampler, Simple Sine Synth, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, Transient Bug (BugWars), TunaBUG, Variable Delay, Vibrato, VST Host Opcode Logger | Add missing editors and verify coverage on native Windows. Existing cross-build and Wine evidence is recorded by product. |
-| macOS Cocoa | Barberpole Tuner, Bode Frequency Shifter, Compander, Decimator, Hard Knee Compressor, Oversampled Tanh, Sigma Delta, Simple Compressor (January 2010), Simple Delay, Simple Gate, Simple Limiter, Simple Linear Phase HP and LP, Simple Sine Synth, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG and VST Host Opcode Logger, cross-built for arm64 and amd64. | Run the AppKit fixture and native DAW checks. Add the other custom editors. |
+| Linux X11 | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Compander, Decimator, EeeekU, Hard Knee Compressor, Oversampled Tanh, Sigma Delta, Simple Compressor (January 2010), Simple Sample Delay, Simple Gate, Simple Limiter, Simple Linear Phase HP and LP, Simple Sampler, Simple Sine Synth, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG, Variable Delay, VST Host Opcode Logger, VST Pascal Script | Add missing editors and close original-UI gaps in existing editors. |
+| Windows HWND | Ather, Barberpole Tuner, Bass Baron, Bass Extender, BetaMeta, Bode Frequency Shifter, Bugpass Lite, Butterworth Filters, Chebyshev Filters, Chebyshev Waveshaper, ChunkDemo, Compander, Decimator, Degrading Delay, Dither & Noiseshaper, Dual Linkwitz-Riley Filters, EeeekU, Enhanced Gate, Flanger, Graphic EQ, Hard Knee Compressor, Hum Removal, Lightweight Soft Knee Gate, Lookahead Limiter, Oversampled Tanh, Party-Delay, Phase-O-Matic, Phase Rotator, QR-Filter, Ring Modulator, Sidechain Compressor, Sigma Delta, Simple Chorus, Simple Compressor (January 2010), Simple Sample Delay, Simple Feedback Compressor, Simple Gate, Simple Limiter, Simple Linear Phase HP and LP, Simple Linear Phase Linkwitz-Riley HP and LP, Simple Sampler, Simple Sine Synth, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, Transient Bug (BugWars), TunaBUG, Variable Delay, Vibrato, VST Host Opcode Logger | Add missing editors and verify coverage on native Windows. Existing cross-build and Wine evidence is recorded by product. |
+| macOS Cocoa | Barberpole Tuner, Bode Frequency Shifter, Compander, Decimator, Hard Knee Compressor, Oversampled Tanh, Sigma Delta, Simple Compressor (January 2010), Simple Sample Delay, Simple Gate, Simple Limiter, Simple Linear Phase HP and LP, Simple Sine Synth, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG and VST Host Opcode Logger, cross-built for arm64 and amd64. | Run the AppKit fixture and native DAW checks. Add the other custom editors. |
 
-Fifty-four catalog projects have at least one native VST3 editor.
-X11 covers 28, HWND covers 53, and Cocoa covers 21. The
+Fifty-five catalog projects have at least one native VST3 editor.
+X11 covers 28, HWND covers 54, and Cocoa covers 21. The
 [original editor inventory](../vst3go-plugins/docs/research/original-editors.md)
 lists native platforms alongside the original evidence for all 137 projects.
-At least 70 projects have a custom editor flag or registration in the original
+At least 69 projects have a custom editor flag or registration in the original
 evidence and still await a first VST3 editor. Confirm the release and prioritize the
 matching form for each first port. The checklist and product notes track
 acceptance for each edition and platform, including known differences in
@@ -1675,7 +1675,7 @@ the editions to verify and records any reference or artwork gaps.
 | Bass (1) | SubBoost |
 | Distortion (10) | 2-Band Distortion, Advanced Clipper, Amp Sim, Christortion, Dynamite, Exciter, Hysteresis, OpAmp, Scary, Tubster |
 | Dynamics (14) | Adhesive, Audiocation Compressor, LA4029, Lightweight Dynamics, Lightweight Feedback Compressor, Lightweight Feedback Limiter, Lightweight Multiband Compressor, Lightweight Soft Knee Compressor, Lightweight Soft Knee Limiter, Lightweight Upward Compressor, Multiband Compressor, Smooth Multiband Compressor, Soft Knee Feedback Compressor, Soft Knee Feedback Limiter |
-| Delay (2) | FeedBUG, Party-Delay |
+| Delay (1) | FeedBUG |
 | Modulation (3) | Barberpole Flanger, ITA Phaser, Spin Bug Lite |
 | Pitch (3) | Granular Pitch Shifter, SoundTouch based Pitch Shifter, Split Harmonizer |
 | Reverb (5) | ConvoFX, ConvoFXLite, Dynamic Convolution Plugin, Freeverb, Plate Reverb |
@@ -1779,7 +1779,7 @@ the editions to verify and records any reference or artwork gaps.
           Reset Automatic Updates and the memo on attach as in the originals.
     - [ ] Match the native control and memo rendering. Verify the Windows
           and macOS views in native DAWs and record the VST3 trace differences.
-  - [ ] Simple Delay editor parity.
+  - [ ] Simple Sample Delay editor parity.
     - [x] Capture the 301 × 195 x86 edition and port its four scrollbars,
           value labels and inversion checkbox from the Delphi form. Expose
           the x64 host-panel edition separately and retain the working delay
@@ -1973,6 +1973,24 @@ the editions to verify and records any reference or artwork gaps.
     - [ ] Match X11 caption, arrow and focus rendering. Add the Cocoa editor,
           verify the archived macOS host-panel build and compare HiDPI states
           and native Windows and macOS DAW behavior.
+  - [ ] Party-Delay editor parity.
+    - [x] Port the published 222 × 358 editor to HWND using native controls
+          and an agg-go frequency-shift dial. Compare 12 original frames,
+          including all four tabs, the filter menu, editor gestures,
+          automation and program recall. Verify 150% input and same-view
+          reattachment from a host edit callback.
+    - [ ] Match the remaining dial, focus and status pixels. Resolve
+          Invert and passive parameter write differences against saved-state
+          compatibility. Verify the retained Win32 and Win64 editor
+          references, which raise exceptions under Wine, and add X11
+          and Cocoa and native DAW checks.
+  - [ ] FeedBUG editor parity.
+    - [ ] Identify artwork ownership and permission for the original
+          background, dials and X/Y graphics. Capture the released 2004
+          and 2005, retained April and retained February forms before
+          mapping the editors to their compatibility classes.
+    - [ ] Port verified editions with the authorized artwork and verify
+          control edits, host automation and reopen on each platform.
   - [ ] Degrading Delay editor parity.
     - [x] Match all 15 states of the 201 × 99 HWND editor with the
           original dials and agg-go, including gestures, checkbox and reopen.
