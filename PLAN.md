@@ -1509,9 +1509,9 @@ parameters, programs, original editor references and audio comparisons in
         the shared granular core against its 486 existing references.
         Restore four edited controls and Preset 2 in Linux REAPER. Pass
         47 SDK checks and cross-build Windows x64.
-  - [ ] Verify the original 285 × 123 four-dial editor and native Windows
-        and macOS DAWs. The port saves active controls. The original
-        echoed preset chunks without updating its live DSP.
+  - [ ] Finish Phase 7.8 editor parity and verify native Windows and macOS
+        DAWs. The port saves active controls. The original echoed preset
+        chunks without updating its live DSP.
 - [ ] [Compander](../vst3go-plugins/plugins/education/compander/PORT.md)
   - [x] Match 360 original buffers bit for bit. Verify both quantisation
         modes and the native 611 × 226 controls in Linux REAPER reopens
@@ -1648,14 +1648,14 @@ linked in Sections 7.1–7.5 and the [companion catalog](../vst3go-plugins/CATAL
 | Platform | Current custom editor coverage | Remaining platform work |
 | --- | --- | --- |
 | Linux X11 | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Compander, Decimator, EeeekU, Oversampled Tanh, Sigma Delta, Simple Compressor (January 2010), Simple Delay, Simple Gate, Simple Limiter (retained), Simple Linear Phase HP and LP, Simple Sampler, Simple Sine Synth, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG, VST Host Opcode Logger, VST Pascal Script | Add missing editors and close original-UI gaps in existing editors. |
-| Windows HWND | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Bugpass Lite, Butterworth Filters, Chebyshev Filters, Chebyshev Waveshaper, Compander, Decimator, Degrading Delay, Dither & Noiseshaper, Dual Linkwitz-Riley Filters, EeeekU, Enhanced Gate, Flanger, Graphic EQ, Hum Removal, Oversampled Tanh, Phase-O-Matic, Phase Rotator, QR-Filter, Ring Modulator, Sidechain Compressor, Sigma Delta, Simple Chorus, Simple Compressor (January 2010), Simple Delay, Simple Feedback Compressor, Simple Gate, Simple Limiter (retained), Simple Linear Phase HP and LP, Simple Linear Phase Linkwitz-Riley HP and LP, Simple Sampler, Simple Sine Synth, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, Transient Bug (BugWars), TunaBUG, Variable Delay, Vibrato, VST Host Opcode Logger | Add missing editors and verify coverage on native Windows. Existing cross-build and Wine evidence is recorded by product. |
+| Windows HWND | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Bugpass Lite, Butterworth Filters, Chebyshev Filters, Chebyshev Waveshaper, ChunkDemo, Compander, Decimator, Degrading Delay, Dither & Noiseshaper, Dual Linkwitz-Riley Filters, EeeekU, Enhanced Gate, Flanger, Graphic EQ, Hum Removal, Oversampled Tanh, Phase-O-Matic, Phase Rotator, QR-Filter, Ring Modulator, Sidechain Compressor, Sigma Delta, Simple Chorus, Simple Compressor (January 2010), Simple Delay, Simple Feedback Compressor, Simple Gate, Simple Limiter (retained), Simple Linear Phase HP and LP, Simple Linear Phase Linkwitz-Riley HP and LP, Simple Sampler, Simple Sine Synth, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, Transient Bug (BugWars), TunaBUG, Variable Delay, Vibrato, VST Host Opcode Logger | Add missing editors and verify coverage on native Windows. Existing cross-build and Wine evidence is recorded by product. |
 | macOS Cocoa | Barberpole Tuner, Bode Frequency Shifter, Compander, Decimator, Oversampled Tanh, Sigma Delta, Simple Compressor (January 2010), Simple Delay, Simple Gate, Simple Limiter (retained), Simple Linear Phase HP and LP, Simple Sine Synth, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG and VST Host Opcode Logger, cross-built for arm64 and amd64. | Run the AppKit fixture and native DAW checks. Add the other custom editors. |
 
-Forty-eight catalog projects have at least one native VST3 editor.
-X11 covers 26, HWND covers 47, and Cocoa covers 20. The
+Forty-nine catalog projects have at least one native VST3 editor.
+X11 covers 26, HWND covers 48, and Cocoa covers 20. The
 [original editor inventory](../vst3go-plugins/docs/research/original-editors.md)
 lists native platforms alongside the original evidence for all 137 projects.
-At least 76 projects have a custom editor flag or registration in the original
+At least 75 projects have a custom editor flag or registration in the original
 evidence and still await a first VST3 editor. Confirm the release and prioritize the
 matching form for each first port. The checklist and product notes track
 acceptance for each edition and platform, including known differences in
@@ -1680,7 +1680,6 @@ the editions to verify and records any reference or artwork gaps.
 | Spectral (2) | Noise Reduction, Spectral Gate |
 | Spatial (10) | Digital Crosstalk Cancellator (DCC), DualWideBug, HRTF 3D, PhaseBug, Quadrophonics, Quadropolis, Simple Crosstalk Cancellation, Spinbug, Surround to Stereo, Tina-Turner |
 | Synth (3) | 2-Oszillator Synth, FunKEYS, Vocoder |
-| Education (1) | ChunkDemo |
 | Hosting (2) | Plugin Wrappers, VST interfaced ASIO-Host |
 | Misc (1) | Audio Amelioration |
 | Utility (1) | PhaseAdjustment |
@@ -1982,10 +1981,13 @@ the editions to verify and records any reference or artwork gaps.
           VST3's saved-gain behavior.
     - [ ] Add X11 and Cocoa and verify matched HiDPI states and native DAWs.
   - [ ] ChunkDemo editor parity.
-    - [ ] Match the published 285 × 123 panel, four Greek captions, dial
-          artwork and gestures. Verify editor edits and saved chunk recall.
-    - [ ] Map the retained editor editions, including their distinct dial
-          graphics, reset and wheel behavior. Add X11 and Cocoa.
+    - [x] Port the 285 × 123 form for the published and retained Windows
+          classes using agg-go and the original dials. Verify distinct
+          reset and wheel gestures, 2× input and saved chunk recall.
+          Match all 14 published Win32 and retained Win64 frames exactly.
+    - [ ] Verify the retained Win32 blend with a 32-bit VST3 and match the
+          remaining two-level RGB difference in the amd64 comparison.
+          Add X11 and Cocoa and verify native DAWs.
   - [ ] Hard Knee Compressor editor parity.
     - [ ] Compare the January 2010 editor against the retained form. Port
           the published controls to HWND with matched drag and recall tests.
