@@ -1649,7 +1649,7 @@ linked in Sections 7.1–7.5 and the [companion catalog](../vst3go-plugins/CATAL
 
 | Platform | Current custom editor coverage | Remaining platform work |
 | --- | --- | --- |
-| Linux X11 | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Compander, Decimator, EeeekU, Oversampled Tanh, Sigma Delta, Simple Compressor (January 2010), Simple Delay, Simple Gate, Simple Limiter (retained), Simple Linear Phase HP and LP, Simple Sampler, Simple Sine Synth, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG, Variable Delay, VST Host Opcode Logger, VST Pascal Script | Add missing editors and close original-UI gaps in existing editors. |
+| Linux X11 | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Compander, Decimator, EeeekU, Oversampled Tanh, Sigma Delta, Simple Compressor (January 2010), Simple Delay, Simple Gate, Simple Limiter, Simple Linear Phase HP and LP, Simple Sampler, Simple Sine Synth, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG, Variable Delay, VST Host Opcode Logger, VST Pascal Script | Add missing editors and close original-UI gaps in existing editors. |
 | Windows HWND | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Bugpass Lite, Butterworth Filters, Chebyshev Filters, Chebyshev Waveshaper, ChunkDemo, Compander, Decimator, Degrading Delay, Dither & Noiseshaper, Dual Linkwitz-Riley Filters, EeeekU, Enhanced Gate, Flanger, Graphic EQ, Hard Knee Compressor, Hum Removal, Lightweight Soft Knee Gate, Lookahead Limiter, Oversampled Tanh, Phase-O-Matic, Phase Rotator, QR-Filter, Ring Modulator, Sidechain Compressor, Sigma Delta, Simple Chorus, Simple Compressor (January 2010), Simple Delay, Simple Feedback Compressor, Simple Gate, Simple Limiter, Simple Linear Phase HP and LP, Simple Linear Phase Linkwitz-Riley HP and LP, Simple Sampler, Simple Sine Synth, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, Transient Bug (BugWars), TunaBUG, Variable Delay, Vibrato, VST Host Opcode Logger | Add missing editors and verify coverage on native Windows. Existing cross-build and Wine evidence is recorded by product. |
 | macOS Cocoa | Barberpole Tuner, Bode Frequency Shifter, Compander, Decimator, Oversampled Tanh, Sigma Delta, Simple Compressor (January 2010), Simple Delay, Simple Gate, Simple Limiter (retained), Simple Linear Phase HP and LP, Simple Sine Synth, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG and VST Host Opcode Logger, cross-built for arm64 and amd64. | Run the AppKit fixture and native DAW checks. Add the other custom editors. |
 
@@ -1843,7 +1843,13 @@ the editions to verify and records any reference or artwork gaps.
           artwork. Match all 12 frames under Wine, including both endpoints,
           live dial movement and reopened values. Verify 2× sizing and
           synchronous removal and reattachment.
-    - [ ] Add X11 and Cocoa for the published four-dial edition.
+    - [x] Port the published four-dial edition to X11 with the shared
+          agg-go panel and pointer controls. Match all pixels outside the
+          text rows in seven original comparisons and verify 200% input,
+          automation, reopen and reentry during host edit callbacks.
+          Verify pointer edits and saved-project recall in Linux REAPER.
+    - [ ] Match the published X11 title and caption raster. Add Cocoa for
+          the published edition and verify matched HiDPI states.
   - [ ] Simple Compressor editor parity.
     - [x] Capture the Windows January 2010 and September 2008 forms and
           confirm the published 2011 x64 host-panel edition. Port the 2010
