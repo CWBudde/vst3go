@@ -1643,11 +1643,11 @@ linked in Sections 7.1–7.5 and the [companion catalog](../vst3go-plugins/CATAL
 | Platform | Current custom editor coverage | Remaining platform work |
 | --- | --- | --- |
 | Linux X11 | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Compander, EeeekU, Oversampled Tanh, Sigma Delta, Simple Delay, Simple Gate, Simple Limiter (retained), Simple Sampler, Simple Sine Synth, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG, VST Host Opcode Logger, VST Pascal Script | Add missing editors and close original-UI gaps in existing editors. |
-| Windows HWND | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Compander, EeeekU, Oversampled Tanh, Sigma Delta, Simple Compressor (January 2010), Simple Delay, Simple Gate, Simple Limiter (retained), Simple Sampler, Simple Sine Synth, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG, VST Host Opcode Logger | Add missing editors and verify coverage on native Windows. Existing cross-build and Wine evidence is recorded by product. |
-| macOS Cocoa | Barberpole Tuner, Bode Frequency Shifter, Compander, Sigma Delta, Simple Delay, Simple Gate, Simple Limiter (retained), Simple Sine Synth, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG and VST Host Opcode Logger, cross-built for arm64 and amd64. | Run the AppKit fixture and native DAW checks. Add the other custom editors. |
+| Windows HWND | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Compander, Dither & Noiseshaper, EeeekU, Flanger, Oversampled Tanh, Sigma Delta, Simple Compressor (January 2010), Simple Delay, Simple Gate, Simple Limiter (retained), Simple Sampler, Simple Sine Synth, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, Transient Bug (BugWars), TunaBUG, VST Host Opcode Logger | Add missing editors and verify coverage on native Windows. Existing cross-build and Wine evidence is recorded by product. |
+| macOS Cocoa | Barberpole Tuner, Bode Frequency Shifter, Compander, Oversampled Tanh, Sigma Delta, Simple Delay, Simple Gate, Simple Limiter (retained), Simple Sine Synth, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG and VST Host Opcode Logger, cross-built for arm64 and amd64. | Run the AppKit fixture and native DAW checks. Add the other custom editors. |
 
-Twenty-four catalog projects have at least one native VST3 editor.
-X11 covers 23, HWND covers 23, and Cocoa covers 16. The
+Twenty-seven catalog projects have at least one native VST3 editor.
+X11 covers 23, HWND covers 26, and Cocoa covers 17. The
 [original editor inventory](../vst3go-plugins/docs/research/original-editors.md)
 lists native platforms alongside the original evidence for all 137 projects.
 Compare the original editor evidence with the coverage column to find
@@ -1812,8 +1812,11 @@ acceptance for each edition and platform.
           confirm the published 2011 x64 host-panel edition. Port the 2010
           252 × 160 view to HWND and check input up to 2× under Wine.
           Verify native input and saved-project recall in Win64 REAPER under Wine.
-    - [ ] Match the 2010 Release edit and attachment behavior beyond the
-          current 5–5000 ms range and close the scrollbar raster differences.
+    - [x] Capture the 2010 Win32 and retained Win64 Release callback order
+          on open, host writes from both thumb positions, End and reopening.
+    - [ ] Match the 2010 Release overflow, thumb and captions while preserving
+          bounded host normalization, saved state and host automation readback.
+          Close the remaining scrollbar raster differences.
     - [x] Verify the retained Win64 GUI and stable audio against 2010
           Win32. Compare the compiled form, four states and 72 audio renders.
     - [ ] Confirm the retained Win64 GUI release provenance and the 2008
@@ -1829,9 +1832,32 @@ acceptance for each edition and platform.
     - [x] Port both classes to X11 and check text entry, dropdown, slider
           and scaling up to 2×. Verify slider input and saved state in
           Linux REAPER, including the transition write on attachment.
-    - [ ] Resolve X11 font and dropdown raster differences and verify
-          dropdown focus in Linux DAWs. Add Cocoa and compare HiDPI states
-          in native Windows and macOS DAWs.
+    - [x] Verify dropdown input and saved-project recall in Linux REAPER
+          after fixing native focus handoff. Cross-link both Cocoa editors
+          and the AppKit fixture for Intel and Apple Silicon.
+    - [ ] Close X11 font and dropdown raster gaps and verify direct typing
+          in Linux DAWs. Run AppKit, native Windows and macOS DAW checks
+          with matched HiDPI states.
+  - [ ] Dither & Noiseshaper editor parity.
+    - [x] Capture all five originals. Port the published and retained
+          241 × 56 IIR forms and the working 251 × 85 FIR form to HWND.
+          Match 12 screenshots and verify 2× input and reopening under Wine.
+    - [ ] Capture an audible baseline for the retained Win64 Lazarus FIR
+          edition. Match its spin control and port working forms to X11
+          and Cocoa. Compare HiDPI states in native DAWs.
+  - [ ] Flanger editor parity.
+    - [x] Verify the 195 × 89 October and January forms. Port both to
+          HWND with the original dial strip and their distinct gestures.
+          Verify the three audible headless originals use the host panel.
+    - [ ] Close the remaining one-level RGB rounding difference and verify
+          the early headless Win64 audio. Add X11 and Cocoa and compare
+          matched HiDPI states and native DAW recall.
+  - [ ] Transient Bug editor parity.
+    - [x] Port the original 326 × 30 BugWars editor to HWND and keep
+          TrBug on the host panel. Verify all 12 matched captures and
+          thumb reset with saved Attack in Win64 REAPER under Wine.
+    - [ ] Match the original endpoint behavior, add HiDPI, X11 and Cocoa
+          support, and verify the other original variants and native DAWs.
   - [ ] Third-Octave Analyser editor parity.
     - [x] Capture the published and both retained 342 × 234 originals. Reproduce
           the red and blue 32-band charts, radio and spin controls on X11.
