@@ -597,8 +597,10 @@ parameters, programs, original editor references and audio comparisons in
 - [ ] [MoogVST](../vst3go-plugins/plugins/filter/moogvst/README.md)
   - [x] Match 120 normal release renders and the six high-resonance cases
         with explicit controls. Reopen Init and driven settings in REAPER.
-  - [ ] Verify other native hosts and the separate retained checkout build.
-        The VST3 uses the displayed zero resonance at startup.
+  - [x] Port the released 297 × 79 Windows scrollbar view and match all 11
+        compared states. The retained `NoEf` produced no child window.
+  - [ ] Finish editor parity in Phase 7.8 and verify the retained DSP
+        and other hosts. The VST3 uses the displayed zero resonance at startup.
 - [ ] [Phase Rotator](../vst3go-plugins/plugins/filter/phase-rotator/README.md)
   - [x] Match 240 audible captures and verify unity magnitude, group delay
         and six timed controls. Reopen the edited stereo setting in REAPER.
@@ -1685,14 +1687,14 @@ linked in Sections 7.1–7.5 and the [companion catalog](../vst3go-plugins/CATAL
 | Platform | Current custom editor coverage | Remaining platform work |
 | --- | --- | --- |
 | Linux X11 | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Compander, Decimator, Degrading Delay, EeeekU, Hard Knee Compressor, Oversampled Tanh, Sigma Delta, Simple Compressor (January 2010), Simple Sample Delay, Simple Gate, Simple Limiter, Simple Linear Phase HP and LP, Simple Sampler, Simple Sine Synth, Soft Knee Feedback Limiter, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG, Variable Delay, Vibrato, VST Host Opcode Logger, VST Pascal Script | Add missing editors and close original-UI gaps in existing editors. |
-| Windows HWND | Ather, Barberpole Tuner, Bass Baron, Bass Extender, BetaMeta, Bode Frequency Shifter, Bugpass Lite, Butterworth Filters, Chebyshev Filters, Chebyshev Waveshaper, ChunkDemo, Compander, Decimator, Degrading Delay, Dither & Noiseshaper, Dual Linkwitz-Riley Filters, EeeekU, Enhanced Gate, Flanger, Graphic EQ, Hard Knee Compressor, Hum Removal, Lightweight Dynamics, Lightweight Feedback Compressor, Lightweight Feedback Limiter, Lightweight Multiband Compressor, Lightweight Soft Knee Compressor, Lightweight Soft Knee Gate, Lightweight Soft Knee Limiter, Lightweight Upward Compressor, Lookahead Limiter, Oversampled Tanh, Party-Delay, Phase-O-Matic, Phase Rotator, QR-Filter, Ring Modulator, Sidechain Compressor, Sigma Delta, Simple Chorus, Simple Compressor (January 2010), Simple Sample Delay, Simple Feedback Compressor, Simple Gate, Simple Limiter, Simple Linear Phase HP and LP, Simple Linear Phase Linkwitz-Riley HP and LP, Simple Sampler, Simple Sine Synth, Soft Knee Feedback Compressor, Soft Knee Feedback Limiter, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, SubBoost, Third Octave Analyser, Tiny-Q, Transient Bug (BugWars), TunaBUG, Variable Delay, Vibrato, VST Host Opcode Logger | Add missing editors and verify coverage on native Windows. Existing cross-build and Wine evidence is recorded by product. |
+| Windows HWND | Ather, Barberpole Tuner, Bass Baron, Bass Extender, BetaMeta, Bode Frequency Shifter, Bugpass Lite, Butterworth Filters, Chebyshev Filters, Chebyshev Waveshaper, ChunkDemo, Compander, Decimator, Degrading Delay, Dither & Noiseshaper, Dual Linkwitz-Riley Filters, EeeekU, Enhanced Gate, Flanger, Graphic EQ, Hard Knee Compressor, Hum Removal, Lightweight Dynamics, Lightweight Feedback Compressor, Lightweight Feedback Limiter, Lightweight Multiband Compressor, Lightweight Soft Knee Compressor, Lightweight Soft Knee Gate, Lightweight Soft Knee Limiter, Lightweight Upward Compressor, Lookahead Limiter, MoogVST, Oversampled Tanh, Party-Delay, Phase-O-Matic, Phase Rotator, QR-Filter, Ring Modulator, Sidechain Compressor, Sigma Delta, Simple Chorus, Simple Compressor (January 2010), Simple Sample Delay, Simple Feedback Compressor, Simple Gate, Simple Limiter, Simple Linear Phase HP and LP, Simple Linear Phase Linkwitz-Riley HP and LP, Simple Sampler, Simple Sine Synth, Soft Knee Feedback Compressor, Soft Knee Feedback Limiter, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, SubBoost, Third Octave Analyser, Tiny-Q, Transient Bug (BugWars), TunaBUG, Variable Delay, Vibrato, VST Host Opcode Logger | Add missing editors and verify coverage on native Windows. Existing cross-build and Wine evidence is recorded by product. |
 | macOS Cocoa | Barberpole Tuner, Bode Frequency Shifter, Compander, Decimator, Degrading Delay, Hard Knee Compressor, Oversampled Tanh, Sigma Delta, Simple Compressor (January 2010), Simple Sample Delay, Simple Gate, Simple Limiter, Simple Linear Phase HP and LP, Simple Sine Synth, Soft Knee Feedback Limiter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG, Variable Delay, Vibrato and VST Host Opcode Logger, cross-built for arm64 and amd64. | Run the AppKit fixture and native DAW checks. Add the other custom editors. |
 
-Sixty-five catalog projects have at least one native VST3 editor.
-X11 covers 31, HWND covers 64, and Cocoa covers 25. The
+Sixty-six catalog projects have at least one native VST3 editor.
+X11 covers 31, HWND covers 65, and Cocoa covers 25. The
 [original editor inventory](../vst3go-plugins/docs/research/original-editors.md)
 lists native platforms alongside the original evidence for all 137 projects.
-At least 59 projects have a custom editor flag or registration in the original
+At least 58 projects have a custom editor flag or registration in the original
 evidence and still await a first VST3 editor.
 
 Progress is tracked per project:
@@ -1872,6 +1874,13 @@ Logger and VST Pascal Script.
 - [ ] Bring the editors first ported during 7.8 up to parity, using the
       criteria in 7.8.3. Add the missing X11 and Cocoa views where only
       the Windows editor exists.
+  - [ ] MoogVST editor parity.
+    - [x] Port the published 297 × 79 HWND form with three stock scrollbars.
+          Match all 11 captures. Verify full-width thumb tracking, keyboard,
+          125% and 200% input, resize refusal and synchronous reattachment.
+    - [ ] Compare original attach-time frequency and resonance writes against
+          VST3 state preservation. Resolve the retained `NoEf` discrepancy.
+          Add X11 and Cocoa and verify HiDPI and native DAW behavior.
   - [ ] Simple Sample Delay editor parity.
     - [x] Capture the 301 × 195 x86 edition and port its four scrollbars,
           value labels and inversion checkbox from the Delphi form. Expose
@@ -2470,7 +2479,7 @@ original client sizes from the
       359 × 395 mono (`VT63`) and 489 × 382 stereo (`VTST`) editors. Needs
       the sampled data and its licensing from 7.7.
 
-**Filter (5)**
+**Filter (4)**
 
 - [ ] [Bugpass](../vst3go-plugins/plugins/filter/bugpass/README.md): port the
       300 × 167 editor of both Win32 downloads (`BugP`, `0x411`) next to the
@@ -2480,9 +2489,6 @@ original client sizes from the
 - [ ] [Linear Phase Butterworth](../vst3go-plugins/plugins/filter/linear-phase-butterworth/README.md):
       locate the Delphi project and capture the HP and LP editors of the
       November 2009 installer before porting them.
-- [ ] [MoogVST](../vst3go-plugins/plugins/filter/moogvst/README.md): port the
-      297 × 104 editor of the published `Moog` build and check the distinct
-      retained `NoEf` build.
 - [ ] [Rubberfilter](../vst3go-plugins/plugins/filter/rubberfilter/README.md):
       capture and port the editors of both published Win32 builds (`Rubb`).
 
