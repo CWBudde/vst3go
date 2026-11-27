@@ -318,10 +318,10 @@ there and reusable DSP in the sibling `algo-*` libraries.
         editor of every loadable class without a failure: 218 classes in 122
         bundles, including the 13 projects with custom X11 editors.
   - [x] Implement the macOS `NSView` child in the host's parent view.
-        VST Host Opcode Logger and Simple Delay use the companion Cocoa
-        adapter and cross-link on arm64 and amd64. AppKit handles Retina
-        backing scale while the host uses logical points. Product coverage
-        and native evidence are tracked in Section 7.8.
+        VST Host Opcode Logger, Simple Delay, Sigma Delta and TunaBUG use the
+        companion Cocoa adapter and cross-link on arm64 and amd64. AppKit
+        handles Retina backing scale while the host uses logical points.
+        Product coverage and native evidence are tracked in Section 7.8.
   - [ ] Run the native Windows and macOS editor checks, including focus and
         keyboard interaction.
 - [x] Wire editor gestures through the retained component handler
@@ -1640,16 +1640,22 @@ linked in Sections 7.1–7.5 and the [companion catalog](../vst3go-plugins/CATAL
 
 | Platform | Current custom editor coverage | Remaining platform work |
 | --- | --- | --- |
-| Linux X11 | Ather, Barberpole Tuner, BetaMeta, Compander, EeeekU, Sigma Delta, Simple Delay, Simple Sampler, Simple Sine Synth, StereoMeter, Third Octave Analyser, Tunabug, VST Host Opcode Logger, VST Pascal Script | Add missing editors and close original-UI gaps in existing editors. |
-| Windows HWND | Ather, Compander, EeeekU, Sigma Delta, Simple Delay, Simple Sampler, Tunabug | Add missing editors and verify coverage on native Windows. Existing cross-build and Wine evidence is recorded by product. |
-| macOS Cocoa | Simple Delay and VST Host Opcode Logger, cross-built for arm64 and amd64. | Run the AppKit fixture and native DAW checks. Add the other custom editors. |
+| Linux X11 | Ather, Barberpole Tuner, BetaMeta, Compander, EeeekU, Sigma Delta, Simple Delay, Simple Sampler, Simple Sine Synth, StereoMeter, Third Octave Analyser, Tiny-Q, Tunabug, VST Host Opcode Logger, VST Pascal Script | Add missing editors and close original-UI gaps in existing editors. |
+| Windows HWND | Ather, Barberpole Tuner, BetaMeta, Compander, EeeekU, Sigma Delta, Simple Delay, Simple Gate, Simple Sampler, Simple Sine Synth, Tunabug, VST Host Opcode Logger | Add missing editors and verify coverage on native Windows. Existing cross-build and Wine evidence is recorded by product. |
+| macOS Cocoa | Sigma Delta, Simple Delay, TunaBUG and VST Host Opcode Logger, cross-built for arm64 and amd64. | Run the AppKit fixture and native DAW checks. Add the other custom editors. |
 
 #### 7.8.1 Original references and edition mapping
 
 - [x] Index retained Delphi entry points, editor forms and available binary
       evidence against all 137 [catalog projects](../vst3go-plugins/docs/research/original-editors.md).
-      Release classification is still open for the 49 projects explicitly
-      flagged in the inventory. Capture and licensing gaps are tracked below.
+      Each project has an editor classification for at least one matched
+      binary. The inventory lists remaining edition, capture and licensing gaps.
+- [x] Recover editor flags for 14 project families from existing hash-checked
+      binary captures. Record which editions advertise a custom editor, which
+      use the host panel, and which still need an opened client capture.
+- [x] Resolve the 35 remaining project-level classifications from retained
+      captures and a fresh ABI sweep. Track exact editions where maker, shell
+      IDs, and editor support differ.
 - [ ] Inventory every class and edition in its product notes. Identify the
       matching original binary, Delphi form and editor code, and record whether
       the original supplies a custom editor, uses the host panel, or lacks a
@@ -1693,12 +1699,20 @@ linked in Sections 7.1–7.5 and the [companion catalog](../vst3go-plugins/CATAL
         stereo graph readouts and S-key randomization. Verify in Linux REAPER
         and the Win64 HWND probe under Wine. Original artwork by Mully and
         the earlier stereo form still need separate acceptance.
-  - [x] Reproduce Barberpole Tuner's brushed backdrop with agg-go. Compare
-        matched defaults from the original Win32 release with the Linux
-        view at 1× and 2×. Keep font and platform parity open.
-  - [ ] VST Host Opcode Logger. Compare the new AppKit controls and retained
-        form against both released editors. Restore the Windows custom view
-        and verify text rendering, log interaction and saving on each platform.
+  - [ ] Barberpole Tuner editor parity.
+    - [x] Reproduce the brushed backdrop with agg-go. Compare with the
+          published Win32 release and verify 1× and 2× drawing on X11.
+    - [x] Add HWND and match the idle and live phase panel captures under
+          Wine. Verify all six selectors and routed input at 125% and 200%.
+    - [ ] Match text and remaining artwork, add Cocoa, and run the native
+          Windows and macOS DAW checks.
+  - [ ] VST Host Opcode Logger editor parity.
+    - [x] Restore the distinct published and retained Win32 layouts. Verify
+          1× and 2× geometry, log interaction, automation, export and reopen
+          under Wine.
+    - [ ] Compare Linux and AppKit with both released editors. Close the
+          published edition's layout and Save As behavior gaps and verify
+          native DAW operation.
   - [ ] Simple Delay editor parity.
     - [x] Capture the 301 × 195 x86 edition and port its four scrollbars,
           value labels and inversion checkbox from the Delphi form. Expose
@@ -1710,8 +1724,45 @@ linked in Sections 7.1–7.5 and the [companion catalog](../vst3go-plugins/CATAL
     - [ ] Close the initial wet thumb, typography and stock rendering
           differences recorded in the [capture notes](../vst3go-plugins/plugins/delay/simple-sample-delay/testdata/reference/CAPTURE.md#editor-comparison).
           Verify both editions in native Windows and macOS DAWs.
+  - [ ] Sigma Delta editor parity.
+    - [x] Redraw the published signal path using agg-go and verify the branch
+          states, numeric and hover readouts, and editor gestures on X11 and
+          HWND. Re-run the original audio comparisons and REAPER state replay.
+    - [x] Cross-link the Cocoa editor for arm64 and amd64. Render the AGG
+          diagram into a 2× backing buffer when AppKit reports Retina scale.
+    - [ ] Close logo permission, typography and HiDPI gaps and exercise the
+          Cocoa and HWND views in native DAWs.
+  - [ ] Tiny-Q editor parity.
+    - [x] Verify the 131 × 35 June release and 131 × 33 September builds.
+          Port the June X11 editor, band controls, response and stereo meter.
+    - [ ] Match the September layouts, context menus, snapshots and Alt
+          gestures. Complete Windows and macOS editors and comparison.
+  - [ ] Simple Sine Synth editor parity.
+    - [x] Match both published 503 × 73 keyboards at rest, held and released
+          on X11 and Win64 under Wine. Verify 2× drawing and playback in
+          REAPER and Windows attach and reopen in REAPER under Wine.
+    - [ ] Complete the macOS editor and compare hover and additional key
+          combinations. Exercise the Windows view in a native DAW.
+  - [ ] Simple Gate editor parity.
+    - [x] Verify and port both published 252 × 46 GUI editions on Windows.
+          Match the 2008 startup display and preserve the separate x64 host
+          panel. Verify mouse, keyboard and 2× reopening under Wine.
+    - [ ] Match the Linux and macOS editors and verify the Windows editor in
+          a native DAW.
+  - [ ] BetaMeta editor parity.
+    - [x] Identify Meta White and Meta Old in the published DLL. Verify the
+          Windows meter at 1× and 2×, including mode, levels and reopening.
+    - [ ] Resolve skin and lettering permission, match style switching and
+          add Cocoa. Verify the Windows and Mac views in native DAWs.
+  - [ ] TunaBUG editor parity.
+    - [x] Verify the published tuning states. Match selected-string re-click
+          behavior and cross-link the new Cocoa tuner on both architectures.
+    - [ ] Resolve artwork and lettering permission, match the original scale
+          and buttons, and verify in native Windows and macOS DAWs.
   - [ ] Verify original host-provided variants still expose their controls
         through the DAW panel and preserve their edition-specific behavior.
+    - [x] Confirm all four Audio2Midi Trigger binaries use the host panel.
+          Verify the VST3 returns no plug-in view and exposes its parameters.
 
 #### 7.8.4 Editor acceptance
 
