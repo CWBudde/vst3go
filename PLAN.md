@@ -550,7 +550,7 @@ parameters, programs, original editor references and audio comparisons in
   - [x] Compare 509 release renders across nine VST3 classes. Verify mono
         and stereo routing, split summation, oversampling and saved sessions
         on Linux.
-  - [ ] Finish editor and platform checks, float64 processing and exact
+  - [ ] Finish editor parity in Phase 7.8, float64 processing and exact
         live oversampler selector transitions.
 - [ ] [Chebyshev Filters](../vst3go-plugins/plugins/filter/chebyshev-filters/README.md)
   - [ ] Type I high-pass and low-pass, including mono editions
@@ -609,7 +609,7 @@ parameters, programs, original editor references and audio comparisons in
 - [ ] [QR-Filter](../vst3go-plugins/plugins/filter/qr-filter/README.md)
   - [x] Match 117 released stereo renders, including running Q and R edits.
         Reopen independent damping and latched spacing in Linux REAPER.
-  - [ ] Verify the original custom editor and additional native hosts.
+  - [ ] Finish editor parity in Phase 7.8 and verify additional native hosts.
 - [ ] [Rubberfilter](../vst3go-plugins/plugins/filter/rubberfilter/README.md)
   - [x] Match 222 renders across the 2007 and 2010 releases. Verify order 64,
         the edition-specific Power behavior and edited programs in REAPER.
@@ -781,12 +781,12 @@ parameters, programs, original editor references and audio comparisons in
 - [ ] [Sidechain Compressor](../vst3go-plugins/plugins/dynamics/sidechain-compressor/README.md)
   - [x] Compare all 13 released programs and the loaded detector path.
         Validate the Linux class and restore the nested state in REAPER.
-  - [ ] Finish native detector selection, editor behavior and other host platforms.
+  - [ ] Finish detector and editor parity in Phase 7.8 and verify native hosts.
 - [ ] [Simple Compressor](../vst3go-plugins/plugins/dynamics/simple-compressor/README.md)
   - [x] Match 72 stable January 2010 Win32 renders, including the measured
         RMS window, queued edits and four reopened REAPER projects.
-  - [ ] Confirm the 2008 ZIP and published x64 audio in other native hosts,
-        and verify the original editor and its graphics permissions. The ZIP
+  - [ ] Finish editor parity in Phase 7.8 and confirm the 2008 ZIP and
+        published x64 audio in other native hosts. The ZIP
         returned nonfinite samples, and the published x64 build returned
         silence. The VST3 resumes finite compression after silence.
 - [ ] [Simple Feedback Compressor](../vst3go-plugins/plugins/dynamics/simple-feedback-compressor/README.md)
@@ -1035,7 +1035,7 @@ parameters, programs, original editor references and audio comparisons in
         drift statistics, and repeated renders from the saved seed in
         twelve reopened REAPER projects. Validate and cross-build.
   - [ ] Resolve the x64 no-write and load outcomes and the retained Win32
-        callback fault. Verify original editors, VST3 double audio and
+        callback fault. Finish editor parity in Phase 7.8, VST3 double audio and
         physical Windows and macOS hosts.
 - [ ] [Spin Bug Lite](../vst3go-plugins/plugins/modulation/spin-bug-lite/README.md)
   - [x] Compare 198 Win32 renders across ten routes and six editable slots.
@@ -1643,16 +1643,18 @@ linked in Sections 7.1–7.5 and the [companion catalog](../vst3go-plugins/CATAL
 | Platform | Current custom editor coverage | Remaining platform work |
 | --- | --- | --- |
 | Linux X11 | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Compander, EeeekU, Oversampled Tanh, Sigma Delta, Simple Delay, Simple Gate, Simple Limiter (retained), Simple Sampler, Simple Sine Synth, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG, VST Host Opcode Logger, VST Pascal Script | Add missing editors and close original-UI gaps in existing editors. |
-| Windows HWND | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Compander, Dither & Noiseshaper, EeeekU, Flanger, Oversampled Tanh, Sigma Delta, Simple Compressor (January 2010), Simple Delay, Simple Gate, Simple Limiter (retained), Simple Sampler, Simple Sine Synth, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, Transient Bug (BugWars), TunaBUG, VST Host Opcode Logger | Add missing editors and verify coverage on native Windows. Existing cross-build and Wine evidence is recorded by product. |
+| Windows HWND | Ather, Barberpole Tuner, BetaMeta, Bode Frequency Shifter, Butterworth Filters, Compander, Dither & Noiseshaper, EeeekU, Flanger, Oversampled Tanh, QR-Filter, Sidechain Compressor, Sigma Delta, Simple Chorus, Simple Compressor (January 2010), Simple Delay, Simple Gate, Simple Limiter (retained), Simple Sampler, Simple Sine Synth, StereoMeter, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, Transient Bug (BugWars), TunaBUG, VST Host Opcode Logger | Add missing editors and verify coverage on native Windows. Existing cross-build and Wine evidence is recorded by product. |
 | macOS Cocoa | Barberpole Tuner, Bode Frequency Shifter, Compander, Oversampled Tanh, Sigma Delta, Simple Delay, Simple Gate, Simple Limiter (retained), Simple Sine Synth, Stk Chorus, Stk Echo, Stk PitchShift, Stk Reverb, Third Octave Analyser, Tiny-Q, TunaBUG and VST Host Opcode Logger, cross-built for arm64 and amd64. | Run the AppKit fixture and native DAW checks. Add the other custom editors. |
 
-Twenty-seven catalog projects have at least one native VST3 editor.
-X11 covers 23, HWND covers 26, and Cocoa covers 17. The
+Thirty-one catalog projects have at least one native VST3 editor.
+X11 covers 23, HWND covers 30, and Cocoa covers 17. The
 [original editor inventory](../vst3go-plugins/docs/research/original-editors.md)
 lists native platforms alongside the original evidence for all 137 projects.
-Compare the original editor evidence with the coverage column to find
-the remaining first ports. The checklist and product notes track
-acceptance for each edition and platform.
+Ninety-three projects have a custom editor flag or registration in the original
+evidence and still have no VST3 editor. Confirm the release and prioritize the
+matching form for each first port. The checklist and product notes track
+acceptance for each edition and platform, including known differences in
+the current editors.
 
 #### 7.8.1 Original references and edition mapping
 
@@ -1814,9 +1816,20 @@ acceptance for each edition and platform.
           Verify native input and saved-project recall in Win64 REAPER under Wine.
     - [x] Capture the 2010 Win32 and retained Win64 Release callback order
           on open, host writes from both thumb positions, End and reopening.
-    - [ ] Match the 2010 Release overflow, thumb and captions while preserving
-          bounded host normalization, saved state and host automation readback.
-          Close the remaining scrollbar raster differences.
+    - [x] Match the 2010 Release overflow, thumb, caption timing, and bounded
+          host normalization. Match all client pixels in four 1× states and
+          verify the overflow thumb on saved-project recall in Win64 REAPER
+          under Wine.
+    - [x] Capture the same Threshold, Ratio, Attack and Release writes
+          on opening between detents in both DLLs. Match callback order,
+          thumb position and host readback in the 2010 Windows VST3.
+    - [x] Compare the Release audio after opening, a thumb change, repeated
+          automation, and reopening across seven fresh original processes
+          per DLL. Verify the port's response after the first and repeated
+          host writes from End.
+    - [ ] Compare subsequent host writes across Threshold, Ratio, and
+          Attack detents while the original and VST3 editors are open.
+          Verify the resulting audio and callback behavior.
     - [x] Verify the retained Win64 GUI and stable audio against 2010
           Win32. Compare the compiled form, four states and 72 audio renders.
     - [ ] Confirm the retained Win64 GUI release provenance and the 2008
@@ -1852,6 +1865,48 @@ acceptance for each edition and platform.
     - [ ] Close the remaining one-level RGB rounding difference and verify
           the early headless Win64 audio. Add X11 and Cocoa and compare
           matched HiDPI states and native DAW recall.
+  - [ ] Simple Chorus editor parity.
+    - [x] Capture the 2009 and August 2011 306 × 89 editors and verify
+          both HWND ports with the licensed original dial artwork.
+          Check 48 matched states, gestures, preset reopen, state restore
+          and 125% input under Wine. Keep the independently captured
+          Generic edition on the host panel.
+    - [ ] Match the August 2011 Depth reset below the declared minimum,
+          the x64 Speed readout and the remaining one-level raster
+          difference. Establish the appropriate release mappings.
+    - [ ] Add X11 and Cocoa and verify HiDPI captures and saved-project
+          recall in native DAWs.
+  - [ ] QR-Filter editor parity.
+    - [x] Capture and port the original 280 × 80 HWND editor. Match the
+          measured gauge-face pixels and verify centered reopen, host writes,
+          drag, steps, wheel, and up to 200% content scale under Wine.
+          Verify both parameter edits and saved-project recall in Win64 REAPER.
+    - [ ] Establish redistribution permission for the original background
+          bitmap or complete its redraw. Verify the retained edition against
+          the capture and add X11 and Cocoa. Compare HiDPI screens and saved
+          recalls in native DAWs.
+  - [ ] Butterworth Filters editor parity.
+    - [x] Capture the eight custom editions, port the 200 × 243 and
+          200 × 181 forms plus the 200 × 205 oversampling view to HWND,
+          and verify input and reopening under Wine. Keep the splitter
+          on the DAW panel.
+    - [ ] Match the original dial artwork, header, chart raster and chart
+          refresh timing. Resolve artwork permission and capture the
+          missing control and DPI states.
+    - [ ] Add X11 and Cocoa for the custom editions and verify matched HiDPI
+          captures, saved state, and native DAW interactions.
+  - [ ] Sidechain Compressor editor parity.
+    - [x] Capture and port the published 449 × 318 editor to HWND, including
+          the sliders, toggles, response plots and native detector picker.
+          Verify pointer input, automation, 125% scale and reopening under Wine.
+    - [x] Verify selection and clearing of a same-bitness VST2 detector
+          with processing stopped, child editor reopening, routed audio,
+          and detector chunk recall after reselecting the matching library.
+    - [ ] Verify detector selection and replacement with the host processing,
+          compatibility with the original detector libraries, and embedded
+          project recall in native Windows DAWs.
+    - [ ] Match the remaining live plot, control and dialog behavior. Add
+          X11 and Cocoa and compare all three platforms in their native DAWs.
   - [ ] Transient Bug editor parity.
     - [x] Port the original 326 × 30 BugWars editor to HWND and keep
           TrBug on the host panel. Verify all 12 matched captures and
